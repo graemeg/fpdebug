@@ -12,7 +12,7 @@
       <MainUnit Value="0"/>
       <TargetFileExt Value=".exe"/>
       <UseXPManifest Value="True"/>
-      <ActiveEditorIndexAtStart Value="1"/>
+      <ActiveEditorIndexAtStart Value="0"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -31,25 +31,25 @@
         <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <Units Count="10">
+    <Units Count="12">
       <Unit0>
         <Filename Value="fpdebugger.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="fpdebugger"/>
-        <CursorPos X="1" Y="12"/>
-        <TopLine Value="6"/>
+        <CursorPos X="15" Y="20"/>
+        <TopLine Value="12"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="26"/>
+        <UsageCount Value="28"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="..\fpdbglib\dbgTypes.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgTypes"/>
-        <CursorPos X="37" Y="33"/>
-        <TopLine Value="27"/>
-        <EditorIndex Value="3"/>
-        <UsageCount Value="26"/>
+        <CursorPos X="20" Y="31"/>
+        <TopLine Value="23"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="28"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
@@ -64,22 +64,18 @@
         <UnitName Value="winDbgTypes"/>
         <CursorPos X="21" Y="9"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="5"/>
-        <UsageCount Value="26"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="28"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="nixDbgTypes"/>
-        <CursorPos X="27" Y="81"/>
-        <TopLine Value="76"/>
-        <EditorIndex Value="1"/>
-        <UsageCount Value="26"/>
+        <CursorPos X="10" Y="90"/>
+        <TopLine Value="67"/>
+        <UsageCount Value="28"/>
         <Bookmarks Count="1">
           <Item0 X="14" Y="16" ID="1"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\fpdbglib\nixPtrace.pas"/>
@@ -87,12 +83,10 @@
         <UnitName Value="nixPtrace"/>
         <CursorPos X="15" Y="27"/>
         <TopLine Value="19"/>
-        <EditorIndex Value="2"/>
-        <UsageCount Value="26"/>
+        <UsageCount Value="28"/>
         <Bookmarks Count="1">
           <Item0 X="52" Y="173" ID="2"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\..\..\..\..\usr\src\linux-headers-2.6.24-16\include\linux\ptrace.h"/>
@@ -112,9 +106,7 @@
         <Filename Value="..\..\..\..\..\usr\src\linux-headers-2.6.24-23-generic\include\linux\ptrace.h"/>
         <CursorPos X="70" Y="2"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="4"/>
         <UsageCount Value="12"/>
-        <Loaded Value="True"/>
         <SyntaxHighlighter Value="C++"/>
       </Unit8>
       <Unit9>
@@ -124,127 +116,144 @@
         <UsageCount Value="10"/>
         <SyntaxHighlighter Value="C++"/>
       </Unit9>
+      <Unit10>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="macDbgType"/>
+        <CursorPos X="22" Y="163"/>
+        <TopLine Value="163"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="22"/>
+        <Loaded Value="True"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="..\fpdbglib\machapi.pas"/>
+        <UnitName Value="machapi"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit11>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="18" Column="22" TopLine="11"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="49" Column="18" TopLine="29"/>
       </Position1>
       <Position2>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="129" Column="1" TopLine="121"/>
+        <Filename Value="fpdebugger.pas"/>
+        <Caret Line="16" Column="13" TopLine="1"/>
       </Position2>
       <Position3>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="23" Column="1" TopLine="18"/>
+        <Filename Value="fpdebugger.pas"/>
+        <Caret Line="10" Column="4" TopLine="1"/>
       </Position3>
       <Position4>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="127" Column="4" TopLine="121"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="22" Column="1" TopLine="13"/>
       </Position4>
       <Position5>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="32" Column="9" TopLine="18"/>
       </Position5>
       <Position6>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="125" Column="36" TopLine="121"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="42" Column="37" TopLine="30"/>
       </Position6>
       <Position7>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="55" Column="1" TopLine="43"/>
       </Position7>
       <Position8>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="126" Column="42" TopLine="122"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="79" Column="1" TopLine="79"/>
       </Position8>
       <Position9>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="134" Column="1" TopLine="130"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="25" Column="1" TopLine="13"/>
       </Position9>
       <Position10>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="164" Column="22" TopLine="157"/>
+        <Filename Value="fpdebugger.pas"/>
+        <Caret Line="16" Column="30" TopLine="1"/>
       </Position10>
       <Position11>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="168" Column="52" TopLine="160"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="12" Column="28" TopLine="2"/>
       </Position11>
       <Position12>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="158" Column="16" TopLine="155"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="62" Column="26" TopLine="50"/>
       </Position12>
       <Position13>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="fpdebugger.pas"/>
+        <Caret Line="26" Column="40" TopLine="8"/>
       </Position13>
       <Position14>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="171" Column="1" TopLine="165"/>
+        <Filename Value="fpdebugger.pas"/>
+        <Caret Line="22" Column="7" TopLine="13"/>
       </Position14>
       <Position15>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="44" Column="44" TopLine="41"/>
+        <Filename Value="fpdebugger.pas"/>
+        <Caret Line="21" Column="36" TopLine="9"/>
       </Position15>
       <Position16>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="141" Column="25" TopLine="139"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="33" Column="1" TopLine="18"/>
       </Position16>
       <Position17>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="17" Column="31" TopLine="5"/>
       </Position17>
       <Position18>
-        <Filename Value="fpdebugger.pas"/>
-        <Caret Line="9" Column="35" TopLine="1"/>
+        <Filename Value="..\fpdbglib\dbgTypes.pas"/>
+        <Caret Line="29" Column="1" TopLine="13"/>
       </Position18>
       <Position19>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="50" Column="1" TopLine="44"/>
+        <Filename Value="fpdebugger.pas"/>
+        <Caret Line="21" Column="44" TopLine="9"/>
       </Position19>
       <Position20>
         <Filename Value="fpdebugger.pas"/>
-        <Caret Line="11" Column="1" TopLine="6"/>
+        <Caret Line="27" Column="16" TopLine="4"/>
       </Position20>
       <Position21>
         <Filename Value="fpdebugger.pas"/>
-        <Caret Line="3" Column="29" TopLine="1"/>
+        <Caret Line="12" Column="23" TopLine="1"/>
       </Position21>
       <Position22>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="21" Column="45" TopLine="16"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="33" Column="18" TopLine="21"/>
       </Position22>
       <Position23>
-        <Filename Value="fpdebugger.pas"/>
-        <Caret Line="13" Column="1" TopLine="6"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="91" Column="1" TopLine="68"/>
       </Position23>
       <Position24>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="172" Column="1" TopLine="165"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="54" Column="1" TopLine="37"/>
       </Position24>
       <Position25>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="55" Column="2" TopLine="52"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="152" Column="17" TopLine="137"/>
       </Position25>
       <Position26>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="61" Column="5" TopLine="59"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="13" Column="3" TopLine="1"/>
       </Position26>
       <Position27>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="16" Column="14" TopLine="12"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="154" Column="1" TopLine="142"/>
       </Position27>
       <Position28>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="40" Column="40" TopLine="40"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="16" Column="1" TopLine="1"/>
       </Position28>
       <Position29>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="60" Column="68" TopLine="58"/>
+        <Filename Value="..\fpdbglib\macDbgType.pas"/>
+        <Caret Line="73" Column="18" TopLine="49"/>
       </Position29>
       <Position30>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="74" Column="13" TopLine="70"/>
+        <Filename Value="fpdebugger.pas"/>
+        <Caret Line="13" Column="1" TopLine="1"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>
@@ -257,6 +266,9 @@
       <SrcPath Value="..\fpdbglib\"/>
     </SearchPaths>
     <Other>
+      <CompilerMessages>
+        <IgnoredMessages idx3189="True" idx4055="True" idx4079="True" idx4080="True" idx4081="True" idx5024="True" idx5057="True" idx5058="True" idx5060="True"/>
+      </CompilerMessages>
       <CompilerPath Value="$(CompPath)"/>
     </Other>
   </CompilerOptions>

@@ -87,5 +87,7 @@ begin
   Result := false;
 end;
 
+initialization
+
 end.
 

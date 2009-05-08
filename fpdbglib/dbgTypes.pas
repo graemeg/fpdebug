@@ -22,7 +22,6 @@ type
   protected
     function GetProcessState: TDbgState; virtual; abstract;
   public
-    //function Execute(const CommandLine: String): Boolean; virtual; abstract;
     procedure Terminate; virtual; abstract;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; virtual; abstract;
     property State: TDbgState read GetProcessState;

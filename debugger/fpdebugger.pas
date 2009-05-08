@@ -6,7 +6,7 @@ uses
   dbgTypes
   {$ifdef windows}
   ,winDbgTypes
-  {$endif};
+  {$endif}, nixDbgTypes, nixPtrace;
 
 begin
   writeln('hello world');

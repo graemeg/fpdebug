@@ -9,9 +9,9 @@ uses
 
 type
 
-  { TUnixProcess }
+  { TLinuxProcess }
 
-  TUnixProcess = class(TDbgProcess)
+  TLinuxProcess = class(TDbgProcess)
   private
     fState  : TDbgState;
     fChild  : TPid;
@@ -23,22 +23,22 @@ type
     procedure Terminate; override;
   end;
 
-function DebugUnixProcessStart(const ACmdLine: String): TDbgProcess;
+function DebugLinuxProcessStart(const ACmdLine: String): TDbgProcess;
 
 implementation
 
-function DebugUnixProcessStart(const ACmdLine: String): TDbgProcess;
+function DebugLinuxProcessStart(const ACmdLine: String): TDbgProcess;
 var
-  dbg : TUnixProcess;
+  dbg : TLinuxProcess;
 begin
-  dbg := TUnixProcess.Create;
+  dbg := TLinuxProcess.Create;
   dbg.StartProcess(ACmdLine);
   Result := dbg;
 end;
 
-{ TUnixProcess }
+{ TLinuxProcess }
 
-function TUnixProcess.GetProcessState: TDbgState;
+function TLinuxProcess.GetProcessState: TDbgState;
 begin
   Result := fState;
 end;
@@ -51,25 +51,25 @@ begin
   if childid < 0 then begin
     Result := false;
   end else if childid = 0 then begin
-    res := ptrace(PTRACE_TRACEME, childid, nil, nil);
+    res := ptrace(PTRACE_TRACEME, 0, nil, nil);
     if res < 0 then Exit; // process cannot be traced
     FpExecV(ACmdLine, nil);
   end else
     Result := true;
 end;
 
-function TUnixProcess.StartProcess(const ACmdLine: String): Boolean;
+function TLinuxProcess.StartProcess(const ACmdLine: String): Boolean;
 begin
   Result := ForkAndDebugProcess(ACmdLine, fChild);
   if not Result then Exit;
 end;
 
-procedure TUnixProcess.Terminate;
+procedure TLinuxProcess.Terminate;
 begin
 
 end;
 
-function TUnixProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;
+function TLinuxProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;
 var
   Status : Integer;
 begin
@@ -88,6 +88,7 @@ begin
 end;
 
 initialization
+  DebugProcessStart := @DebugLinuxProcessStart;
 
 end.
 

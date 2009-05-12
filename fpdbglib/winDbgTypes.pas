@@ -5,7 +5,8 @@ unit winDbgTypes;
 interface
 
 uses
-  dbgTypes;
+  Windows,
+  dbgTypes, winDbgProc;
   
 type
   { TWinDbgProcess }
@@ -14,19 +15,40 @@ type
   private
     fState    : TDbgState;
     fCmdLine  : String;
+    
+    fProcInfo   : TProcessInformation;
+    fLastEvent      : TDebugEvent;
+    fLastEvenThread : TThreadID;
+    fLastEventProc  : LongWord;
+    fContinueStatus : LongWord;
+    fWaited     : Boolean;
+    fTerminated : Boolean;
   protected
     function GetProcessState: TDbgState; override;
   public
     constructor Create;
     destructor Destroy; override;
     
-    function Execute(const ACommandLine: String): Boolean; override;
+    function Execute(const ACommandLine: String): Boolean; 
     procedure Terminate; override;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
   end;
   
 
 implementation
+
+function WinDebugProcessStart(const ACommandLine: String): TDbgProcess;
+var
+  win : TWinDbgProcess;
+begin
+  win := TWinDbgProcess.Create;
+  if not win.Execute(ACommandLine) then begin
+    win.Free;
+    Result := nil
+  end else
+    Result := win;
+end;
+
 
 { TWinDbgProcess }
 
@@ -50,6 +72,9 @@ begin
   fCmdLine := ACommandLine;
   fState := ds_ReadToRun;
   Result := true;
+  
+  Result := CreateDebugProcess(ACommandLine, fProcInfo);
+  if not Result then Exit;
 end;
 
 procedure TWinDbgProcess.Terminate;  
@@ -59,8 +84,28 @@ end;
 
 function TWinDbgProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;  
 begin
-  Result := false;
+  if fWaited then ContinueDebugEvent(fLastEventProc, fLastEvenThread, fContinueStatus);
+
+  if fTerminated then begin
+    Result := false;
+    Exit;
+  end;
+  
+  FillChar(fLastEvent, sizeof(fLastEvent), 0);
+  Result := Windows.WaitForDebugEvent(fLastEvent, INFINITE);
+  
+  fWaited := Result;
+  fContinueStatus := DBG_CONTINUE;
+  if Result then begin
+    WinEventToDbgEvent(fLastEvent, Event);
+    fLastEventProc := fLastEvent.dwProcessId;
+    fLastEvenThread := fLastEvent.dwThreadId;
+    fTerminated := (Event.Kind = dek_ProcessTerminated);
+  end;
+  
 end;
 
+initialization
+  DebugProcessStart := @WinDebugProcessStart;
 end.
 

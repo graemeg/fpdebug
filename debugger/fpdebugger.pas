@@ -7,11 +7,12 @@ uses
   {$ifdef windows},winDbgTypes{$endif}
   {$ifdef linux},nixDbgTypes{$endif}
   {$ifdef darwin},macDbgType{$endif}
-  ;
+  , winDbgProc;
 
 procedure RunDebugger;
 var
   dbg : TDbgProcess;
+  evn : TDbgEvent;
   cmd : String;
   exe : String;
 begin
@@ -31,7 +32,14 @@ begin
   end;
   try
     writeln('running');
-
+    while dbg.WaitNextEvent(evn) do begin
+      case evn.Kind of
+        dek_Other: write('other');
+        dek_ProcessStart: write('process started');
+        dek_ProcessTerminated: write('process terminated');
+      end;
+      readln;
+    end;
     writeln('debug done');
   finally
     dbg.Free;

@@ -6,7 +6,7 @@ uses
   dbgTypes
   {$ifdef windows},winDbgTypes{$endif}
   {$ifdef linux},nixDbgTypes{$endif}
-  {$ifdef darwin},macDbgType{$endif}, linuxDbgProc;
+  {$ifdef darwin},macDbgType{$endif};
 
 procedure RunDebugger;
 var

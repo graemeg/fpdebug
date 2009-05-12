@@ -12,7 +12,7 @@
       <MainUnit Value="0"/>
       <TargetFileExt Value=".exe"/>
       <UseXPManifest Value="True"/>
-      <ActiveEditorIndexAtStart Value="3"/>
+      <ActiveEditorIndexAtStart Value="0"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -31,26 +31,24 @@
         <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <Units Count="25">
+    <Units Count="27">
       <Unit0>
         <Filename Value="fpdebugger.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="fpdebugger"/>
-        <CursorPos X="1" Y="14"/>
+        <CursorPos X="37" Y="9"/>
         <TopLine Value="1"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="40"/>
+        <UsageCount Value="43"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="..\fpdbglib\dbgTypes.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgTypes"/>
-        <CursorPos X="40" Y="11"/>
-        <TopLine Value="1"/>
-        <EditorIndex Value="2"/>
-        <UsageCount Value="40"/>
-        <Loaded Value="True"/>
+        <CursorPos X="1" Y="103"/>
+        <TopLine Value="93"/>
+        <UsageCount Value="43"/>
       </Unit1>
       <Unit2>
         <Filename Value="E:\FPC_Laz\fpc\rtl\inc\systemh.inc"/>
@@ -62,9 +60,9 @@
         <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="winDbgTypes"/>
-        <CursorPos X="16" Y="87"/>
-        <TopLine Value="72"/>
-        <UsageCount Value="40"/>
+        <CursorPos X="24" Y="144"/>
+        <TopLine Value="123"/>
+        <UsageCount Value="43"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
@@ -72,12 +70,10 @@
         <UnitName Value="nixDbgTypes"/>
         <CursorPos X="37" Y="13"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="1"/>
-        <UsageCount Value="40"/>
+        <UsageCount Value="43"/>
         <Bookmarks Count="1">
           <Item0 X="14" Y="16" ID="1"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\fpdbglib\nixPtrace.pas"/>
@@ -85,12 +81,10 @@
         <UnitName Value="nixPtrace"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="5"/>
-        <UsageCount Value="40"/>
+        <UsageCount Value="43"/>
         <Bookmarks Count="1">
           <Item0 X="52" Y="173" ID="2"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\..\..\usr\src\linux-headers-2.6.24-16\include\linux\ptrace.h"/>
@@ -126,7 +120,7 @@
         <UnitName Value="macDbgType"/>
         <CursorPos X="22" Y="163"/>
         <TopLine Value="154"/>
-        <UsageCount Value="34"/>
+        <UsageCount Value="37"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\fpdbglib\machapi.pas"/>
@@ -143,12 +137,12 @@
         <UsageCount Value="10"/>
       </Unit12>
       <Unit13>
-        <Filename Value="winDbgProc.pas"/>
+        <Filename Value="..\fpdbglib\winDbgProc.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="winDbgProc"/>
-        <CursorPos X="3" Y="8"/>
+        <CursorPos X="1" Y="14"/>
         <TopLine Value="1"/>
-        <UsageCount Value="32"/>
+        <UsageCount Value="35"/>
       </Unit13>
       <Unit14>
         <Filename Value="E:\FPC_Laz\fpc\rtl\win\wininc\struct.inc"/>
@@ -198,11 +192,9 @@
         <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="linuxDbgProc"/>
-        <CursorPos X="20" Y="93"/>
-        <TopLine Value="78"/>
-        <EditorIndex Value="3"/>
-        <UsageCount Value="29"/>
-        <Loaded Value="True"/>
+        <CursorPos X="3" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="32"/>
       </Unit21>
       <Unit22>
         <Filename Value="..\..\..\FPC_Laz\fpc\rtl\unix\bunxovlh.inc"/>
@@ -220,133 +212,24 @@
         <Filename Value="..\..\..\FPC_Laz\fpc\rtl\linux\signal.inc"/>
         <CursorPos X="37" Y="61"/>
         <TopLine Value="49"/>
-        <EditorIndex Value="4"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit24>
+      <Unit25>
+        <Filename Value="E:\FPC_Laz\fpc\rtl\win\wininc\defines.inc"/>
+        <CursorPos X="32" Y="3079"/>
+        <TopLine Value="3061"/>
+        <UsageCount Value="11"/>
+      </Unit25>
+      <Unit26>
+        <Filename Value="dbgRegisters.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="dbgRegisters"/>
+        <CursorPos X="15" Y="42"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="21"/>
+      </Unit26>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
-      <Position1>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="8" Column="38" TopLine="1"/>
-      </Position1>
-      <Position2>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="16" Column="38" TopLine="1"/>
-      </Position2>
-      <Position3>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="25" Column="12" TopLine="14"/>
-      </Position3>
-      <Position4>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="78" Column="19" TopLine="74"/>
-      </Position4>
-      <Position5>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="94" Column="23" TopLine="77"/>
-      </Position5>
-      <Position6>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="72" Column="1" TopLine="55"/>
-      </Position6>
-      <Position7>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="196" Column="20" TopLine="174"/>
-      </Position7>
-      <Position8>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position8>
-      <Position9>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="37" Column="17" TopLine="25"/>
-      </Position9>
-      <Position10>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="38" Column="31" TopLine="25"/>
-      </Position10>
-      <Position11>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="163" Column="42" TopLine="151"/>
-      </Position11>
-      <Position12>
-        <Filename Value="..\fpdbglib\nixPtrace.pas"/>
-        <Caret Line="179" Column="25" TopLine="167"/>
-      </Position12>
-      <Position13>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="27" Column="20" TopLine="11"/>
-      </Position13>
-      <Position14>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="94" Column="26" TopLine="80"/>
-      </Position14>
-      <Position15>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="66" Column="20" TopLine="56"/>
-      </Position15>
-      <Position16>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="50" Column="17" TopLine="36"/>
-      </Position16>
-      <Position17>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="93" Column="1" TopLine="83"/>
-      </Position17>
-      <Position18>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="86" Column="27" TopLine="73"/>
-      </Position18>
-      <Position19>
-        <Filename Value="..\..\..\FPC_Laz\fpc\rtl\linux\signal.inc"/>
-        <Caret Line="95" Column="19" TopLine="83"/>
-      </Position19>
-      <Position20>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="79" Column="19" TopLine="73"/>
-      </Position20>
-      <Position21>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="39" Column="37" TopLine="24"/>
-      </Position21>
-      <Position22>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="98" Column="34" TopLine="82"/>
-      </Position22>
-      <Position23>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="70" Column="1" TopLine="47"/>
-      </Position23>
-      <Position24>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="13" Column="1" TopLine="13"/>
-      </Position24>
-      <Position25>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="7" Column="31" TopLine="1"/>
-      </Position25>
-      <Position26>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="53" Column="31" TopLine="37"/>
-      </Position26>
-      <Position27>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="57" Column="9" TopLine="49"/>
-      </Position27>
-      <Position28>
-        <Filename Value="..\fpdbglib\nixDbgTypes.pas"/>
-        <Caret Line="25" Column="34" TopLine="10"/>
-      </Position28>
-      <Position29>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="57" Column="9" TopLine="49"/>
-      </Position29>
-      <Position30>
-        <Filename Value="..\fpdbglib\linuxDbgProc.pas"/>
-        <Caret Line="95" Column="16" TopLine="78"/>
-      </Position30>
-    </JumpHistory>
+    <JumpHistory Count="0" HistoryIndex="-1"/>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="8"/>

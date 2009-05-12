@@ -10,8 +10,9 @@ uses
 function CreateDebugProcess(const CmdLine: string; out Info: TProcessInformation): Boolean;
 
 procedure WinEventToDbgEvent(const Win: TDebugEvent; out Dbg: TDbgEvent);
-  
+
 implementation
+
 
 function CreateDebugProcess(const CmdLine: string; out Info: TProcessInformation): Boolean;
 var
@@ -32,6 +33,7 @@ end;
 
 procedure WinEventToDbgEvent(const Win: TDebugEvent; out Dbg: TDbgEvent);
 begin
+  writeln('code = ',Win.dwDebugEventCode);
   case Win.dwDebugEventCode of
     CREATE_PROCESS_DEBUG_EVENT:
       Dbg.Kind := dek_ProcessStart;

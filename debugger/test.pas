@@ -24,15 +24,15 @@ begin
 end;
 
 begin 
-  //writeln('testing break');
-  //TestBreak;
+  writeln('testing break');
+  TestBreak;
 
   writeln('testing access violation');
   TestAV;
 
 
   writeln('hello world');
-  readln(s);
+  //readln(s);
 
-  writeln('hello ', s);
+  //writeln('hello ', s);
 end.

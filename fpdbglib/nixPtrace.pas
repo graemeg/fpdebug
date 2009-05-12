@@ -24,7 +24,7 @@ interface
 uses
   BaseUnix;
 
-{$linklib libc}
+{$linklib }
 
 type
   Tptrace_request = Integer;
@@ -170,8 +170,11 @@ const
 
 //function ptrace(request: Tptrace_request; args: array of const): Integer; cdecl; external;
 
+type
+  TPtraceWord = Integer;
+
 function ptrace(request: Tptrace_request; pid: TPid;
-  addr, data: Pointer): Integer; cdecl; external;
+  addr, data: Pointer): TPtraceWord; cdecl; external;
 
 implementation
 

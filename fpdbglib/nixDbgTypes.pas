@@ -5,7 +5,7 @@ unit nixDbgTypes;
 interface
 
 uses
-  BaseUnix, Unix, dbgTypes, nixPtrace;
+  BaseUnix, Unix, dbgTypes, nixPtrace, linuxDbgProc;
 
 type
 
@@ -15,6 +15,9 @@ type
   private
     fState  : TDbgState;
     fChild  : TPid;
+    fContSig    : Integer;
+    fTerminated : Boolean;
+    fWaited     : Boolean;
   protected
     function GetProcessState: TDbgState; override;
   public
@@ -32,8 +35,11 @@ var
   dbg : TLinuxProcess;
 begin
   dbg := TLinuxProcess.Create;
-  dbg.StartProcess(ACmdLine);
-  Result := dbg;
+  if not dbg.StartProcess(ACmdLine) then begin
+    dbg.Free;
+    Result := nil;
+  end else
+    Result := dbg;
 end;
 
 { TLinuxProcess }
@@ -41,21 +47,6 @@ end;
 function TLinuxProcess.GetProcessState: TDbgState;
 begin
   Result := fState;
-end;
-
-function ForkAndDebugProcess(const ACmdLine: String; var childid: TPid): Boolean;
-var
-  res     : Integer;
-begin
-  childid := FpFork;
-  if childid < 0 then begin
-    Result := false;
-  end else if childid = 0 then begin
-    res := ptrace(PTRACE_TRACEME, 0, nil, nil);
-    if res < 0 then Exit; // process cannot be traced
-    FpExecV(ACmdLine, nil);
-  end else
-    Result := true;
 end;
 
 function TLinuxProcess.StartProcess(const ACmdLine: String): Boolean;
@@ -72,19 +63,37 @@ end;
 function TLinuxProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;
 var
   Status : Integer;
+  fch    : TPid;
 begin
   if fChild = 0 then begin
     Result := false;
     Exit;
   end;
-  fChild := FpWaitPid(fChild, Status, 0);
-  if fChild < 0 then begin // failed to wait
+
+  if fWaited then _ptrace_cont(fChild, fContSig);
+
+  if fTerminated then begin
     Result := false;
-    fChild := 0;
     Exit;
   end;
 
-  Result := false;
+  fCh := FpWaitPid(fChild, Status, 0);
+  if fCh < 0 then begin // failed to wait
+    Result := false;
+    fChild := 0;
+    fTerminated := true;
+    Exit;
+  end;
+
+  if isStopped(Status, fContSig) then begin
+    case fContSig of
+      SIGTRAP: fContSig := 0;
+    end;
+  end;
+
+  Result := WaitStatusToDbgEvent(fChild, Status, Event);
+  fWaited := Result;
+  fTerminated := Event.Kind = dek_ProcessTerminated;
 end;
 
 initialization

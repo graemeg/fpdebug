@@ -3,29 +3,32 @@ program fpdebugger;
 {$mode objfpc}{$H+}
 
 uses
+
   dbgTypes
   {$ifdef windows},winDbgTypes{$endif}
   {$ifdef linux},nixDbgTypes{$endif}
-  {$ifdef darwin},macDbgType{$endif}
-  , winDbgProc;
+  {$ifdef darwin},macDbgType{$endif}, linuxDbgProc;
+
+
+procedure TestBreak;
+asm
+    int 3h;
+end;
 
 procedure RunDebugger;
 var
   dbg : TDbgProcess;
   evn : TDbgEvent;
   cmd : String;
-  exe : String;
 begin
-  cmd := cmdline;
-  exe := ParamStr(0);
-  Delete(cmd, 1, length(exe));
+  cmd := ParamStr(1);
   if cmd = '' then begin
     writeln('executable is not specified');
     Exit;
   end else
-    writeln('debugging process: ', exe);
+    writeln('debugging process: ', cmd);
 
-  dbg := DebugProcessStart(exe);
+  dbg := DebugProcessStart(cmd);
   if not Assigned(dbg) then begin
     writeln('cannot start debug process');
     Exit;

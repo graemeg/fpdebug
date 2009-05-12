@@ -22,9 +22,9 @@ unit nixPtrace;
 interface
 
 uses
-  BaseUnix;
+  BaseUnix{, syscall};
 
-{$linklib }
+{$linklib libc}
 
 type
   Tptrace_request = Integer;
@@ -173,10 +173,28 @@ const
 type
   TPtraceWord = Integer;
 
-function ptrace(request: Tptrace_request; pid: TPid;
-  addr, data: Pointer): TPtraceWord; cdecl; external;
+function ptrace(request: Tptrace_request; pid: TPid; addr, data: Pointer): TPtraceWord;
+ cdecl; external name 'ptrace';
+
+function _ptrace_traceme: TPtraceWord;
+function _ptrace_cont(pid: TPid; Signal: Integer): TPtraceWord;
 
 implementation
+
+{function ptrace(request: Tptrace_request; pid: TPid; addr, data: Pointer): TPtraceWord;
+begin
+  Result := Do_SysCall(syscall_nr_ptrace, PTRACE_CONT, pid, addr, TSysParam(data));
+end;}
+
+function _ptrace_cont(pid: TPid; Signal: Integer): TPtraceWord;
+begin
+  Result := ptrace(PTRACE_CONT, pid, nil, Pointer(Signal));
+end;
+
+function _ptrace_traceme: TPtraceWord;
+begin
+  Result := ptrace(PTRACE_TRACEME, FpGetpid, nil, nil);
+end;
 
 end.
 

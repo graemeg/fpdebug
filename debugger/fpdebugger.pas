@@ -3,17 +3,10 @@ program fpdebugger;
 {$mode objfpc}{$H+}
 
 uses
-
   dbgTypes
   {$ifdef windows},winDbgTypes{$endif}
   {$ifdef linux},nixDbgTypes{$endif}
   {$ifdef darwin},macDbgType{$endif}, linuxDbgProc;
-
-
-procedure TestBreak;
-asm
-    int 3h;
-end;
 
 procedure RunDebugger;
 var

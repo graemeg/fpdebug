@@ -78,6 +78,8 @@ begin
   end;
 
   fCh := FpWaitPid(fChild, Status, 0);
+  writeln('fCh    = ', fCh);
+  writeln('fChild = ', fChild);
   if fCh < 0 then begin // failed to wait
     Result := false;
     fChild := 0;

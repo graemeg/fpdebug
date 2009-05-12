@@ -178,6 +178,7 @@ function ptrace(request: Tptrace_request; pid: TPid; addr, data: Pointer): TPtra
 
 function _ptrace_traceme: TPtraceWord;
 function _ptrace_cont(pid: TPid; Signal: Integer): TPtraceWord;
+function _ptrace_getsiginfo(pid: TPid; var siginfo: tsiginfo): TPtraceWord;
 
 implementation
 
@@ -194,6 +195,11 @@ end;
 function _ptrace_traceme: TPtraceWord;
 begin
   Result := ptrace(PTRACE_TRACEME, FpGetpid, nil, nil);
+end;
+
+function _ptrace_getsiginfo(pid: TPid; var siginfo: tsiginfo): TPtraceWord;
+begin
+  Result := ptrace(PTRACE_GETSIGINFO, pid, nil, @siginfo);
 end;
 
 end.

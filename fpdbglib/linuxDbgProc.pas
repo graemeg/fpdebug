@@ -36,7 +36,7 @@ end;
 function isTerminated(Status: Integer; var TermSignal: Integer): Boolean;
 begin
   Result := wifsignaled(Status);
-  if Result then TermSignal := wstopsig(Status);
+  if Result then TermSignal := wtermsig(Status);
 end;
 
 function isStopped(Status: Integer; var StopSignal: Integer): Boolean;
@@ -51,6 +51,15 @@ begin
   if Result then ExitStatus := wexitStatus(Status);
 end;
 
+function StopSigToEventKind(ASig: Integer): TDbgEventKind;
+begin
+  case ASig of
+    SIGTRAP: Result := dek_BreakPoint;
+  else
+    Result := dek_Other;
+  end;
+end;
+
 function WaitStatusToDbgEvent(ChildID: TPid; Status: Integer; var event: TDbgEvent): Boolean;
 var
   termSig : Integer;
@@ -58,21 +67,34 @@ var
   stopSig : Integer;
   isTerm  : Boolean;
   isExit  : Boolean;
+  siginfo : tsiginfo;
+  res     : TPtraceWord;
 begin
   writeln('Status = ', Status);
   Result := true;
-  isTerm := isTerminated(Status, termSig);
-  if not isTerm then
-    isExit := isExited(Status, exitSig);
+  if isStopped(Status, stopSig) then begin
+    writeln('* stop signaled = ', stopSig);
+    event.Kind := StopSigToEventKind(stopSig);
+  end else begin
+    isTerm := isTerminated(Status, termSig);
+    if not isTerm then begin
+      isExit := isExited(Status, exitSig);
+      event.Kind := dek_ProcessTerminated;
+      writeln('* exited ', exitSig);
+    end else begin
+      writeln('* signaled/terminated ', termSig);
+      event.Kind := dek_Other;
+    end;
+  end;
 
-  if isStopped(Status, stopSig) then writeln('* stopped = ', StopSig);
-  if isTerm then writeln('* signaled/terminated ', termSig);
-  if isExit then writeln('* exited ', exitSig);
+  res := _ptrace_getsiginfo(ChildID, siginfo);
+  if res = 0 then begin
+    writeln('siginfo: ');
+    writeln('  code  ', siginfo.si_code);
+    writeln('  errno ', siginfo.si_errno);
+    writeln('  signo ', siginfo.si_signo);
+  end;
 
-  if isTerm or isExit then begin
-    event.Kind := dek_ProcessTerminated;
-  end else
-    event.Kind := dek_Other;
 end;
 
 end.

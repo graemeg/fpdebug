@@ -12,7 +12,7 @@
       <MainUnit Value="0"/>
       <TargetFileExt Value=".exe"/>
       <UseXPManifest Value="True"/>
-      <ActiveEditorIndexAtStart Value="2"/>
+      <ActiveEditorIndexAtStart Value="1"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -31,25 +31,25 @@
         <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <Units Count="27">
+    <Units Count="29">
       <Unit0>
         <Filename Value="fpdebugger.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="fpdebugger"/>
-        <CursorPos X="26" Y="35"/>
-        <TopLine Value="22"/>
+        <CursorPos X="1" Y="17"/>
+        <TopLine Value="2"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="45"/>
+        <UsageCount Value="47"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="..\fpdbglib\dbgTypes.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgTypes"/>
-        <CursorPos X="19" Y="77"/>
-        <TopLine Value="59"/>
-        <EditorIndex Value="1"/>
-        <UsageCount Value="45"/>
+        <CursorPos X="19" Y="1"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="47"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
@@ -62,10 +62,10 @@
         <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="winDbgTypes"/>
-        <CursorPos X="73" Y="155"/>
-        <TopLine Value="144"/>
-        <EditorIndex Value="2"/>
-        <UsageCount Value="45"/>
+        <CursorPos X="14" Y="43"/>
+        <TopLine Value="31"/>
+        <EditorIndex Value="4"/>
+        <UsageCount Value="47"/>
         <Loaded Value="True"/>
       </Unit3>
       <Unit4>
@@ -74,7 +74,7 @@
         <UnitName Value="nixDbgTypes"/>
         <CursorPos X="37" Y="13"/>
         <TopLine Value="1"/>
-        <UsageCount Value="45"/>
+        <UsageCount Value="47"/>
         <Bookmarks Count="1">
           <Item0 X="14" Y="16" ID="1"/>
         </Bookmarks>
@@ -85,7 +85,7 @@
         <UnitName Value="nixPtrace"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="45"/>
+        <UsageCount Value="47"/>
         <Bookmarks Count="1">
           <Item0 X="52" Y="173" ID="2"/>
         </Bookmarks>
@@ -124,7 +124,7 @@
         <UnitName Value="macDbgType"/>
         <CursorPos X="22" Y="163"/>
         <TopLine Value="154"/>
-        <UsageCount Value="39"/>
+        <UsageCount Value="41"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\fpdbglib\machapi.pas"/>
@@ -148,17 +148,17 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="winDbgProc"/>
         <CursorPos X="18" Y="54"/>
-        <TopLine Value="34"/>
-        <EditorIndex Value="4"/>
-        <UsageCount Value="37"/>
+        <TopLine Value="48"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="39"/>
         <Loaded Value="True"/>
       </Unit13>
       <Unit14>
         <Filename Value="E:\FPC_Laz\fpc\rtl\win\wininc\struct.inc"/>
         <CursorPos X="6" Y="1837"/>
-        <TopLine Value="1808"/>
-        <EditorIndex Value="5"/>
-        <UsageCount Value="10"/>
+        <TopLine Value="1831"/>
+        <EditorIndex Value="7"/>
+        <UsageCount Value="11"/>
         <Loaded Value="True"/>
       </Unit14>
       <Unit15>
@@ -205,7 +205,7 @@
         <UnitName Value="linuxDbgProc"/>
         <CursorPos X="3" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="34"/>
+        <UsageCount Value="36"/>
       </Unit21>
       <Unit22>
         <Filename Value="..\..\..\FPC_Laz\fpc\rtl\unix\bunxovlh.inc"/>
@@ -228,9 +228,9 @@
       <Unit25>
         <Filename Value="E:\FPC_Laz\fpc\rtl\win\wininc\defines.inc"/>
         <CursorPos X="6" Y="339"/>
-        <TopLine Value="324"/>
-        <EditorIndex Value="3"/>
-        <UsageCount Value="11"/>
+        <TopLine Value="333"/>
+        <EditorIndex Value="5"/>
+        <UsageCount Value="12"/>
         <Loaded Value="True"/>
       </Unit25>
       <Unit26>
@@ -239,129 +239,149 @@
         <UnitName Value="dbgRegisters"/>
         <CursorPos X="15" Y="42"/>
         <TopLine Value="1"/>
-        <UsageCount Value="23"/>
+        <UsageCount Value="25"/>
       </Unit26>
+      <Unit27>
+        <Filename Value="cmdloop.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="cmdloop"/>
+        <CursorPos X="36" Y="20"/>
+        <TopLine Value="3"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="22"/>
+        <Loaded Value="True"/>
+      </Unit27>
+      <Unit28>
+        <Filename Value="commands.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="commands"/>
+        <CursorPos X="33" Y="72"/>
+        <TopLine Value="49"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit28>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="110" Column="24" TopLine="92"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="17" Column="39" TopLine="1"/>
       </Position1>
       <Position2>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="148" Column="26" TopLine="133"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="45" Column="1" TopLine="34"/>
       </Position2>
       <Position3>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="152" Column="26" TopLine="133"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position3>
       <Position4>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="165" Column="20" TopLine="156"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="35" Column="15" TopLine="10"/>
       </Position4>
       <Position5>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="71" Column="1" TopLine="70"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="22" Column="1" TopLine="8"/>
       </Position5>
       <Position6>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="88" Column="58" TopLine="70"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="32" Column="3" TopLine="12"/>
       </Position6>
       <Position7>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="89" Column="28" TopLine="70"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="46" Column="12" TopLine="27"/>
       </Position7>
       <Position8>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="92" Column="19" TopLine="70"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="88" Column="38" TopLine="75"/>
       </Position8>
       <Position9>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="93" Column="21" TopLine="70"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="74" Column="37" TopLine="57"/>
       </Position9>
       <Position10>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="94" Column="43" TopLine="70"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="39" Column="1" TopLine="16"/>
       </Position10>
       <Position11>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="84" Column="56" TopLine="70"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="112" Column="25" TopLine="86"/>
       </Position11>
       <Position12>
-        <Filename Value="..\fpdbglib\dbgTypes.pas"/>
-        <Caret Line="77" Column="14" TopLine="62"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="120" Column="6" TopLine="96"/>
       </Position12>
       <Position13>
-        <Filename Value="fpdebugger.pas"/>
-        <Caret Line="32" Column="27" TopLine="22"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="67" Column="35" TopLine="49"/>
       </Position13>
       <Position14>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="129" Column="19" TopLine="127"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="50" Column="27" TopLine="32"/>
       </Position14>
       <Position15>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="144" Column="28" TopLine="119"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="98" Column="1" TopLine="82"/>
       </Position15>
       <Position16>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="147" Column="18" TopLine="130"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="78" Column="1" TopLine="54"/>
       </Position16>
       <Position17>
-        <Filename Value="..\fpdbglib\winDbgProc.pas"/>
-        <Caret Line="46" Column="42" TopLine="29"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="67" Column="38" TopLine="47"/>
       </Position17>
       <Position18>
-        <Filename Value="E:\FPC_Laz\fpc\rtl\win\wininc\struct.inc"/>
-        <Caret Line="1900" Column="52" TopLine="1885"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="39" Column="1" TopLine="23"/>
       </Position18>
       <Position19>
-        <Filename Value="E:\FPC_Laz\fpc\rtl\win\wininc\struct.inc"/>
-        <Caret Line="1789" Column="45" TopLine="1773"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="41" Column="3" TopLine="30"/>
       </Position19>
       <Position20>
-        <Filename Value="..\fpdbglib\winDbgProc.pas"/>
-        <Caret Line="37" Column="1" TopLine="18"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="61" Column="6" TopLine="46"/>
       </Position20>
       <Position21>
-        <Filename Value="..\fpdbglib\winDbgProc.pas"/>
-        <Caret Line="36" Column="15" TopLine="23"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="173" Column="5" TopLine="149"/>
       </Position21>
       <Position22>
-        <Filename Value="..\fpdbglib\winDbgProc.pas"/>
-        <Caret Line="37" Column="37" TopLine="22"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="42" Column="1" TopLine="12"/>
       </Position22>
       <Position23>
-        <Filename Value="..\fpdbglib\winDbgProc.pas"/>
-        <Caret Line="35" Column="1" TopLine="27"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="32" Column="46" TopLine="20"/>
       </Position23>
       <Position24>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="157" Column="34" TopLine="138"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="148" Column="52" TopLine="130"/>
       </Position24>
       <Position25>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="143" Column="35" TopLine="137"/>
       </Position25>
       <Position26>
-        <Filename Value="..\fpdbglib\winDbgTypes.pas"/>
-        <Caret Line="147" Column="15" TopLine="142"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position26>
       <Position27>
-        <Filename Value="..\fpdbglib\winDbgProc.pas"/>
-        <Caret Line="12" Column="11" TopLine="1"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="91" Column="25" TopLine="76"/>
       </Position27>
       <Position28>
-        <Filename Value="..\fpdbglib\winDbgProc.pas"/>
-        <Caret Line="35" Column="19" TopLine="20"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="141" Column="34" TopLine="124"/>
       </Position28>
       <Position29>
-        <Filename Value="..\fpdbglib\winDbgProc.pas"/>
-        <Caret Line="46" Column="23" TopLine="20"/>
+        <Filename Value="commands.pas"/>
+        <Caret Line="15" Column="1" TopLine="15"/>
       </Position29>
       <Position30>
-        <Filename Value="..\fpdbglib\winDbgProc.pas"/>
-        <Caret Line="48" Column="23" TopLine="20"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="25" Column="20" TopLine="4"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>

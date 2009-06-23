@@ -4,7 +4,7 @@ program fpdebugger;
 
 uses
   dbgTypes
-  {$ifdef windows},winDbgTypes{$endif}
+  {$ifdef windows},winDbgTypes, cmdloop, commands{$endif}
   {$ifdef linux},nixDbgTypes{$endif}
   {$ifdef darwin},macDbgType{$endif};
 
@@ -28,7 +28,7 @@ begin
   end;
   try
     try
-      writeln('running');
+      {writeln('running');
       while dbg.WaitNextEvent(evn) do begin
         case evn.Kind of
           dek_Other: write('other');
@@ -36,9 +36,11 @@ begin
           dek_ProcessStart: write('process started');
           dek_ProcessTerminated: write('process terminated');
         end;
+        write(' ...press enter');
         readln;
       end;
-      writeln('debug done');
+      writeln('debug done');}
+      RunLoop(dbg)
     finally
       dbg.Free;
     end;

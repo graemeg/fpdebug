@@ -27,18 +27,23 @@ begin
     Exit;
   end;
   try
-    writeln('running');
-    while dbg.WaitNextEvent(evn) do begin
-      case evn.Kind of
-        dek_Other: write('other');
-        dek_ProcessStart: write('process started');
-        dek_ProcessTerminated: write('process terminated');
+    try
+      writeln('running');
+      while dbg.WaitNextEvent(evn) do begin
+        case evn.Kind of
+          dek_Other: write('other');
+          dek_BreakPoint: write('breakpoint');
+          dek_ProcessStart: write('process started');
+          dek_ProcessTerminated: write('process terminated');
+        end;
+        readln;
       end;
-      readln;
+      writeln('debug done');
+    finally
+      dbg.Free;
     end;
-    writeln('debug done');
-  finally
-    dbg.Free;
+  except
+    writeln('main loop exception');
   end;
 end;
 

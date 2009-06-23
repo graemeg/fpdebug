@@ -44,6 +44,7 @@ type
     
     function GetThreadsCount: Integer; override;
     function GetThreadID(AIndex: Integer): TDbgThreadID; override;
+    function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters): Boolean; override;
 
     function GetProcessState: TDbgState; override;
   end;
@@ -68,7 +69,6 @@ end;
 
 constructor TWinDbgProcess.Create; 
 begin
-
 end;
 
 destructor TWinDbgProcess.Destroy;  
@@ -126,7 +126,10 @@ end;
 
 function TWinDbgProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;  
 begin
-  if fWaited then ContinueDebugEvent(fLastEventProc, fLastEvenThread, fContinueStatus);
+  if fWaited then begin
+    writeln('continue with ', fContinueStatus);
+    ContinueDebugEvent(fLastEventProc, fLastEvenThread, fContinueStatus);
+  end;
 
   if fTerminated then begin
     Result := false;
@@ -137,18 +140,22 @@ begin
   Result := Windows.WaitForDebugEvent(fLastEvent, INFINITE);
   
   fWaited := Result;
-  fContinueStatus := DBG_CONTINUE;
+  
+  
   if Result then begin
     WinEventToDbgEvent(fLastEvent, Event);
     case fLastEvent.dwDebugEventCode of
-      CREATE_PROCESS_DEBUG_EVENT, CREATE_THREAD_DEBUG_EVENT: begin
-        
-        inc(fThreadsCount);
-      end;
-      EXIT_PROCESS_DEBUG_EVENT, EXIT_THREAD_DEBUG_EVENT: begin
-        dec(fThreadsCount);
-      end;
+      CREATE_PROCESS_DEBUG_EVENT, CREATE_THREAD_DEBUG_EVENT: 
+        AddThread(fLastEvent.dwThreadId);
+      EXIT_PROCESS_DEBUG_EVENT, EXIT_THREAD_DEBUG_EVENT: 
+        RemoveThread(fLastEvent.dwThreadId);
     end;
+    
+    
+    if Event.Kind in [dek_Other, dek_ProcessTerminated, dek_ProcessStart] then
+      fContinueStatus := DBG_CONTINUE
+    else
+      fContinueStatus := DBG_EXCEPTION_NOT_HANDLED;
     
     fLastEventProc := fLastEvent.dwProcessId;
     fLastEvenThread := fLastEvent.dwThreadId;
@@ -166,6 +173,11 @@ begin
   if (AIndex < 0) or (AIndex >= fThreadsCount) 
     then Result := 0
     else Result := fThreads[AIndex].id;
+end;
+
+function TWinDbgProcess.GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters): Boolean;  
+begin
+  Result := false;  
 end;
 
 initialization

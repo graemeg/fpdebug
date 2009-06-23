@@ -25,7 +25,7 @@ end;
 
 begin 
   writeln('testing break');
-  TestBreak;
+  //TestBreak;
 
   writeln('testing access violation');
   TestAV;

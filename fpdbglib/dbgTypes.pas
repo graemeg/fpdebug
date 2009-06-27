@@ -68,6 +68,7 @@ type
     Addr    : TDbgPtr;
     Thread  : TDbgThreadID;
     Kind    : TDbgEventKind;
+    Debug   : String;
   end;   
   
   TDbgProcess = class(TObject)

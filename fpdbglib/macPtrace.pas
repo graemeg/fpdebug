@@ -4,6 +4,7 @@ unit macPtrace;
 
 interface
 
+
 const
  	PT_TRACE_ME	= 0;	// child declares it's being traced
  	PT_READ_I	  = 1;	// read word in child's I space
@@ -26,13 +27,31 @@ const
 
 	PT_FIRSTMACH	= 32;	// for machine-specific requests
 
+const
+  CONT_STOP_ADDR : PtrUInt = 1;
+
 type
   pid_t = Integer;
 
-function ptrace(_request: integer; _pid: pid_t;  _addr: PtrUInt;
-  _data: integer): integer; cdecl; external name 'ptrace';
+//todo: fix fo syscall
+function ptrace(_request: integer; _pid: pid_t; _addr: PtrUInt; _data: integer): integer; cdecl; external name 'ptrace';
+
+function ptraceme: Boolean;
+function ptraceme_cont(pid: pid_t; addr: PtrUInt; signal: Integer): Boolean;
 
 implementation
+
+function ptraceme: Boolean;
+begin
+  Result := ptrace(PT_TRACE_ME, 0, 0, 0) = 0;
+end;
+
+function ptraceme_cont(pid: pid_t; addr: PtrUInt; signal: Integer): Boolean;
+begin
+  Result := ptrace(PT_CONTINUE, pid, addr, signal) = 0;
+end;
+
+
 
 end.
 

@@ -12,21 +12,64 @@ procedure RunLoop(Process: TDbgProcess);
 implementation
 
 var
-  LastCommand: String;
+  LastCommand : String;
+  DbgEvent    : TDbgEvent;
+
+  Running       : Boolean = false;
+  callwaitnext  : Boolean = false;
 
 const
-  CmdPrefix = 'duby>';  
+  CmdPrefix = 'duby> ';
+
+type
+  { TRunComand }
+
+  TRunComand = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+  end;
+
+  { TContinueCommand }
+
+  TContinueCommand = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+  end;
+
+{ TContinueCommand }
+
+procedure TContinueCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);
+begin
+  if not Running then
+    writeln('not running')
+  else
+    callwaitnext := true;
+end;
+
+{ TRunComand }
+
+procedure TRunComand.Execute(CmdParams: TStrings; Process: TDbgProcess);
+begin
+  if not Running then begin
+    running := true;
+    writeln('starting process');
+    callwaitnext := true;
+  end else
+    writelN('process already started');
+end;
   
-procedure ExectuteCommand;
+procedure ExecuteNextCommand;
 var
   s : string;
   p : TStringList;
 begin
   write(CmdPrefix);
   readln(s);
-  if s = '' then s := LastCommand;
+  if s = '' then begin
+    s := LastCommand;
+    writeln(s);
+  end;
+
   if s <> '' then begin
-    p := TStringList.Create;  
+    p := TStringList.Create;
     p.Add(s);
     if not ExecuteCommand(p, nil) then
       writeln('unknown command ', p[0]);
@@ -36,9 +79,28 @@ begin
 end;
 
 procedure DoRunLoop(Process: TDbgProcess);
+var
+  ProcTerm  : Boolean;
 begin
+  if not Assigned(Process) then begin
+    writeln('no process to debug (internal error?)');
+    Exit;
+  end;
+
+  ProcTerm := false;
   while true do begin
-    ExectuteCommand;
+    callwaitnext := false;
+    ExecuteNextCommand;
+
+    if CallWaitNext and not ProcTerm then begin
+      if not Process.WaitNextEvent(DbgEvent) then
+        writeln('process terminated?')
+      else begin
+        writeln('event: ', DbgEvent.Debug);
+      end;
+      if DbgEvent.Kind = dek_ProcessTerminated then
+        writeln('process has been terminated');
+    end;
   end;
 end;
 
@@ -49,6 +111,15 @@ begin
   except
   end;
 end;
+
+procedure RegisterLoopCommands;
+begin
+  RegisterCommand(['run','r'], TRunComand.Create);
+  RegisterCommand(['c'], TContinueCommand.Create);
+end;
+
+initialization
+  RegisterLoopCommands;
 
 end.
 

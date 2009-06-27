@@ -3,10 +3,12 @@ program fpdebugger;
 {$mode objfpc}{$H+}
 
 uses
-  dbgTypes
-  {$ifdef windows},winDbgTypes, cmdloop, commands{$endif}
+  dbgTypes,
+  cmdloop, commands
+  {$ifdef windows},winDbgTypes{$endif}
   {$ifdef linux},nixDbgTypes{$endif}
-  {$ifdef darwin},macDbgType{$endif};
+  {$ifdef darwin},macDbgType{$endif}
+  ;
 
 procedure RunDebugger;
 var
@@ -28,19 +30,7 @@ begin
   end;
   try
     try
-      {writeln('running');
-      while dbg.WaitNextEvent(evn) do begin
-        case evn.Kind of
-          dek_Other: write('other');
-          dek_BreakPoint: write('breakpoint');
-          dek_ProcessStart: write('process started');
-          dek_ProcessTerminated: write('process terminated');
-        end;
-        write(' ...press enter');
-        readln;
-      end;
-      writeln('debug done');}
-      RunLoop(dbg)
+      RunLoop(dbg);
     finally
       dbg.Free;
     end;

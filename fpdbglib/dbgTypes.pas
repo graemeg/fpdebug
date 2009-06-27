@@ -81,6 +81,9 @@ type
     function GetThreadsCount: Integer; virtual; abstract;
     function GetThreadID(AIndex: Integer): TDbgThreadID; virtual; abstract;
     function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters): Boolean; virtual; abstract;
+    
+    function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; virtual; abstract;
+    function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; virtual; abstract;
   end;
   
  

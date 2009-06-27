@@ -4,7 +4,7 @@ program fpdebugger;
 
 uses
   dbgTypes,
-  cmdloop, commands
+  cmdloop, commands, memviewer
   {$ifdef windows},winDbgTypes{$endif}
   {$ifdef linux},nixDbgTypes{$endif}
   {$ifdef darwin},macDbgType{$endif}
@@ -13,7 +13,6 @@ uses
 procedure RunDebugger;
 var
   dbg : TDbgProcess;
-  evn : TDbgEvent;
   cmd : String;
 begin
   cmd := ParamStr(1);

@@ -34,17 +34,16 @@ var
 begin 
  // writeln('testing break');
  //TestBreak;
-(*
+  
   writeln('testing access violation');
   p := nil;
   try
     p^ := 5;
   except
-    writeln('access violation');
+    writeln('handled access violation');
   end;
-
+  (*
   TestAV;
-*)
  // try
     raise(exception.create('hello world'));
  // except
@@ -56,4 +55,5 @@ begin
 
   //writeln('hello ', s);
   ExitCode := 55;
+  *)
 end.

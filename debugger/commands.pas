@@ -15,11 +15,12 @@ type
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); virtual; abstract;
     procedure PrintHelp; virtual; 
     function Description: String; virtual;
+    function ResetParamsCache: Boolean; virtual;
   end;
   
 function RegisterCommand(const Keys: array of String; ACommand: TCommand): Boolean;
 function FindCommand(const Key: String): TCommand;
-function ExecuteCommand(Params: TStrings; Process: TDbgProcess): Boolean;
+function ExecuteCommand(Params: TStrings; Process: TDbgProcess; var ExecutedCommand: TCommand): Boolean;
 
 implementation
 
@@ -112,6 +113,11 @@ function TCommand.Description: String;
 begin
   Result := '';
 end;
+
+function TCommand.ResetParamsCache: Boolean; 
+begin
+  Result := false;
+end;
   
 procedure InitCommands;
 begin
@@ -156,15 +162,17 @@ begin
   else Result := TCommand(keyslist.Objects[i]);
 end;  
 
-function ExecuteCommand(Params: TStrings; Process: TDbgProcess): Boolean;
+function ExecuteCommand(Params: TStrings; Process: TDbgProcess; var ExecutedCommand: TCommand): Boolean;
 var
   cmd : TCommand;
 begin
   Result := false;
+  ExecutedCommand := nil;
   if not Assigned(Params) then Exit;
   cmd := FindCommand(Params[0]);
   if not Assigned(cmd) then Exit;
   cmd.Execute(Params, Process);
+  ExecutedCommand := cmd;
   Result := true;
 end;
 

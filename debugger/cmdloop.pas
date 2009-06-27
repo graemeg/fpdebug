@@ -55,25 +55,84 @@ begin
   end else
     writelN('process already started');
 end;
+
+function GetNextWord(const s: AnsiString; var index: Integer): String;
+const
+  WhiteSpace = [' ',#8,#10];
+  Literals   = ['"',''''];
+var
+  Wstart,wend : Integer;
+  InLiteral   : Boolean;
+  LastLiteral : AnsiChar;
+
+begin
+  WStart:=index;
+  while (WStart<=Length(S)) and (S[WStart] in WhiteSpace) do
+    Inc(WStart);
+
+  WEnd:=WStart;
+  InLiteral:=False;
+  LastLiteral:=#0;
+  while (Wend<=Length(S)) and (not (S[Wend] in WhiteSpace) or InLiteral) do begin
+    if S[Wend] in Literals then
+      If InLiteral then
+        InLiteral:=not (S[Wend]=LastLiteral)
+      else begin
+        InLiteral:=True;
+        LastLiteral:=S[Wend];
+      end;
+    inc(wend);
+  end;
+
+  Result:=Copy(S,WStart,WEnd-WStart);
+
+  if (Length(Result) > 0)
+     and (Result[1] = Result[Length(Result)]) // if 1st char = last char and..
+     and (Result[1] in Literals) then // it's one of the literals, then
+    Result:=Copy(Result, 2, Length(Result) - 2); //delete the 2 (but not others in it)
+
+  while (WEnd<=Length(S)) and (S[Wend] in WhiteSpace) do
+    inc(Wend);
+  index := Wend;
+end;
+
+procedure ParseCommand(const Cmd: String; items: Tstrings);
+var
+  i : integer;
+  w : String;
+begin
+  if not Assigned(items)then Exit;
+  i:=1;
+  while i <= length(Cmd) do begin
+    w := GetNextWord(cmd, i);        
+    items.Add(w);
+  end;  
+end;
+
   
-procedure ExecuteNextCommand;
+procedure ExecuteNextCommand(AProcess: TDbgProcess);
 var
   s : string;
   p : TStringList;
+  cmd : TCommand;
 begin
   write(CmdPrefix);
   readln(s);
   if s = '' then begin
     s := LastCommand;
-    writeln(s);
+    writeln(CmdPrefix,s);
   end;
 
   if s <> '' then begin
     p := TStringList.Create;
-    p.Add(s);
-    if not ExecuteCommand(p, nil) then
-      writeln('unknown command ', p[0]);
-    LastCommand := s;
+    ParseCommand(s, p);
+    if not ExecuteCommand(p, AProcess, cmd) then 
+      writeln('unknown command ', p[0])
+    else begin
+      LastCommand := s;
+      if cmd.ResetParamsCache then 
+        LastCommand := p[0];
+    end;
     p.Free;
   end;
 end;
@@ -90,7 +149,7 @@ begin
   ProcTerm := false;
   while true do begin
     callwaitnext := false;
-    ExecuteNextCommand;
+    ExecuteNextCommand(Process);
 
     if CallWaitNext and not ProcTerm then begin
       if not Process.WaitNextEvent(DbgEvent) then

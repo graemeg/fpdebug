@@ -1,3 +1,8 @@
+== win debugging ==
+
+  http://msdn.microsoft.com/en-us/library/ms679276(VS.85).aspx
+  http://msdn.microsoft.com/en-us/library/ms809754.aspx
+
 
 == osx debugging ==
 

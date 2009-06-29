@@ -8,3 +8,6 @@
 
 mach microkernel:
   ftp://ftp.cs.cmu.edu/project/mach/doc
+  http://web.mit.edu/darwin/src/modules/xnu/osfmk/man/
+books
+  http://books.google.com/books?id=K8vUkpOXhN4C

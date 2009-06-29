@@ -33,11 +33,12 @@ const
 type
   pid_t = Integer;
 
-//todo: fix fo syscall
+//todo: use syscall?
 function ptrace(_request: integer; _pid: pid_t; _addr: PtrUInt; _data: integer): integer; cdecl; external name 'ptrace';
 
 function ptraceme: Boolean;
-function ptraceme_cont(pid: pid_t; addr: PtrUInt; signal: Integer): Boolean;
+function ptrace_sig_as_exc: Boolean;
+function ptrace_cont(pid: pid_t; addr: PtrUInt; signal: Integer): Boolean;
 
 implementation
 
@@ -46,7 +47,12 @@ begin
   Result := ptrace(PT_TRACE_ME, 0, 0, 0) = 0;
 end;
 
-function ptraceme_cont(pid: pid_t; addr: PtrUInt; signal: Integer): Boolean;
+function ptrace_sig_as_exc: Boolean;
+begin
+  Result := ptrace(PT_SIGEXC, 0,0,0) = 0;
+end;
+
+function ptrace_cont(pid: pid_t; addr: PtrUInt; signal: Integer): Boolean;
 begin
   Result := ptrace(PT_CONTINUE, pid, addr, signal) = 0;
 end;

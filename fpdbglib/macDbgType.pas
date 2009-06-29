@@ -20,17 +20,19 @@ type
     waitedsig   : Integer;
 
   public
-    function StartProcess(const ACmdLine: String): Boolean;
-
+    procedure Terminate; override;
+    function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
     function GetProcessState: TDbgState; override;
 
     function GetThreadsCount: Integer; override;
     function GetThreadID(AIndex: Integer): TDbgThreadID; override;
     function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters): Boolean; override;
 
-    procedure Terminate; override;
-    function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
-    property State: TDbgState read GetProcessState;
+    function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
+    function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
+
+
+    function StartProcess(const ACmdLine: String): Boolean;
   end;
 
 implementation
@@ -52,6 +54,7 @@ begin
     task_for_pid( mach_task_self, FpGetpid, childtask);
     FpWrite(apipe[1], childtask, sizeof(childtask));
     ptraceme;
+    ptrace_sig_as_exc;
 
     res := FpExecV(CommandLine, nil);
     if res < 0 then begin
@@ -85,6 +88,17 @@ end;
 function TMachDbgProcess.GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters): Boolean;
 begin
   Result:=false;
+end;
+
+function TMachDbgProcess.ReadMem(Offset: TDbgPtr; Count: Integer;
+  var Data: array of byte): Integer;
+begin
+end;
+
+function TMachDbgProcess.WriteMem(Offset: TDbgPtr; Count: Integer;
+  const Data: array of byte): Integer;
+begin
+
 end;
 
 procedure TMachDbgProcess.Terminate;
@@ -146,8 +160,7 @@ begin
       sig := 0
     else
       sig := waitedsig;
-
-    ptraceme_cont(fchildpid, CONT_STOP_ADDR, sig)
+    ptrace_cont(fchildpid, CONT_STOP_ADDR, sig)
   end;
 
   waited := false;

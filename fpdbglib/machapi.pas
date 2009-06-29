@@ -63,6 +63,11 @@ type register_t = int32_t;
  integer_t = int32_t;
  natural_t = uint32_t;
 
+
+ pinteger_t = ^integer_t;
+ pnatural_t = ^natural_t;
+
+
 {*
  * These are the VM types that scale with the address
  * space size of a given process.
@@ -76,7 +81,11 @@ type vm_size_t = uint64_t;
   vm_address_t = natural_t;
   vm_offset_t = natural_t;
   vm_size_t = natural_t;
-//ndif
+
+  pvm_address_t = ^vm_address_t;
+  pvm_offset_t = ^vm_offset_t;
+  pvm_size_t = ^vm_size_t;
+//endif
 
 {*
  * The mach_vm_xxx_t types are sized to hold the
@@ -84,20 +93,23 @@ type vm_size_t = uint64_t;
  * platform.
  *}
   mach_vm_address_t = uint64_t;
+  pmach_vm_address_t = ^mach_vm_address_t;
   mach_vm_offset_t = uint64_t;
+
   mach_vm_size_t = uint64_t;
+  pmach_vm_size_t = ^mach_vm_size_t;
 
 {if	MACH_IPC_COMPAT
-/*
+{*
  * For the old IPC interface
  */
 #define	MSG_TYPE_PORT_NAME	natural_t
 
-#endif	/* MACH_IPC_COMPAT */
+#endif	{* MACH_IPC_COMPAT */
 
-#endif	/* _MACHINE_VM_TYPES_DEFS_ */
+#endif	{* _MACHINE_VM_TYPES_DEFS_ */
 
-/* vim: set ft=c : *}
+{* vim: set ft=c : *}
 
 
 {	Time value returned by kernel.}
@@ -113,6 +125,7 @@ type
   kern_return_t = Integer;
 
   mach_port_t = Integer;
+  pmach_port_t = ^mach_port_t;
 
   task_t   = mach_port_t;
   task_name_t = mach_port_t;
@@ -133,6 +146,7 @@ type
   clock_ctrl_t = mach_port_t;
 
   mach_msg_type_number_t = Integer;
+  Pmach_msg_type_number_t = ^mach_msg_type_number_t;
 
 { * Mig doesn't translate the components of an array.
   * For example, Mig won't use the thread_t translations
@@ -409,8 +423,8 @@ const
  *}
 type
   mach_port_qos = record
-    //unsigned int		name:1;		/* name given */
-  	//unsigned int 		prealloc:1;	/* prealloced message */
+    //unsigned int		name:1;		{* name given */
+  	//unsigned int 		prealloc:1;	{* prealloced message */
   	//boolean_t		pad1:30;
     flags : LongWord;
    	len   : natural_t;
@@ -662,7 +676,7 @@ typedef struct
 #endif
 } mach_msg_ool_ports_descriptor_t;
 
-/*
+{*
  * LP64support - This union definition is not really
  * appropriate in LP64 mode because not all descriptors
  * are of the same size in that environment.
@@ -733,7 +747,7 @@ typedef struct
   security_token_t		msgh_sender;
 } mach_msg_security_trailer_t;
 
-/*
+{*
  * The audit token is an opaque token which identifies
  * Mach tasks and senders of Mach messages as subjects
  * to the BSM audit system.  Only the appropriate BSM
@@ -761,7 +775,7 @@ typedef struct
   mach_port_name_t sender;
 } msg_labels_t;
 
-/*
+{*
    Trailer type to pass MAC policy label info as a mach message trailer.
 
 */
@@ -779,7 +793,7 @@ typedef struct
 
 #define MACH_MSG_TRAILER_MINIMUM_SIZE  sizeof(mach_msg_trailer_t)
 
-/*
+{*
  * These values can change from release to release - but clearly
  * code cannot request additional trailer elements one was not
  * compiled to understand.  Therefore, it is safe to use this
@@ -791,7 +805,7 @@ typedef struct
 typedef mach_msg_mac_trailer_t mach_msg_max_trailer_t;
 #define MAX_TRAILER_SIZE sizeof(mach_msg_max_trailer_t)
 
-/*
+{*
  * Legacy requirements keep us from ever updating these defines (even
  * when the format_0 trailers gain new option data fields in the future).
  * Therefore, they shouldn't be used going forward.  Instead, the sizes
@@ -800,7 +814,7 @@ typedef mach_msg_mac_trailer_t mach_msg_max_trailer_t;
  */
 typedef mach_msg_security_trailer_t mach_msg_format_0_trailer_t;
 
-/*typedef mach_msg_mac_trailer_t mach_msg_format_0_trailer_t;
+{*typedef mach_msg_mac_trailer_t mach_msg_format_0_trailer_t;
 */
 
 #define MACH_MSG_TRAILER_FORMAT_0_SIZE sizeof(mach_msg_format_0_trailer_t)
@@ -832,17 +846,17 @@ typedef union
 
 #pragma pack()
 
-/* utility to round the message size - will become machine dependent */
+{* utility to round the message size - will become machine dependent */
 #define round_msg(x)	(((mach_msg_size_t)(x) + sizeof (natural_t) - 1) & \
 				~(sizeof (natural_t) - 1))
 
-/*
+{*
  *  There is no fixed upper bound to the size of Mach messages.
  */
 
 #define	MACH_MSG_SIZE_MAX	((mach_msg_size_t) ~0)
 
-/*
+{*
  *  Compatibility definitions, for code written
  *  when there was a msgh_kind instead of msgh_seqno.
  */
@@ -851,7 +865,7 @@ typedef union
 #define	msgh_kind			msgh_seqno
 #define mach_msg_kind_t			mach_port_seqno_t
 
-/*
+{*
  *  The msgt_number field specifies the number of data elements.
  *  The msgt_size field specifies the size of each data element, in bits.
  *  The msgt_name field specifies the type of each data element.
@@ -879,7 +893,7 @@ typedef union
 typedef natural_t mach_msg_type_size_t;
 typedef natural_t mach_msg_type_number_t;
 
-/*
+{*
  *  Values received/carried in messages.  Tells the receiver what
  *  sort of port right he now has.
  *
@@ -895,16 +909,16 @@ typedef natural_t mach_msg_type_number_t;
 #define MACH_MSG_TYPE_PORT_SEND		MACH_MSG_TYPE_MOVE_SEND
 #define MACH_MSG_TYPE_PORT_SEND_ONCE	MACH_MSG_TYPE_MOVE_SEND_ONCE
 
-#define MACH_MSG_TYPE_LAST		22		/* Last assigned */
+#define MACH_MSG_TYPE_LAST		22		{* Last assigned */
 
-/*
+{*
  *  A dummy value.  Mostly used to indicate that the actual value
  *  will be filled in later, dynamically.
  */
 
 #define MACH_MSG_TYPE_POLYMORPHIC	((mach_msg_type_name_t) -1)
 
-/*
+{*
  *	Is a given item a port type?
  */
 
@@ -929,17 +943,17 @@ typedef integer_t mach_msg_option_t;
 #define MACH_RCV_LARGE		0x00000004
 
 #define MACH_SEND_TIMEOUT	0x00000010
-#define MACH_SEND_INTERRUPT	0x00000040	/* libmach implements */
+#define MACH_SEND_INTERRUPT	0x00000040	{* libmach implements */
 #define MACH_SEND_CANCEL	0x00000080
-#define MACH_SEND_ALWAYS	0x00010000	/* internal use only */
+#define MACH_SEND_ALWAYS	0x00010000	{* internal use only */
 #define MACH_SEND_TRAILER	0x00020000
 
 #define MACH_RCV_TIMEOUT	0x00000100
 #define MACH_RCV_NOTIFY		0x00000200
-#define MACH_RCV_INTERRUPT	0x00000400	/* libmach implements */
+#define MACH_RCV_INTERRUPT	0x00000400	{* libmach implements */
 #define MACH_RCV_OVERWRITE	0x00001000
 
-/*
+{*
  * NOTE: a 0x00------ RCV mask implies to ask for
  * a MACH_MSG_TRAILER_FORMAT_0 with 0 Elements,
  * which is equivalent to a mach_msg_trailer_t.
@@ -962,7 +976,7 @@ typedef integer_t mach_msg_option_t;
 
 #define GET_RCV_ELEMENTS(y) (((y) >> 24) & 0xf)
 
-/*
+{*
  * XXXMAC: note that in the case of MACH_RCV_TRAILER_AV and
  * MACH_RCV_TRAILER_LABELS, we just fall through to mach_msg_max_trailer_t.
  * This is correct behavior since mach_msg_max_trailer_t is defined as
@@ -982,7 +996,7 @@ typedef integer_t mach_msg_option_t;
 	    sizeof(mach_msg_audit_trailer_t) :      		\
 	    sizeof(mach_msg_max_trailer_t))))))
 
-/*
+{*
  *  Much code assumes that mach_msg_return_t == kern_return_t.
  *  This definition is useful for descriptive purposes.
  *
@@ -999,86 +1013,86 @@ typedef kern_return_t mach_msg_return_t;
 
 
 #define	MACH_MSG_MASK			0x00003e00
-		/* All special error code bits defined below. */
+		{* All special error code bits defined below. */
 #define	MACH_MSG_IPC_SPACE		0x00002000
-		/* No room in IPC name space for another capability name. */
+		{* No room in IPC name space for another capability name. */
 #define	MACH_MSG_VM_SPACE		0x00001000
-		/* No room in VM address space for out-of-line memory. */
+		{* No room in VM address space for out-of-line memory. */
 #define	MACH_MSG_IPC_KERNEL		0x00000800
-		/* Kernel resource shortage handling an IPC capability. */
+		{* Kernel resource shortage handling an IPC capability. */
 #define	MACH_MSG_VM_KERNEL		0x00000400
-		/* Kernel resource shortage handling out-of-line memory. */
+		{* Kernel resource shortage handling out-of-line memory. */
 
 #define MACH_SEND_IN_PROGRESS		0x10000001
-		/* Thread is waiting to send.  (Internal use only.) */
+		{* Thread is waiting to send.  (Internal use only.) */
 #define MACH_SEND_INVALID_DATA		0x10000002
-		/* Bogus in-line data. */
+		{* Bogus in-line data. */
 #define MACH_SEND_INVALID_DEST		0x10000003
-		/* Bogus destination port. */
+		{* Bogus destination port. */
 #define MACH_SEND_TIMED_OUT		0x10000004
-		/* Message not sent before timeout expired. */
+		{* Message not sent before timeout expired. */
 #define MACH_SEND_INTERRUPTED		0x10000007
-		/* Software interrupt. */
+		{* Software interrupt. */
 #define MACH_SEND_MSG_TOO_SMALL		0x10000008
-		/* Data doesn't contain a complete message. */
+		{* Data doesn't contain a complete message. */
 #define MACH_SEND_INVALID_REPLY		0x10000009
-		/* Bogus reply port. */
+		{* Bogus reply port. */
 #define MACH_SEND_INVALID_RIGHT		0x1000000a
-		/* Bogus port rights in the message body. */
+		{* Bogus port rights in the message body. */
 #define MACH_SEND_INVALID_NOTIFY	0x1000000b
-		/* Bogus notify port argument. */
+		{* Bogus notify port argument. */
 #define MACH_SEND_INVALID_MEMORY	0x1000000c
-		/* Invalid out-of-line memory pointer. */
+		{* Invalid out-of-line memory pointer. */
 #define MACH_SEND_NO_BUFFER		0x1000000d
-		/* No message buffer is available. */
+		{* No message buffer is available. */
 #define MACH_SEND_TOO_LARGE		0x1000000e
-		/* Send is too large for port */
+		{* Send is too large for port */
 #define MACH_SEND_INVALID_TYPE		0x1000000f
-		/* Invalid msg-type specification. */
+		{* Invalid msg-type specification. */
 #define MACH_SEND_INVALID_HEADER	0x10000010
-		/* A field in the header had a bad value. */
+		{* A field in the header had a bad value. */
 #define MACH_SEND_INVALID_TRAILER	0x10000011
-		/* The trailer to be sent does not match kernel format. */
+		{* The trailer to be sent does not match kernel format. */
 #define MACH_SEND_INVALID_RT_OOL_SIZE	0x10000015
-		/* compatibility: no longer a returned error */
+		{* compatibility: no longer a returned error */
 
 #define MACH_RCV_IN_PROGRESS		0x10004001
-		/* Thread is waiting for receive.  (Internal use only.) */
+		{* Thread is waiting for receive.  (Internal use only.) */
 #define MACH_RCV_INVALID_NAME		0x10004002
-		/* Bogus name for receive port/port-set. */
+		{* Bogus name for receive port/port-set. */
 #define MACH_RCV_TIMED_OUT		0x10004003
-		/* Didn't get a message within the timeout value. */
+		{* Didn't get a message within the timeout value. */
 #define MACH_RCV_TOO_LARGE		0x10004004
-		/* Message buffer is not large enough for inline data. */
+		{* Message buffer is not large enough for inline data. */
 #define MACH_RCV_INTERRUPTED		0x10004005
-		/* Software interrupt. */
+		{* Software interrupt. */
 #define MACH_RCV_PORT_CHANGED		0x10004006
-		/* compatibility: no longer a returned error */
+		{* compatibility: no longer a returned error */
 #define MACH_RCV_INVALID_NOTIFY		0x10004007
-		/* Bogus notify port argument. */
+		{* Bogus notify port argument. */
 #define MACH_RCV_INVALID_DATA		0x10004008
-		/* Bogus message buffer for inline data. */
+		{* Bogus message buffer for inline data. */
 #define MACH_RCV_PORT_DIED		0x10004009
-		/* Port/set was sent away/died during receive. */
+		{* Port/set was sent away/died during receive. */
 #define	MACH_RCV_IN_SET			0x1000400a
-		/* compatibility: no longer a returned error */
+		{* compatibility: no longer a returned error */
 #define	MACH_RCV_HEADER_ERROR		0x1000400b
-		/* Error receiving message header.  See special bits. */
+		{* Error receiving message header.  See special bits. */
 #define	MACH_RCV_BODY_ERROR		0x1000400c
-		/* Error receiving message body.  See special bits. */
+		{* Error receiving message body.  See special bits. */
 #define	MACH_RCV_INVALID_TYPE		0x1000400d
-		/* Invalid msg-type specification in scatter list. */
+		{* Invalid msg-type specification in scatter list. */
 #define	MACH_RCV_SCATTER_SMALL		0x1000400e
-		/* Out-of-line overwrite region is not large enough */
+		{* Out-of-line overwrite region is not large enough */
 #define MACH_RCV_INVALID_TRAILER	0x1000400f
-		/* trailer type or number of trailer elements not supported */
+		{* trailer type or number of trailer elements not supported */
 #define MACH_RCV_IN_PROGRESS_TIMED      0x10004011
-                /* Waiting for receive with timeout. (Internal use only.) */
+                {* Waiting for receive with timeout. (Internal use only.) */
 
 
 __BEGIN_DECLS
 
-/*
+{*
  *	Routine:	mach_msg_overwrite
  *	Purpose:
  *		Send and/or receive a message.  If the message operation
@@ -1107,7 +1121,7 @@ extern mach_msg_return_t	mach_msg_overwrite(
 					mach_msg_size_t rcv_limit);
 
 
-/*
+{*
  *	Routine:	mach_msg
  *	Purpose:
  *		Send and/or receive a message.  If the message operation
@@ -1127,7 +1141,7 @@ extern mach_msg_return_t	mach_msg(
 
 __END_DECLS
 
-#endif	/* _MACH_MESSAGE_H_ */   *)
+#endif	{* _MACH_MESSAGE_H_ */   *)
 
 
 // ----- policy.h --------------------------------------------------------------
@@ -1156,7 +1170,7 @@ const
 
   POLICYCLASS_FIXEDPRI=	(POLICY_RR or POLICY_FIFO) ;
 {
-/*
+{*
  *	Check if policy is valid.
  */
 #define invalid_policy(policy)			\
@@ -2059,9 +2073,1004 @@ function map_fd(fd: integer; offset: vm_offset_t;	var va: vm_offset_t;
 	findspace: boolean_t; 	size: vm_size_t): kern_return_t;
   cdecl external name 'map_fd';
 
-//#endif	/* !defined(__LP64__) */
+//#endif	{* !defined(__LP64__) */
+
+{*
+ *	File:	memory_object.h
+ *	Author:	Michael Wayne Young
+ *
+ *	External memory management interface definition.
+ *}
+
+{*
+ *	User-visible types used in the external memory
+ *	management interface:
+ *}
+
+//#define VM_64_BIT_DATA_OBJECTS
+
+type
+  memory_object_offset_t = QWord;
+  memory_object_size_t   = QWord;
+  memory_object_cluster_size_t = natural_t;
+
+  pmemory_object_offset_t = ^memory_object_offset_t;
+  pmemory_object_size_t = ^memory_object_size_t;
+
+{*
+ * Temporary until real EMMI version gets re-implemented
+ *}
+  memory_object_t = mach_port_t;
+  memory_object_control_t = mach_port_t;
+
+  memory_object_array_t = ^memory_object_t;
+					{* A memory object ... *}
+					{*  Used by the kernel to retrieve *}
+					{*  or store data *}
+
+  memory_object_name_t = mach_port_t;
+					{* Used to describe the memory ... *}
+					{*  object in vm_regions() calls *}
+
+  memory_object_default_t = mach_port_t;
+					{* Registered with the host ... *}
+					{*  for creating new internal objects *}
+
+const
+  MEMORY_OBJECT_NULL		     = 0;
+  MEMORY_OBJECT_CONTROL_NULL = 0;
+  MEMORY_OBJECT_NAME_NULL		 = 0;
+  MEMORY_OBJECT_DEFAULT_NULL = 0;
+
+type
+  memory_object_copy_strategy_t = Integer;
+
+{* How memory manager handles copy: *}
+const
+ 	MEMORY_OBJECT_COPY_NONE		= 0;					{* ... No special support *}
+  MEMORY_OBJECT_COPY_CALL		= 1;					{* ... Make call on memory manager *}
+  MEMORY_OBJECT_COPY_DELAY 	= 2;					{* ... Memory manager doesn't	change data externally. *}
+  MEMORY_OBJECT_COPY_TEMPORARY = 3;				{* ... Memory manager doesn't change data externally, and doesn't need to see changes. *}
+  MEMORY_OBJECT_COPY_SYMMETRIC = 4;				{* ... Memory manager doesn't change data externally,	doesn't need to see changes,
+                                    			 *     and object will not be multiply mapped. XXX Not yet safe for non-kernel use. *}
+
+   MEMORY_OBJECT_COPY_INVALID	 = 5; 			{* ...	An invalid copy strategy,	for external objects which
+                                					 *	have not been initialized.Allows copy_strategy to be examined without also
+                                 					 *	examining pager_ready and internal.  *}
+
+type
+  memory_object_return_t = integer;
+
+  {* Which pages to return to manager this time (lock_request) *}
+const
+  MEMORY_OBJECT_RETURN_NONE	= 0;	{* ... don't return any. *}
+  MEMORY_OBJECT_RETURN_DIRTY	= 1;	{* ... only dirty pages. *}
+  MEMORY_OBJECT_RETURN_ALL	= 2;		{* ... dirty and precious pages. *}
+  MEMORY_OBJECT_RETURN_ANYTHING	= 3;	{* ... any resident page. *}
+
+{*	Data lock request flags *}
+
+	MEMORY_OBJECT_DATA_FLUSH 	    = $1;
+	MEMORY_OBJECT_DATA_NO_CHANGE  =	$2;
+	MEMORY_OBJECT_DATA_PURGE	    = $4;
+	MEMORY_OBJECT_COPY_SYNC	 	    = $8;
+	MEMORY_OBJECT_DATA_SYNC		    = $10;
+  MEMORY_OBJECT_IO_SYNC         = $20;
+
+{*	Types for the memory object flavor interfaces }
+
+const
+  MEMORY_OBJECT_INFO_MAX      = 1024;
+
+type
+  memory_object_info_t = ^Integer;
+  memory_object_flavor_t = Integer;
+  memory_object_info_data_t = array [0..MEMORY_OBJECT_INFO_MAX-1] of Integer;
+
+const
+  MEMORY_OBJECT_PERFORMANCE_INFO	= 11;
+  MEMORY_OBJECT_ATTRIBUTE_INFO	  = 14;
+  MEMORY_OBJECT_BEHAVIOR_INFO 	  = 15;
+
+type
+  memory_object_perf_info = packed record
+  	cluster_size  : memory_object_cluster_size_t;
+	  may_cache     : boolean_t			;
+  end;
+
+  memory_object_attr_info = packed record
+  	copy_strategy     : memory_object_copy_strategy_t;
+	  cluster_size      : memory_object_cluster_size_t;
+  	may_cache_object  : boolean_t;
+	  temporary         : boolean_t;
+  end;
+
+  memory_object_behave_info = packed record
+  	copy_strategy : memory_object_copy_strategy_t;
+	  temporary : boolean_t;
+  	boolean_t : boolean_t;
+  	silent_overwrite  : boolean_t;
+  	advisory_pageout  : boolean_t;
+  end;
+
+type
+  memory_object_behave_info_t = ^memory_object_behave_info;
+  memory_object_behave_info_data_t= memory_object_behave_info;
+
+  memory_object_perf_info_t = ^memory_object_perf_info;
+  memory_object_perf_info_data_t = memory_object_perf_info	;
+
+  memory_object_attr_info_t = ^memory_object_attr_info;
+  memory_object_attr_info_data_t = memory_object_attr_info	;
+
+const
+  MEMORY_OBJECT_BEHAVE_INFO_COUNT = sizeof(memory_object_behave_info_data_t) div sizeof(integer);
+  MEMORY_OBJECT_PERF_INFO_COUNT	  = sizeof(memory_object_perf_info_data_t) div sizeof(integer);
+  MEMORY_OBJECT_ATTR_INFO_COUNT	  = sizeof(memory_object_attr_info_data_t) div sizeof(integer);
+
+(*
+#define invalid_memory_object_flavor(f)					\
+	(f != MEMORY_OBJECT_ATTRIBUTE_INFO && 				\
+	 f != MEMORY_OBJECT_PERFORMANCE_INFO && 			\
+	 f != OLD_MEMORY_OBJECT_BEHAVIOR_INFO &&			\
+	 f != MEMORY_OBJECT_BEHAVIOR_INFO &&				\
+	 f != OLD_MEMORY_OBJECT_ATTRIBUTE_INFO)
+*)
+
+{* Used to support options on memory_object_release_name call *}
+const
+  MEMORY_OBJECT_TERMINATE_IDLE	= $1;
+  MEMORY_OBJECT_RESPECT_CACHE	  = $2;
+  MEMORY_OBJECT_RELEASE_NO_OP	  = $4;
+
+{* named entry processor mapping options *}
+{* enumerated *}
+const
+  MAP_MEM_NOOP	 	 = 0;
+  MAP_MEM_COPYBACK = 1;
+  MAP_MEM_IO	 	   = 2;
+  MAP_MEM_WTHRU		 = 3;
+  MAP_MEM_WCOMB		 = 4;	{* Write combining mode *}
+					{* aka store gather     *}
+
+{#define GET_MAP_MEM(flags)	\
+	((((unsigned int)(flags)) >> 24) & $FF)
+
+#define SET_MAP_MEM(caching, flags)	\
+	((flags) = ((((unsigned int)(caching)) << 24) \
+			& $FF000000) | ((flags) & $FFFFFF));
+  }
+
+{* leave room for vm_prot bits *}
+const
+  MAP_MEM_ONLY		      = $10000;	{* change processor caching  *}
+  MAP_MEM_NAMED_CREATE	= $20000; {* create extant object      *}
+  MAP_MEM_PURGABLE	    = $40000;	{* create a purgable VM object *}
+  MAP_MEM_NAMED_REUSE	  = $80000;	{* reuse provided entry if identical *}
 
 
+{*
+ *  Universal Page List data structures
+ *
+ *  A UPL describes a bounded set of physical pages
+ *  associated with some range of an object or map
+ *  and a snapshot of the attributes associated with
+ *  each of those pages.
+ *}
+
+type
+  upl_page_info = packed record
+	  opaque: array [0..1] of LongWord;	{* use upl_page_xxx() accessor funcs *}
+  end;
+
+  upl_page_info_t = upl_page_info	;
+  upl_page_info_array_t = ^upl_page_info_t;
+  upl_page_list_ptr_t = upl_page_info_array_t	;
+
+  upl_offset_t = uint32_t;	{* page-aligned byte offset *}
+  upl_size_t   = uint32_t;	{* page-aligned byte size *}
+
+{* upl invocation flags *}
+{* top nibble is used by super upl *}
+
+const
+  UPL_FLAGS_NONE		= $00000000;
+  UPL_COPYOUT_FROM	= $00000001;
+  UPL_PRECIOUS	 	  = $00000002;
+  UPL_NO_SYNC		    = $00000004;
+  UPL_CLEAN_IN_PLACE	= $00000008;
+  UPL_NOBLOCK		      = $00000010;
+  UPL_RET_ONLY_DIRTY	= $00000020;
+  UPL_SET_INTERNAL	  = $00000040;
+  UPL_QUERY_OBJECT_TYPE	= $00000080;
+  UPL_RET_ONLY_ABSENT	  = $00000100; {* used only for COPY_FROM = FALSE *}
+  UPL_FILE_IO           = $00000200;
+  UPL_SET_LITE		      = $00000400;
+  UPL_SET_INTERRUPTIBLE	= $00000800;
+  UPL_SET_IO_WIRE		    = $00001000;
+  UPL_FOR_PAGEOUT		    = $00002000;
+  UPL_WILL_BE_DUMPED    = $00004000;
+  UPL_FORCE_DATA_SYNC   = $00008000;
+{* continued after the ticket bits... *}
+
+  UPL_PAGE_TICKET_MASK	= $000F0000;
+  UPL_PAGE_TICKET_SHIFT = 16;
+
+{* ... flags resume here *}
+  UPL_BLOCK_ACCESS	= $00100000;
+  UPL_ENCRYPT		    = $00200000;
+  UPL_NOZEROFILL		= $00400000;
+  UPL_WILL_MODIFY		= $00800000; {* caller will modify the pages *}
+
+  UPL_NEED_32BIT_ADDR	= $01000000;
+
+{* UPL flags known by this kernel *}
+  UPL_VALID_FLAGS		= $01FFFFFF;
+
+
+{* upl abort error flags *}
+  UPL_ABORT_RESTART	= $1;
+  UPL_ABORT_UNAVAILABLE	= $2;
+  UPL_ABORT_ERROR		= $4;
+  UPL_ABORT_FREE_ON_EMPTY	= $8;  {* only implemented in wrappers *}
+  UPL_ABORT_DUMP_PAGES	= $10;
+  UPL_ABORT_NOTIFY_EMPTY	= $20;
+  UPL_ABORT_ALLOW_ACCESS	= $40;
+
+{* upl pages check flags *}
+  UPL_CHECK_DIRTY         = $1;
+
+{*
+ *  upl pagein/pageout  flags
+ *
+ *
+ * when I/O is issued from this UPL it should be done synchronously
+ *}
+  UPL_IOSYNC	= $1;
+
+{*
+ * the passed in UPL should not have either a commit or abort
+ * applied to it by the underlying layers... the site that
+ * created the UPL is responsible for cleaning it up.
+ *}
+  UPL_NOCOMMIT	= $2;
+
+{*
+ * turn off any speculative read-ahead applied at the I/O layer
+ *}
+  UPL_NORDAHEAD	= $4;
+
+{*
+ * pageout request is targeting a real file
+ * as opposed to a swap file.
+ *}
+
+  UPL_VNODE_PAGER	= $8;
+{*
+ * this pageout is being originated as part of an explicit
+ * memory synchronization operation... no speculative clustering
+ * should be applied, only the range specified should be pushed.
+ *}
+  UPL_MSYNC		= $10;
+
+{*
+ *
+ *}
+
+{*
+ * this pageout is being originated as part of an explicit
+ * memory synchronization operation that is checking for I/O
+ * errors and taking it's own action... if an error occurs,
+ * just abort the pages back into the cache unchanged
+ *}
+  UPL_KEEPCACHED		= $40;
+
+{* upl commit flags *}
+  UPL_COMMIT_FREE_ON_EMPTY = $1; {* only implemented in wrappers *}
+  UPL_COMMIT_CLEAR_DIRTY	 = $2;
+  UPL_COMMIT_SET_DIRTY		= $4;
+  UPL_COMMIT_INACTIVATE		= $8;
+  UPL_COMMIT_NOTIFY_EMPTY	= $10;
+  UPL_COMMIT_ALLOW_ACCESS	= $20;
+
+{* flags for return of state from vm_map_get_upl,  vm_upl address space *}
+{* based call *}
+  UPL_DEV_MEMORY		= $1;
+  UPL_PHYS_CONTIG		= $2;
+
+{*
+ * Flags for the UPL page ops routine.  This routine is not exported
+ * out of the kernel at the moment and so the defs live here.
+ *}
+  UPL_POP_DIRTY		  = $1;
+  UPL_POP_PAGEOUT		= $2;
+  UPL_POP_PRECIOUS	= $4;
+  UPL_POP_ABSENT		= $8;
+  UPL_POP_BUSY			= $10;
+
+  UPL_POP_PHYSICAL	= $10000000;
+  UPL_POP_DUMP		  = $20000000;
+  UPL_POP_SET		= $40000000;
+  UPL_POP_CLR		= $80000000;
+
+{*
+ * Flags for the UPL range op routine.  This routine is not exported
+ * out of the kernel at the moemet and so the defs live here.
+ *}
+{*
+ * UPL_ROP_ABSENT: Returns the extent of the range presented which
+ * is absent, starting with the start address presented
+ *}
+  UPL_ROP_ABSENT		= $01;
+{*
+ * UPL_ROP_PRESENT: Returns the extent of the range presented which
+ * is present (i.e. resident), starting with the start address presented
+ *}
+  UPL_ROP_PRESENT		= $02;
+{*
+ * UPL_ROP_DUMP: Dump the pages which are found in the target object
+ * for the target range.
+ *}
+  UPL_ROP_DUMP			= $04;
+
+// vm_types.h
+
+type
+{*
+ * We use addr64_t for 64-bit addresses that are used on both
+ * 32 and 64-bit machines.  On PPC, they are passed and returned as
+ * two adjacent 32-bit GPRs.  We use addr64_t in places where
+ * common code must be useable both on 32 and 64-bit machines.
+ *}
+  addr64_t = uint64_t;		{* Basic effective address *}
+
+{*
+ * We use reg64_t for addresses that are 32 bits on a 32-bit
+ * machine, and 64 bits on a 64-bit machine, but are always
+ * passed and returned in a single GPR on PPC.  This type
+ * cannot be used in generic 32-bit c, since on a 64-bit
+ * machine the upper half of the register will be ignored
+ * by the c compiler in 32-bit mode.  In c, we can only use the
+ * type in prototypes of functions that are written in and called
+ * from assembly language.  This type is basically a comment.
+ *}
+  reg64_t =	uint32_t;
+
+{*
+ * To minimize the use of 64-bit fields, we keep some physical
+ * addresses (that are page aligned) as 32-bit page numbers.
+ * This limits the physical address space to 16TB of RAM.
+ *}
+  ppnum_t = uint32_t ;		{* Physical page number *}
+  //UINT32_MAX = PPNUM_MAX;
+
+  vm_map_t = mach_port_t;
+  pvm_map_t = ^vm_map_t;
+
+const
+  VM_MAP_NULL = 0; // or nil?
+
+{*
+ *	File:	mach/vm_prot.h
+ *	Author:	Avadis Tevanian, Jr., Michael Wayne Young
+ *
+ *	Virtual memory protection definitions.
+ *
+ *}
+
+{*
+ *	Types defined:
+ *
+ *	vm_prot_t		VM protection values.
+ *}
+
+type
+  vm_prot_t = integer;
+  pvm_prot_t = ^vm_prot_t;
+
+{*
+ *	Protection values, defined as bits within the vm_prot_t type
+ *}
+
+const
+ 	VM_PROT_NONE =$00;
+  VM_PROT_READ =$01;	{* read permission *}
+  VM_PROT_WRITE	  = $02;	{* write permission *}
+  VM_PROT_EXECUTE	= $04;	{* execute permission *}
+  VM_PROT_DEFAULT	= VM_PROT_READ or VM_PROT_WRITE; {* The default protection for newly-created virtual memory *}
+  VM_PROT_ALL	= VM_PROT_READ or VM_PROT_WRITE or VM_PROT_EXECUTE; {*	The maximum privileges possible, for parameter checking. *}
+
+{*
+ *	An invalid protection value.
+ *	Used only by memory_object_lock_request to indicate no change
+ *	to page locks.  Using -1 here is a bad idea because it
+ *	looks like VM_PROT_ALL and then some.
+ *}
+  VM_PROT_NO_CHANGE	= $08;
+
+{*
+ *      When a caller finds that he cannot obtain write permission on a
+ *      mapped entry, the following flag can be used.  The entry will
+ *      be made "needs copy" effectively copying the object (using COW),
+ *      and write permission will be added to the maximum protections
+ *      for the associated entry.
+ *}
+  VM_PROT_COPY = $10;
+
+{*
+ *	Another invalid protection value.
+ *	Used only by memory_object_data_request upon an object
+ *	which has specified a copy_call copy strategy. It is used
+ *	when the kernel wants a page belonging to a copy of the
+ *	object, and is only asking the object as a result of
+ *	following a shadow chain. This solves the race between pages
+ *	being pushed up by the memory manager and the kernel
+ *	walking down the shadow chain.
+ *}
+  VM_PROT_WANTS_COPY = $10;
+
+
+{*	File:	mach/vm_inherit.h
+ *	Author:	Avadis Tevanian, Jr., Michael Wayne Young
+ *
+ *	Virtual memory map inheritance definitions. *}
+
+{*	Types defined:
+ *	vm_inherit_t	inheritance codes. *}
+
+type
+  vm_inherit_t = LongWord;	{* might want to change this *}
+
+{* Enumeration of valid values for vm_inherit_t. *}
+
+const
+ 	VM_INHERIT_SHARE	      = 0;	{* share with child *}
+ 	VM_INHERIT_COPY		      = 1;	{* copy into child *}
+  VM_INHERIT_NONE		      = 2;	{* absent from child *}
+ 	VM_INHERIT_DONATE_COPY	= 3;	{* copy and delete *}
+  VM_INHERIT_DEFAULT      = VM_INHERIT_COPY;
+  VM_INHERIT_LAST_VALID   = VM_INHERIT_NONE;
+
+{*	File:	mach/vm_sync.h
+ *	Virtual memory synchronisation definitions.  *}
+
+type
+  vm_sync_t= LongWord;
+
+{**	Synchronization flags, defined as bits within the vm_sync_t type *}
+
+const
+ 	VM_SYNC_ASYNCHRONOUS =	$01;
+  VM_SYNC_SYNCHRONOUS	 =  $02;
+  VM_SYNC_INVALIDATE	 =  $04;
+  VM_SYNC_KILLPAGES    =  $08;
+  VM_SYNC_DEACTIVATE   =  $10;
+  VM_SYNC_CONTIGUOUS   =  $20;
+
+{*	File:	mach/vm_behavior.h
+ *
+ *	Virtual memory map behavior definitions.
+ *}
+
+{*	Types defined:
+ *
+ *	vm_behavior_t	behavior codes.
+ *}
+
+type
+  vm_behavior_t = integer;
+
+{*	Enumeration of valid values for vm_behavior_t.
+ *	These describe expected page reference behavior for
+ *	for a given range of virtual memory.  For implementation
+ *	details see vm/vm_fault.c
+ *}
+
+const
+  VM_BEHAVIOR_DEFAULT	   = 0;	{* default *}
+  VM_BEHAVIOR_RANDOM	   = 1;	{* random *}
+  VM_BEHAVIOR_SEQUENTIAL = 2;	{* forward sequential *}
+  VM_BEHAVIOR_RSEQNTL	   = 3;	{* reverse sequential *}
+  VM_BEHAVIOR_WILLNEED	 = 4;	{* will need in near future *}
+  VM_BEHAVIOR_DONTNEED	 = 5;	{* dont need in near future *}
+
+
+{*	File:	mach/vm_region.h
+ *
+ *	Define the attributes of a task's memory region
+ *
+ *}
+
+
+//#pragma pack(4)
+
+{*
+ *	Types defined:
+ *
+ *	vm_region_info_t	memory region attributes
+ *}
+
+const
+  VM_REGION_INFO_MAX = 1024;
+
+type
+  vm_region_info_t = ^Integer;
+  vm_region_info_64_t = ^Integer;
+  vm_region_recurse_info_t = ^Integer;
+  vm_region_recurse_info_64_t = ^Integer;
+  vm_region_flavor_t = Integer;
+  vm_region_info_data_t = array [0..VM_REGION_INFO_MAX-1] of Integer;
+
+const
+  VM_REGION_BASIC_INFO_64		= 9;
+
+type
+  vm_region_basic_info_64_ = packed record
+  	protection : vm_prot_t;
+	  max_protection: vm_prot_t;
+  	inheritance : vm_inherit_t;
+  	shared: boolean_t;
+  	reserved: boolean_t;
+  	offset: memory_object_offset_t;
+  	behavior: vm_behavior_t;
+	  user_wired_count: Word; //unsigned short		;
+ end;
+ vm_region_basic_info_64_t = ^vm_region_basic_info_64_;
+ vm_region_basic_info_data_64_t = vm_region_basic_info_64_;
+
+const
+  VM_REGION_BASIC_INFO_COUNT_64 = sizeof(vm_region_basic_info_data_64_t) div sizeof(integer);
+
+{*
+ * Passing VM_REGION_BASIC_INFO to vm_region_64
+ * automatically converts it to a VM_REGION_BASIC_INFO_64.
+ * Please use that explicitly instead.
+ *}
+  VM_REGION_BASIC_INFO	=	10;
+
+{*
+ * This is the legacy basic info structure.  It is
+ * deprecated because it passes only a 32-bit memory object
+ * offset back - too small for many larger objects (e.g. files).
+ *}
+type
+  vm_region_basic_info_ = packed record
+  	protection: vm_prot_t;
+  	max_protection: vm_prot_t;
+  	inheritance: vm_inherit_t;
+  	shared: boolean_t;
+  	reserved: boolean_t;
+  	offset: uint32_t; { too small for a real offset }
+  	behavior: vm_behavior_t;
+  	user_wired_count: Word; //unsigned short		;
+  end;
+  vm_region_basic_info_t = ^vm_region_basic_info_;
+  vm_region_basic_info_data_t = vm_region_basic_info_;
+
+const
+  VM_REGION_BASIC_INFO_COUNT = sizeof(vm_region_basic_info_data_t) div sizeof(integer);
+
+const
+  VM_REGION_EXTENDED_INFO	= 11;
+
+  SM_COW             = 1;
+  SM_PRIVATE         = 2;
+  SM_EMPTY           = 3;
+  SM_SHARED          = 4;
+  SM_TRUESHARED      = 5;
+  SM_PRIVATE_ALIASED = 6;
+  SM_SHARED_ALIASED  = 7;
+
+{*
+ * For submap info,  the SM flags above are overlayed when a submap
+ * is encountered.  The field denotes whether or not machine level mapping
+ * information is being shared.  PTE's etc.  When such sharing is taking
+ * place the value returned is SM_TRUESHARED otherwise SM_PRIVATE is passed
+ * back.
+ *}
+type
+  vm_region_extended_info_ = packed record
+    protection : vm_prot_t;
+    user_tag   : LongWord;
+    pages_resident           : LongWord;
+    pages_shared_now_private : LongWord;
+    pages_swapped_out        : LongWord;
+    pages_dirtied            : LongWord;
+    ref_count                : LongWord;
+    shadow_depth: Word;
+    external_pager : byte;
+    share_mode: byte;
+  end;
+  vm_region_extended_info_t = ^vm_region_extended_info_;
+  vm_region_extended_info_data_t = vm_region_extended_info_;
+
+const
+  VM_REGION_EXTENDED_INFO_COUNT = sizeof(vm_region_extended_info_data_t) div sizeof(integer);
+
+const
+  VM_REGION_TOP_INFO	= 12;
+
+type
+  vm_region_top_info_ = packed record
+    obj_id: LongWord;
+    ref_count: LongWord;
+    private_pages_resident : LongWord;
+    shared_pages_resident : LongWord;
+    share_mode : byte
+  end;
+  vm_region_top_info_t = ^vm_region_top_info_;
+  vm_region_top_info_data_t = vm_region_top_info_;
+
+const
+  VM_REGION_TOP_INFO_COUNT = sizeof(vm_region_top_info_data_t) div sizeof(integer);
+
+{*
+ * vm_region_submap_info will return information on a submap or object.
+ * The user supplies a nesting level on the call.  When a walk of the
+ * user's map is done and a submap is encountered, the nesting count is
+ * checked. If the nesting count is greater than 1 the submap is entered and
+ * the offset relative to the address in the base map is examined.  If the
+ * nesting count is zero, the information on the submap is returned.
+ * The caller may thus learn about a submap and its contents by judicious
+ * choice of the base map address and nesting count.  The nesting count
+ * allows penetration of recursively mapped submaps.  If a submap is
+ * encountered as a mapped entry of another submap, the caller may bump
+ * the nesting count and call vm_region_recurse again on the target address
+ * range.  The "is_submap" field tells the caller whether or not a submap
+ * has been encountered.
+ *
+ * Object only fields are filled in through a walking of the object shadow
+ * chain (where one is present), and a walking of the resident page queue.
+ *
+ *}
+
+type
+  vm_region_submap_info = packed record
+	  protection: vm_prot_t;     {* present access protection *}
+	  max_protection: vm_prot_t; {* max avail through vm_prot *}
+	  inheritance: vm_inherit_t;{* behavior of map/obj on fork *}
+	  offset: uint32_t;		{* offset into object/map *}
+    user_tag: LongWord;	{* user tag on map entry *}
+    pages_resident: LongWord;	{* only valid for objects *}
+    pages_shared_now_private: LongWord; {* only for objects *}
+    pages_swapped_out: LongWord; {* only for objects *}
+    pages_dirtied: LongWord;   {* only for objects *}
+    ref_count: LongWord;	 {* obj/map mappers, etc *}
+    shadow_depth: Word; 	{* only for obj *}
+    external_pager: byte;  {* only for obj *}
+    share_mode: byte;	{* see enumeration *}
+  	is_submap: boolean_t;	{* submap vs obj *}
+  	behavior: vm_behavior_t;	{* access behavior hint *}
+	  object_id: vm_offset_t;	{* obj/map name, not a handle *}
+	  user_wired_count: Word;
+  end;
+  vm_region_submap_info_t = ^vm_region_submap_info;
+  vm_region_submap_info_data_t = vm_region_submap_info;
+
+const
+  VM_REGION_SUBMAP_INFO_COUNT = sizeof(vm_region_submap_info_data_t) div sizeof(integer);
+
+type
+  vm_region_submap_info_64 = packed record
+ 	  protection : vm_prot_t		;     {* present access protection *}
+  	max_protection: vm_prot_t; {* max avail through vm_prot *}
+  	inheritance: vm_inherit_t;{* behavior of map/obj on fork *}
+  	offset: memory_object_offset_t;		{* offset into object/map *}
+    user_tag  : LongWord;	{* user tag on map entry *}
+    pages_resident: LongWord;	{* only valid for objects *}
+    pages_shared_now_private: LongWord; {* only for objects *}
+    pages_swapped_out: LongWord; {* only for objects *}
+    pages_dirtied: LongWord;   {* only for objects *}
+    ref_count: LongWord;	 {* obj/map mappers, etc *}
+    shadow_depth: Word; 	{* only for obj *}
+    external_pager: Byte;  {* only for obj *}
+    share_mode: Byte;	{* see enumeration *}
+  	is_submap: boolean_t;	{* submap vs obj *}
+  	behavior: vm_behavior_t;	{* access behavior hint *}
+  	object_id: vm_offset_t;	{* obj/map name, not a handle *}
+  	user_wired_count: Word;
+  end;
+  vm_region_submap_info_64_t = ^vm_region_submap_info_64;
+  vm_region_submap_info_data_64_t = vm_region_submap_info_64;
+
+const
+  VM_REGION_SUBMAP_INFO_COUNT_64 = sizeof(vm_region_submap_info_data_64_t) div sizeof(integer);
+
+type
+  vm_region_submap_short_info_64  = packed record
+  	protection: vm_prot_t;     {* present access protection *}
+  	max_protection: vm_prot_t; {* max avail through vm_prot *}
+  	inheritance : vm_inherit_t;{* behavior of map/obj on fork *}
+  	offset: memory_object_offset_t;		{* offset into object/map *}
+    user_tag : LongWord;	{* user tag on map entry *}
+    ref_count: LongWord;	 {* obj/map mappers, etc *}
+    shadow_depth: Word; 	{* only for obj *}
+    external_pager: Byte;  {* only for obj *}
+    share_mode: Byte;	{* see enumeration *}
+  	is_submap: boolean_t;	{* submap vs obj *}
+  	behavior: vm_behavior_t;	{* access behavior hint *}
+  	object_id: vm_offset_t		;	{* obj/map name, not a handle *}
+  	user_wired_count : Word;
+  end;
+  vm_region_submap_short_info_64_t = ^vm_region_submap_short_info_64;
+  vm_region_submap_short_info_data_64_t =vm_region_submap_short_info_64	 ;
+
+const
+  VM_REGION_SUBMAP_SHORT_INFO_COUNT_64 = sizeof(vm_region_submap_short_info_data_64_t) div sizeof(integer);
+
+type
+  mach_vm_read_entry = packed record
+  	address : mach_vm_address_t;
+  	size    : mach_vm_size_t;
+  end;
+
+  vm_read_entry = packed record
+  	address : vm_address_t;
+	  size    : vm_size_t;
+  end;
+
+const
+  VM_MAP_ENTRY_MAX  = 256;
+
+type
+  mach_vm_read_entry_t = array [0..VM_MAP_ENTRY_MAX-1] of mach_vm_read_entry;
+  vm_read_entry_t      = array [0..VM_MAP_ENTRY_MAX-1] of vm_read_entry;
+
+
+{*
+ *	File:	mach/vm_attributes.h
+ *	Author:	Alessandro Forin
+ *
+ *	Virtual memory attributes definitions.
+ *
+ *	These definitions are in addition to the machine-independent
+ *	ones (e.g. protection), and are only selectively supported
+ *	on specific machine architectures.
+ *
+ *}
+
+{*	Types of machine-dependent attributes *}
+type
+  vm_machine_attribute_t = LongWord;
+
+const
+  MATTR_CACHE		  = 1;	{* cachability *}
+  MATTR_MIGRATE		= 2;	{* migrability *}
+  MATTR_REPLICATE	=	4; {* replicability *}
+
+{* Values for the above, e.g. operations on attribute *}
+type
+  vm_machine_attribute_val_t = Integer;
+  pvm_machine_attribute_val_t = ^vm_machine_attribute_val_t;
+
+const
+  MATTR_VAL_OFF	=	0;	{* (generic) turn attribute off *}
+  MATTR_VAL_ON	=	1;	{* (generic) turn attribute on *}
+  MATTR_VAL_GET	=	2;	{* (generic) return current value *}
+
+  MATTR_VAL_CACHE_FLUSH	 = 6;	{* flush from all caches *}
+  MATTR_VAL_DCACHE_FLUSH = 7;	{* flush from data caches *}
+  MATTR_VAL_ICACHE_FLUSH = 8;	{* flush from instruction caches *}
+  MATTR_VAL_CACHE_SYNC	 = 9;	{* sync I+D caches *}
+
+  MATTR_VAL_GET_INFO	= 10;	{* get page info (stats) *}
+
+{*
+ * Virtual memory map purgeable object definitions.
+ * Objects that will be needed in the future (forward cached objects) should be queued LIFO.
+ * Objects that have been used and are cached for reuse (backward cached) should be queued FIFO.
+ * Every user of purgeable memory is entitled to using the highest volatile group (7).
+ * Only if a client wants some of its objects to definitely be purged earlier, it can put those in
+ * another group. This could be used to make all FIFO objects (in the lower group) go away before
+ * any LIFO objects (in the higher group) go away.
+ * Objects that should not get any chance to stay around can be marked as "obsolete". They will
+ * be emptied before any other objects or pages are reclaimed. Obsolete objects are not emptied
+ * in any particular order.
+ * 'purgeable' is recognized as the correct spelling. For historical reasons, definitions
+ * in this file are spelled 'purgable'.
+ *}
+
+{*
+ *	Types defined:
+ *
+ *	vm_purgable_t	purgeable object control codes.
+ *}
+
+type
+  vm_purgable_t = integer;
+
+{* Enumeration of valid values for vm_purgable_t.*}
+const
+  VM_PURGABLE_SET_STATE	= 0;	{* set state of purgeable object *}
+  VM_PURGABLE_GET_STATE	= 1;	{* get state of purgeable object *}
+
+{*
+ * Volatile memory ordering groups (group zero objects are purged before group 1, etc...
+ * It is implementation dependent as to whether these groups are global or per-address space.
+ * (for the moment, they are global).
+ *}
+  VM_VOLATILE_GROUP_SHIFT		= 8;
+  VM_VOLATILE_GROUP_MASK		= (7 shl VM_VOLATILE_GROUP_SHIFT);
+
+  VM_VOLATILE_GROUP_0			=(0 shl VM_VOLATILE_GROUP_SHIFT);
+  VM_VOLATILE_GROUP_1			=(1 shl VM_VOLATILE_GROUP_SHIFT);
+  VM_VOLATILE_GROUP_2			=(2 shl VM_VOLATILE_GROUP_SHIFT);
+  VM_VOLATILE_GROUP_3			=(3 shl VM_VOLATILE_GROUP_SHIFT);
+  VM_VOLATILE_GROUP_4			=(4 shl VM_VOLATILE_GROUP_SHIFT);
+  VM_VOLATILE_GROUP_5			=(5 shl VM_VOLATILE_GROUP_SHIFT);
+  VM_VOLATILE_GROUP_6			=(6 shl VM_VOLATILE_GROUP_SHIFT);
+  VM_VOLATILE_GROUP_7			=(7 shl VM_VOLATILE_GROUP_SHIFT);
+
+  VM_VOLATILE_GROUP_DEFAULT = VM_VOLATILE_GROUP_7;
+
+{*
+ * Purgeable behavior
+ * Within the same group, FIFO objects will be emptied before objects that are added later.
+ * LIFO objects will be emptied after objects that are added later.
+ * - Input only, not returned on state queries.
+ *}
+  VM_PURGABLE_BEHAVIOR_SHIFT  = 6;
+  VM_PURGABLE_BEHAVIOR_MASK   = (1 shl VM_PURGABLE_BEHAVIOR_SHIFT);
+  VM_PURGABLE_BEHAVIOR_FIFO   = (0 shl VM_PURGABLE_BEHAVIOR_SHIFT);
+  VM_PURGABLE_BEHAVIOR_LIFO   = (1 shl VM_PURGABLE_BEHAVIOR_SHIFT);
+
+{*
+ * Obsolete object.
+ * Disregard volatile group, and put object into obsolete queue instead, so it is the next object
+ * to be purged.
+ * - Input only, not returned on state queries.
+ *}
+  VM_PURGABLE_ORDERING_SHIFT	=	5;
+  VM_PURGABLE_ORDERING_MASK		= (1 shl VM_PURGABLE_ORDERING_SHIFT);
+  VM_PURGABLE_ORDERING_OBSOLETE	= (1 shl VM_PURGABLE_ORDERING_SHIFT);
+  VM_PURGABLE_ORDERING_NORMAL		= (0 shl VM_PURGABLE_ORDERING_SHIFT);
+
+
+{*
+ * Obsolete parameter - do not use
+ *}
+  VM_VOLATILE_ORDER_SHIFT			= 4;
+  VM_VOLATILE_ORDER_MASK			= (1 shl VM_VOLATILE_ORDER_SHIFT);
+  VM_VOLATILE_MAKE_FIRST_IN_GROUP	= (1 shl VM_VOLATILE_ORDER_SHIFT);
+  VM_VOLATILE_MAKE_LAST_IN_GROUP	= (0 shl VM_VOLATILE_ORDER_SHIFT);
+
+{*
+ * Valid states of a purgeable object.
+ *}
+  VM_PURGABLE_STATE_MIN	 = 0;		{* minimum purgeable object state value *}
+  VM_PURGABLE_STATE_MAX	 = 3;		{* maximum purgeable object state value *}
+  VM_PURGABLE_STATE_MASK = 3;		{* mask to separate state from group *}
+
+  VM_PURGABLE_NONVOLATILE	= 0;	{* purgeable object is non-volatile *}
+  VM_PURGABLE_VOLATILE	  = 1;	{* purgeable object is volatile *}
+  VM_PURGABLE_EMPTY		    = 2;	{* purgeable object is volatile and empty *}
+  VM_PURGABLE_DENY		    = 3; 	{* (mark) object not purgeable *}
+
+
+// mach_vm.h
+
+{ Module mach_vm }
+
+type
+  function_ptr_t = procedure (port: mach_port_t; n : PChar; cnt: mach_msg_type_number_t); cdecl;
+
+  function_table_entry = packed record
+    name      : pchar;
+    _function : function_ptr_t;
+  end;
+  function_table_t = ^function_table_entry;
+
+const
+  mach_vm_MSG_COUNT	= 19;
+
+{* Routine mach_vm_allocate *}
+
+function  mach_vm_allocate(target: vm_map_t; address : pmach_vm_address_t;
+	size: mach_vm_size_t; flags: integer): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_deallocate *}
+
+function mach_vm_deallocate(target: vm_map_t; address : mach_vm_address_t;
+	size : mach_vm_size_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_protect *}
+function mach_vm_protect (target_task: vm_map_t;	address: mach_vm_address_t;
+	size: mach_vm_size_t;	set_maximum: boolean_t;	new_protection: vm_prot_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_inherit *}
+
+function mach_vm_inherit (target_task: vm_map_t; address: mach_vm_address_t;	size: mach_vm_size_t;
+	new_inheritance: vm_inherit_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_read *}
+function mach_vm_read(target_task: vm_map_t; address: mach_vm_address_t;
+	size: mach_vm_size_t; 	data: pvm_offset_t; dataCnt: Pmach_msg_type_number_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_read_list *}
+
+function mach_vm_read_list(target_task: vm_map_t;	data_list: mach_vm_read_entry_t;
+	count: natural_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_write *}
+function mach_vm_write(	target_task: vm_map_t;	address: mach_vm_address_t;	data: vm_offset_t;
+	dataCnt: mach_msg_type_number_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_copy *}
+function mach_vm_copy(target_task: vm_map_t;source_address: mach_vm_address_t;
+  size: mach_vm_size_t; 	dest_address: mach_vm_address_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_read_overwrite *}
+
+function mach_vm_read_overwrite(target_task: vm_map_t;	address: mach_vm_address_t;
+	size: mach_vm_size_t;	data: mach_vm_address_t;	outsize: pmach_vm_size_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_msync *}
+function  mach_vm_msync(target_task: vm_map_t;	address: mach_vm_address_t;
+	size: mach_vm_size_t; sync_flags: vm_sync_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_behavior_set *}
+function mach_vm_behavior_set (target_task: vm_map_t; address: mach_vm_address_t;
+	size: mach_vm_size_t;	new_behavior: vm_behavior_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_map *}
+
+function mach_vm_map(target_task: pvm_map_t; address: pmach_vm_address_t; size: mach_vm_size_t;
+	mask: mach_vm_offset_t;	flags:integer;	_object :mem_entry_name_port_t; offset: memory_object_offset_t;
+	copy: boolean_t;	cur_protection: vm_prot_t;	max_protection: vm_prot_t;
+  inheritance: vm_inherit_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_machine_attribute *}
+
+function mach_vm_machine_attribute (	target_task: vm_map_t; 	address: mach_vm_address_t; 	size: mach_vm_size_t;
+	attribute: vm_machine_attribute_t;	value: pvm_machine_attribute_val_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_remap *}
+
+function mach_vm_remap (target_task: vm_map_t;	target_address: pmach_vm_address_t;
+	size: mach_vm_size_t;	mask: mach_vm_offset_t;	anywhere: boolean_t; 	src_task: vm_map_t;
+	src_address: mach_vm_address_t; 	copy: boolean_t;	cur_protection: pvm_prot_t;
+	max_protection: pvm_prot_t; inheritance: vm_inherit_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_page_query *}
+function mach_vm_page_query(target_map: vm_map_t;	offset: mach_vm_offset_t;
+	disposition: pinteger_t;	ref_count : pinteger_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_region_recurse *}
+function  mach_vm_region_recurse(target_task: vm_map_t; 	address: pmach_vm_address_t;
+	size: pmach_vm_size_t; 	nesting_depth: pnatural_t; 	info: vm_region_recurse_info_t;
+	infoCnt: pmach_msg_type_number_t): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_region *}
+function mach_vm_region
+(
+	target_task: vm_map_t;
+	address: pmach_vm_address_t;
+	size: pmach_vm_size_t;
+	flavor: vm_region_flavor_t;
+	info: vm_region_info_t;
+	infoCnt: pmach_msg_type_number_t;
+	object_name: pmach_port_t
+): kern_return_t; cdecl; external;
+
+{* Routine _mach_make_memory_entry *}
+function _mach_make_memory_entry
+(
+	target_task: vm_map_t;
+	size: pmemory_object_size_t;
+	offset: pmemory_object_offset_t;
+	permission: vm_prot_t;
+	object_handle: mem_entry_name_port_t;
+	parent_handle: mem_entry_name_port_t
+): kern_return_t; cdecl; external;
+
+{* Routine mach_vm_purgable_control *}
+function mach_vm_purgable_control
+(
+	target_task: vm_map_t;
+	address: mach_vm_address_t;
+	control: vm_purgable_t;
+	state: pinteger
+): kern_return_t;  cdecl; external;
 
 implementation
 

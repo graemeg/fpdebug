@@ -1,0 +1,35 @@
+TDbgProcess = class. 
+
+The class is designed to wrap OS debugging API.
+
+It should never be created directly, by using TDbg*Process.Create, global allocation functions should be used instead. Global allocation function should allow to debug a new process (started by command line) or
+attach to an existing process (not implemented, yet).
+
+* Terminate() - terminates running process
+
+* WaitNextEvent(var Event: TDbgEvent; HandledEvent: Boolean) - continues execution of the  proces (if not terminated)
+    If process was not started, starts the process.
+    The method returns only if something happens in the running process (signal, exception, process
+    termination or pause). Event structure is filled discribing the debugging event happened.
+    HandledEvent - describes if previosly fired event, has been processed by the debugger.
+    If waitnextEvent is called for the first time HandledEvent is ignored.
+
+    the function returns false if process is terminated. Event structure field values are undefined.
+
+* GetProcessState - returns current process state:
+    notstarted  - process has not been started, yet
+    running     - process is now running
+    stopped     - process has been stopped by pausing or by an event
+    terminated  - process has been terminated
+
+* GetThreadsCount: Integer; - (the process must be in stopped state) returns number of threads
+    in the process. otherwise function may return incorrect results
+
+* GetThreadID(AIndex: Integer) - (the process must be in stopped state) returns a thread id, from a thread
+    index. ThreadID order might change between WaitNextEvent calls. Pair of ID <-> threadindex should not
+    be retained.
+
+* GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters) - (the process must be in stopped state)
+    fills TDbgRegisters class with the register state of a thread, specified by ThreadID.
+    function returns false, if threadid is invalid or thread has been terminated.
+

@@ -12,7 +12,7 @@
       <MainUnit Value="0"/>
       <TargetFileExt Value=".exe"/>
       <UseXPManifest Value="True"/>
-      <ActiveEditorIndexAtStart Value="1"/>
+      <ActiveEditorIndexAtStart Value="0"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -36,7 +36,7 @@
         <Filename Value="fpdebugger.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="fpdebugger"/>
-        <CursorPos X="12" Y="20"/>
+        <CursorPos X="1" Y="13"/>
         <TopLine Value="1"/>
         <EditorIndex Value="0"/>
         <UsageCount Value="78"/>
@@ -61,7 +61,7 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="winDbgTypes"/>
         <CursorPos X="54" Y="180"/>
-        <TopLine Value="11"/>
+        <TopLine Value="162"/>
         <EditorIndex Value="2"/>
         <UsageCount Value="78"/>
         <Loaded Value="True"/>
@@ -326,7 +326,7 @@
         <UsageCount Value="10"/>
       </Unit39>
     </Units>
-    <JumpHistory Count="29" HistoryIndex="28">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="..\fpdbglib\winDbgProc.pas"/>
         <Caret Line="80" Column="12" TopLine="61"/>
@@ -443,6 +443,10 @@
         <Filename Value="cmdloop.pas"/>
         <Caret Line="158" Column="16" TopLine="130"/>
       </Position29>
+      <Position30>
+        <Filename Value="fpdebugger.pas"/>
+        <Caret Line="20" Column="12" TopLine="2"/>
+      </Position30>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
@@ -450,8 +454,8 @@
     <PathDelim Value="\"/>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)\"/>
-      <OtherUnitFiles Value="..\fpdbglib\"/>
-      <SrcPath Value="..\fpdbglib\"/>
+      <OtherUnitFiles Value="..\dubylib\"/>
+      <SrcPath Value="..\dubylib\"/>
     </SearchPaths>
     <Other>
       <CompilerMessages>

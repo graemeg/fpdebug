@@ -1,8 +1,5 @@
 {$mode objfpc}
 
-uses
-  sysUtils;
-
 var
   s : string;
 

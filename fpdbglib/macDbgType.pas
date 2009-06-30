@@ -6,7 +6,7 @@ interface
 
 uses
   SysUtils,
-  BaseUnix, Unix, machapi, dbgTypes, macPtrace;
+  BaseUnix, Unix, machapi, mach_port, dbgTypes, macPtrace, macDbgProc;
 
 type
   { TMachDbgProcess }
@@ -15,9 +15,13 @@ type
   private
     fchildpid   : TPid;
     fchildtask  : mach_port_name_t;
+
+    catchport   : mach_port_t;
   protected
     waited      : Boolean;
     waitedsig   : Integer;
+
+    procedure SetupChildTask(child: task_t);
 
   public
     procedure Terminate; override;
@@ -30,7 +34,6 @@ type
 
     function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
     function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
-
 
     function StartProcess(const ACmdLine: String): Boolean;
   end;
@@ -90,15 +93,34 @@ begin
   Result:=false;
 end;
 
-function TMachDbgProcess.ReadMem(Offset: TDbgPtr; Count: Integer;
-  var Data: array of byte): Integer;
+function TMachDbgProcess.ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
+var
+  r : mach_msg_type_number_t;
 begin
+  if mach_vm_read(fchildtask, Offset, Count, @Data[0], @r) <> 0 then
+    Result := -1
+  else
+    Result := r;
 end;
 
-function TMachDbgProcess.WriteMem(Offset: TDbgPtr; Count: Integer;
-  const Data: array of byte): Integer;
+function TMachDbgProcess.WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
 begin
+  Result := -1;
+end;
 
+procedure TMachDbgProcess.SetupChildTask(child: task_t);
+var
+  res : Integer;
+begin
+  //task_set_exception_ports
+  catchport := AllocMachPort;
+  res :=  task_set_exception_ports(
+    child,
+    EXC_MASK_ALL,
+    catchport,
+    EXCEPTION_DEFAULT,
+    0);
+  writeln('task_set_exception_ports = ', res);
 end;
 
 procedure TMachDbgProcess.Terminate;
@@ -201,85 +223,7 @@ end;
 function TMachDbgProcess.StartProcess(const ACmdLine: String): Boolean;
 begin
   Result := ForkAndRun(ACmdLine, fchildpid, fchildtask);
-
-(*
-
-  machname := ParamStr(1);
-  //  if machname = '' then machname := 'main';
-
-  if machname = '' then begin
-    writeln('please specify executable filename. Exiting...');
-    Exit;
-  end;
-
-  if not StartDebug then begin
-    writeln('unable to start debug. Exiting...');
-    Exit;
-  end;
-  writeln('debugged process started');
-  writeln('pid = ', childpid);
-
-  try
-    macherr := task_for_pid( mach_task_self, childpid, childtask);
-    if macherr <> 0 then begin
-      writeln('unable to get task port for child process. Exiting...');
-      Exit;
-    end;
-    writeln('task port = ', childtask);
-
-    nixerr := WaitProcess(childpid);
-    writeln('[1] wait err: ', nixerr);
-    ptrace(PT_CONTINUE, childpid, PtrUInt(1), 0);
-
-    {writeln('[2] wait err: ',  FpWaitPid(childpid, nixerr, 0));
-    nixerr := -nixerr;
-    writeln('status = ', nixerr);}
-    nixerr := WaitProcess(childpid);
-
-    if nixerr < -1 then nixerr := -nixerr;
-    writeln('[2] wait err: ', nixerr);
-    if WIFSTOPPED(nixerr) then begin
-      writeln('stopped');
-      writeln('  signal = ', SignalToStr(wstopsig(nixerr)));
-      ReportRegisters;
-
-    end else if wifsignaled(nixerr) then begin
-      writeln('signaled...');
-      writeln('  termsign = ', wtermsig(nixerr));
-    end else if wifexited(nixerr) then
-      writeln('exited');
-
-
-{    for i := 1 to 10 do begin
-      nixerr := WaitProcess(childpid);
-      writeln('wait err: ', nixerr);
-
-      macherr := task_threads(childtask, thread_list, thread_count);
-      writeln('task_threads = ', thread_count, ' err = ', macherr);
-      if macherr = 0 then begin
-        FillChar(regs, sizeof(regs), 0);
-        regsize := sizeof(regs);
-        macherr := thread_get_state(thread_list[0], x86_THREAD_STATE32, thread_state_t(@regs), regsize);
-        writeln('thread_get_state = ', regsize, ' err = ', macherr);
-        Reporti386(regs);
-      end else
-        writeln('unable to get registers');
-
-
-      nixerr := ptrace(PT_STEP, childpid, PtrUint(1), 0);
-      writeln('ptrace err: ', nixerr);
-
-
-    end;}
-
-
-  finally
-    ptrace(PT_CONTINUE, childpid, PtrUint(1), 0);
-    FpKill(childpid, 1);
-    nixerr := WaitProcess(childpid);
-    writeln('[after kill] wait err: ', nixerr);
-  end;
-*)
+  SetupChildTask(fchildtask);
 end;
 
 function MachDebugProcessStart(const ACmdLine: String): TDbgProcess;

@@ -380,6 +380,9 @@ type
   mach_port_name_t = natural_t;
   mach_port_name_array_t = ^mach_port_name_t;
 
+  pmach_port_name_t = ^mach_port_name_t;
+  pmach_port_name_array_t = ^mach_port_name_array_t;
+
 {*
  *	mach_port_t - a named port right
  *
@@ -441,6 +444,9 @@ type
   mach_port_type_t = natural_t;
   mach_port_type_array_t = ^mach_port_type_t;
 
+  pmach_port_type_t = ^mach_port_type_t;
+  pmach_port_type_array_t = ^mach_port_type_array_t;
+
 {#define MACH_PORT_TYPE(right)						\
   (
      (mach_port_type_t)
@@ -472,12 +478,15 @@ type
   mach_port_urefs_t = natural_t;
   mach_port_delta_t = integer_t;			{ change in urefs }
 
+  pmach_port_urefs_t = ^mach_port_urefs_t;
+
 { Attributes of ports.  (See mach_port_get_receive_status.) }
 
   mach_port_seqno_t = natural_t;		{ sequence number }
   mach_port_mscount_t = natural_t;		{ make-send count }
   mach_port_msgcount_t = natural_t;		{ number of msgs }
   mach_port_rights_t = natural_t;		{ number of rights }
+  pmach_port_rights_t = ^mach_port_rights_t;
 
 {*
  *	Are there outstanding send rights for a given port?
@@ -547,6 +556,7 @@ type
    	len   : natural_t;
   end;
   mach_port_qos_t = mach_port_qos;
+  pmach_port_qos_t = ^mach_port_qos_t;
 
 //#if	!__DARWIN_UNIX03 && !defined(_NO_PORT_T_FROM_MACH)
 {*
@@ -673,6 +683,7 @@ const
 
 type
   mach_msg_type_name_t = LongWord;
+  pmach_msg_type_name_t = ^mach_msg_type_name_t;
 
 const
   MACH_MSG_TYPE_MOVE_RECEIVE	 = 16; { Must hold receive rights }
@@ -3242,7 +3253,7 @@ const
                  EXC_MASK_SYSCALL or
                  EXC_MASK_MACH_SYSCALL or
                  EXC_MASK_RPC_ALERT or
-                 EXC_MASK_CR;
+                 EXC_MASK_CRASH;
   { ZERO is illegal  }
   FIRST_EXCEPTION = 1;
   {* Machine independent codes for EXC_SOFTWARE

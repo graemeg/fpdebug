@@ -5,6 +5,100 @@ unit machapi;
 
 interface
 
+{*	File:	h/kern_return.h
+ *	Author:	Avadis Tevanian, Jr.
+ *	Date:	1985
+ *
+ *	Kernel return codes. *}
+
+const
+  KERN_SUCCESS= 0;
+  KERN_INVALID_ADDRESS	  =	1;{* Specified address is not currently valid. *}
+  KERN_PROTECTION_FAILURE	=	2;{* Specified memory is valid, but does not permit the required forms of access.*}
+  KERN_NO_SPACE		        =	3; {* The address range specified is already in use, or no address range of the size specified could be found. *}
+  KERN_INVALID_ARGUMENT	  =	4;{* The function requested was not applicable to this type of argument, or an argument is invalid		 *}
+  KERN_FAILURE			      = 5;
+		{* The function could not be performed.  A catch-all.	 *}
+  KERN_RESOURCE_SHORTAGE	=	6;
+		{* A system resource could not be allocated to fulfill
+		 * this request.  This failure may not be permanent. *}
+
+  KERN_NOT_RECEIVER	  =	7;{* The task in question does not hold receive rights for the port argument. *}
+  KERN_NO_ACCESS		  =	8;{* Bogus access restriction.*}
+  KERN_MEMORY_FAILURE	=	9;
+		{* During a page fault, the target address refers to a
+		 * memory object that has been destroyed.  This
+		 * failure is permanent.		 *}
+  KERN_MEMORY_ERROR 	=	10;
+		{* During a page fault, the memory object indicated
+		 * that the data could not be returned.  This failure
+		 * may be temporary; future attempts to access this
+		 * same data may succeed, as defined by the memory
+		 * object. *}
+ 	KERN_ALREADY_IN_SET	= 11; {* The receive right is already a member of the portset. *}
+  KERN_NOT_IN_SET		  =	12;	{* The receive right is not a member of a port set. *}
+  KERN_NAME_EXISTS	  =	13; {* The name already denotes a right in the task. *}
+  KERN_ABORTED		    =	14;	{* The operation was aborted.  Ipc code will catch this and reflect it as a message error. *}
+  KERN_INVALID_NAME	  =	15;	{* The name doesn't denote a right in the task. *}
+ 	KERN_INVALID_TASK	  =	16;	{* Target task isn't an active task. *}
+  KERN_INVALID_RIGHT	=	17; {* The name denotes a right, but not an appropriate right. *}
+  KERN_INVALID_VALUE	=	18;	{* A blatant range error.	 *}
+ 	KERN_UREFS_OVERFLOW	=	19;	{* Operation would overflow limit on user-references. *}
+ 	KERN_INVALID_CAPABILITY	=	20;	{* The supplied (port) capability is improper. *}
+  KERN_RIGHT_EXISTS		    = 21;	{* The task already has send or receive rights for the port under another name. *}
+ 	KERN_INVALID_HOST	  =	22;	{* Target host isn't actually a host. *}
+  KERN_MEMORY_PRESENT	=	23;	{* An attempt was made to supply "precious" data for memory that is already present in a memory object.*}
+
+  KERN_MEMORY_DATA_MOVED		= 24;
+		{* A page was requested of a memory manager via
+		 * memory_object_data_request for an object using
+		 * a MEMORY_OBJECT_COPY_CALL strategy, with the
+		 * VM_PROT_WANTS_COPY flag being used to specify
+		 * that the page desired is for a copy of the
+		 * object, and the memory manager has detected
+		 * the page was pushed into a copy of the object
+		 * while the kernel was walking the shadow chain
+		 * from the copy to the object. This error code
+		 * is delivered via memory_object_data_error
+		 * and is handled by the kernel (it forces the
+		 * kernel to restart the fault). It will not be
+		 * seen by users.
+		 *}
+
+  KERN_MEMORY_RESTART_COPY	= 25;
+		{* A strategic copy was attempted of an object
+		 * upon which a quicker copy is now possible.
+		 * The caller should retry the copy using
+		 * vm_object_copy_quickly. This error code
+		 * is seen only by the kernel.
+		 *}
+
+  KERN_INVALID_PROCESSOR_SET	= 26;	{* An argument applied to assert processor set privilege  was not a processor set control port. *}
+  KERN_POLICY_LIMIT	    =	27;	{* The specified scheduling attributes exceed the thread's limits. *}
+  KERN_INVALID_POLICY		= 28;	{* The specified scheduling policy is not currently enabled for the processor set. *}
+  KERN_INVALID_OBJECT	  =	29; {* The external memory manager failed to initialize the  memory object. *}
+  KERN_ALREADY_WAITING	=	30;	{* A thread is attempting to wait for an event for which there is already a waiting thread. *}
+  KERN_DEFAULT_SET		  = 31;	{* An attempt was made to destroy the default processor set. *}
+  KERN_EXCEPTION_PROTECTED	  = 32; {* An attempt was made to fetch an exception port that is protected, or to abort a thread while processing a protected exception. *}
+  KERN_INVALID_LEDGER		      = 33;	{* A ledger was required but not supplied. *}
+  KERN_INVALID_MEMORY_CONTROL	= 34;	{* The port was not a memory cache control port. *}
+  KERN_INVALID_SECURITY		= 35;	{* An argument supplied to assert security privilege was not a host security port. *}
+  KERN_NOT_DEPRESSED		  = 36;	{* thread_depress_abort was called on a thread which  was not currently depressed.	 *}
+  KERN_TERMINATED		      =	37; {* Object has been terminated and is no longer available *}
+  KERN_LOCK_SET_DESTROYED	=	38;	{* Lock set has been destroyed and is no longer available.*}
+  KERN_LOCK_UNSTABLE	    =	39;	{* The thread holding the lock terminated before releasing the lock *}
+  KERN_LOCK_OWNED			    = 40;	{* The lock is already owned by another thread *}
+  KERN_LOCK_OWNED_SELF		    = 41; {* The lock is already owned by the calling thread *}
+  KERN_SEMAPHORE_DESTROYED    = 42; {* Semaphore has been destroyed and is no longer available. *}
+  KERN_RPC_SERVER_TERMINATED  =	43;	{* Return from RPC indicating the target server was terminated before it successfully replied *}
+  KERN_RPC_TERMINATE_ORPHAN	= 44;	  {* Terminate an orphaned activation. *}
+  KERN_RPC_CONTINUE_ORPHAN	= 45; 	{* Allow an orphaned activation to continue executing. *}
+  KERN_NOT_SUPPORTED  = 46; {* Empty thread activation (No thread linked to it)*}
+  KERN_NODE_DOWN		  =	47;	{* Remote node down or inaccessible.	 *}
+  KERN_NOT_WAITING		= 48;	{* A signalled thread was not actually waiting. *}
+  KERN_OPERATION_TIMED_OUT  = 49;  {* Some thread-oriented operation (semaphore_wait) timed out *}
+  KERN_RETURN_MAX			      = $100;	    {* Maximum return value allowable *}
+
 
 type
   boolean_t  = Integer;
@@ -26,8 +120,8 @@ type
   MACH_MSG_TYPE_REAL_64 = double;
 
 
-// from ISO/IEC 988:1999 spec */
-// 7.18.1.4 Integer types capable of hgolding object pointers */
+// from ISO/IEC 988:1999 spec *}
+// 7.18.1.4 Integer types capable of hgolding object pointers *}
 {*
  * The [u]intptr_t types for the native
  * integer type, e.g. 32 or 64 or.. whatever
@@ -98,19 +192,6 @@ type vm_size_t = uint64_t;
 
   mach_vm_size_t = uint64_t;
   pmach_vm_size_t = ^mach_vm_size_t;
-
-{if	MACH_IPC_COMPAT
-{*
- * For the old IPC interface
- */
-#define	MSG_TYPE_PORT_NAME	natural_t
-
-#endif	{* MACH_IPC_COMPAT */
-
-#endif	{* _MACHINE_VM_TYPES_DEFS_ */
-
-{* vim: set ft=c : *}
-
 
 {	Time value returned by kernel.}
   time_value = record
@@ -220,6 +301,42 @@ type
 
   user_subsystem_t = Pchar;
   labelstr_t = Pchar;
+
+{* File:	mach/error.h
+ * Purpose:
+ *	error module definitions *}
+
+{*	error number layout as follows:
+ *
+ *	hi		 		       lo
+ *	| system(6) | subsystem(12) | code(14) | *}
+
+const
+  err_none		    = 0;
+  ERR_SUCCESS		  = 0;
+  ERR_ROUTINE_NIL	=	nil;
+
+  system_emask	= $3f  shr 26;
+  sub_emask		  = $fff shr 14;
+  code_emask	  =	$3fff;
+
+(*	major error systems	*)
+
+const
+  //err_system(x)		(((x)&0x3f)<<26)       ((| and $3f) shr 26)
+  err_kern	      = (0 shr 26);   //	err_system(0x1)	/* kernel */
+  err_us		      = (1 shr 26);   //	err_system(0x1)		/* user space library */
+  err_server      = (2 shr 26);	  //	err_system(0x2)		/* user space servers */
+  err_ipc		      = (3 shr 26);	  //  err_system(0x3)		/* old ipc errors */
+  err_mach_ipc    =	(4 shr 26);	  //  err_system(0x4)		/* mach-ipc errors */
+  err_dipc		    = (7 shr 26);   //  err_system(0x7)		/* distributed ipc */
+  err_local		    = ($3e shr 26);  //  err_system(0x3e)	/* user defined errors */
+  err_ipc_compat  = ($ef shr 26);  //	err_system(0x3f)	/* (compatibility) mach-ipc errors */
+	err_max_system	= $3f;
+
+type
+  mach_error_t   = kern_return_t;
+  mach_error_fn_t = function : mach_error_t; cdecl;
 
 
 // port.h
@@ -423,8 +540,8 @@ const
  *}
 type
   mach_port_qos = record
-    //unsigned int		name:1;		{* name given */
-  	//unsigned int 		prealloc:1;	{* prealloced message */
+    //unsigned int		name:1;		{* name given *}
+  	//unsigned int 		prealloc:1;	{* prealloced message *}
   	//boolean_t		pad1:30;
     flags : LongWord;
    	len   : natural_t;
@@ -680,7 +797,7 @@ typedef struct
  * LP64support - This union definition is not really
  * appropriate in LP64 mode because not all descriptors
  * are of the same size in that environment.
- */
+ *}
 typedef union
 {
   mach_msg_port_descriptor_t		port;
@@ -755,7 +872,7 @@ typedef struct
  * contents of the audit token as the representation
  * of the subject identity within the token may change
  * over time.
- */
+ *}
 typedef struct
 {
   unsigned int			val[8];
@@ -778,7 +895,7 @@ typedef struct
 {*
    Trailer type to pass MAC policy label info as a mach message trailer.
 
-*/
+*}
 
 typedef struct
 {
@@ -801,7 +918,7 @@ typedef struct
  * Otherwise, you run the risk that the options requested by
  * another module may exceed the local modules notion of
  * MAX_TRAILER_SIZE.
- */
+ *}
 typedef mach_msg_mac_trailer_t mach_msg_max_trailer_t;
 #define MAX_TRAILER_SIZE sizeof(mach_msg_max_trailer_t)
 
@@ -811,11 +928,11 @@ typedef mach_msg_mac_trailer_t mach_msg_max_trailer_t;
  * Therefore, they shouldn't be used going forward.  Instead, the sizes
  * should be compared against the specific element size requested using
  * REQUESTED_TRAILER_SIZE.
- */
+ *}
 typedef mach_msg_security_trailer_t mach_msg_format_0_trailer_t;
 
 {*typedef mach_msg_mac_trailer_t mach_msg_format_0_trailer_t;
-*/
+*}
 
 #define MACH_MSG_TRAILER_FORMAT_0_SIZE sizeof(mach_msg_format_0_trailer_t)
 
@@ -846,20 +963,20 @@ typedef union
 
 #pragma pack()
 
-{* utility to round the message size - will become machine dependent */
+{* utility to round the message size - will become machine dependent *}
 #define round_msg(x)	(((mach_msg_size_t)(x) + sizeof (natural_t) - 1) & \
 				~(sizeof (natural_t) - 1))
 
 {*
  *  There is no fixed upper bound to the size of Mach messages.
- */
+ *}
 
 #define	MACH_MSG_SIZE_MAX	((mach_msg_size_t) ~0)
 
 {*
  *  Compatibility definitions, for code written
  *  when there was a msgh_kind instead of msgh_seqno.
- */
+ *}
 #define MACH_MSGH_KIND_NORMAL		0x00000000
 #define MACH_MSGH_KIND_NOTIFICATION	0x00000001
 #define	msgh_kind			msgh_seqno
@@ -888,7 +1005,7 @@ typedef union
  *  The msgt_unused bit should be zero.
  *  The msgt_name, msgt_size, msgt_number fields in
  *  a mach_msg_type_long_t should be zero.
- */
+ *}
 
 typedef natural_t mach_msg_type_size_t;
 typedef natural_t mach_msg_type_number_t;
@@ -900,7 +1017,7 @@ typedef natural_t mach_msg_type_number_t;
  *  MACH_MSG_TYPE_PORT_NAME is used to transfer a port name
  *  which should remain uninterpreted by the kernel.  (Port rights
  *  are not transferred, just the port name.)
- */
+ *}
 
 #define MACH_MSG_TYPE_PORT_NONE		0
 
@@ -909,18 +1026,18 @@ typedef natural_t mach_msg_type_number_t;
 #define MACH_MSG_TYPE_PORT_SEND		MACH_MSG_TYPE_MOVE_SEND
 #define MACH_MSG_TYPE_PORT_SEND_ONCE	MACH_MSG_TYPE_MOVE_SEND_ONCE
 
-#define MACH_MSG_TYPE_LAST		22		{* Last assigned */
+#define MACH_MSG_TYPE_LAST		22		{* Last assigned *}
 
 {*
  *  A dummy value.  Mostly used to indicate that the actual value
  *  will be filled in later, dynamically.
- */
+ *}
 
 #define MACH_MSG_TYPE_POLYMORPHIC	((mach_msg_type_name_t) -1)
 
 {*
  *	Is a given item a port type?
- */
+ *}
 
 #define MACH_MSG_TYPE_PORT_ANY(x)			\
 	(((x) >= MACH_MSG_TYPE_MOVE_RECEIVE) &&		\
@@ -943,14 +1060,14 @@ typedef integer_t mach_msg_option_t;
 #define MACH_RCV_LARGE		0x00000004
 
 #define MACH_SEND_TIMEOUT	0x00000010
-#define MACH_SEND_INTERRUPT	0x00000040	{* libmach implements */
+#define MACH_SEND_INTERRUPT	0x00000040	{* libmach implements *}
 #define MACH_SEND_CANCEL	0x00000080
-#define MACH_SEND_ALWAYS	0x00010000	{* internal use only */
+#define MACH_SEND_ALWAYS	0x00010000	{* internal use only *}
 #define MACH_SEND_TRAILER	0x00020000
 
 #define MACH_RCV_TIMEOUT	0x00000100
 #define MACH_RCV_NOTIFY		0x00000200
-#define MACH_RCV_INTERRUPT	0x00000400	{* libmach implements */
+#define MACH_RCV_INTERRUPT	0x00000400	{* libmach implements *}
 #define MACH_RCV_OVERWRITE	0x00001000
 
 {*
@@ -962,7 +1079,7 @@ typedef integer_t mach_msg_option_t;
  * and MACH_RCV_TRAILER_AV need their own private bit since we only calculate
  * their fields when absolutely required.  This will cause us problems if
  * Apple adds new trailers.
- */
+ *}
 #define MACH_RCV_TRAILER_NULL   0
 #define MACH_RCV_TRAILER_SEQNO  1
 #define MACH_RCV_TRAILER_SENDER 2
@@ -983,7 +1100,7 @@ typedef integer_t mach_msg_option_t;
  * mac_msg_mac_trailer_t which is used for the LABELS and AV trailers.
  * It also makes things work properly if MACH_RCV_TRAILER_AV or
  * MACH_RCV_TRAILER_LABELS are ORed with one of the other options.
- */
+ *}
 #define REQUESTED_TRAILER_SIZE(y) 				\
 	((mach_msg_trailer_size_t)				\
 	 ((GET_RCV_ELEMENTS(y) == MACH_RCV_TRAILER_NULL) ?	\
@@ -1005,7 +1122,7 @@ typedef integer_t mach_msg_option_t;
  *  receive errors are subsystem 1.  The code field is always non-zero.
  *  The high bits of the code field communicate extra information
  *  for some error codes.  MACH_MSG_MASK masks off these special bits.
- */
+ *}
 
 typedef kern_return_t mach_msg_return_t;
 
@@ -1013,81 +1130,81 @@ typedef kern_return_t mach_msg_return_t;
 
 
 #define	MACH_MSG_MASK			0x00003e00
-		{* All special error code bits defined below. */
+		{* All special error code bits defined below. *}
 #define	MACH_MSG_IPC_SPACE		0x00002000
-		{* No room in IPC name space for another capability name. */
+		{* No room in IPC name space for another capability name. *}
 #define	MACH_MSG_VM_SPACE		0x00001000
-		{* No room in VM address space for out-of-line memory. */
+		{* No room in VM address space for out-of-line memory. *}
 #define	MACH_MSG_IPC_KERNEL		0x00000800
-		{* Kernel resource shortage handling an IPC capability. */
+		{* Kernel resource shortage handling an IPC capability. *}
 #define	MACH_MSG_VM_KERNEL		0x00000400
-		{* Kernel resource shortage handling out-of-line memory. */
+		{* Kernel resource shortage handling out-of-line memory. *}
 
 #define MACH_SEND_IN_PROGRESS		0x10000001
-		{* Thread is waiting to send.  (Internal use only.) */
+		{* Thread is waiting to send.  (Internal use only.) *}
 #define MACH_SEND_INVALID_DATA		0x10000002
-		{* Bogus in-line data. */
+		{* Bogus in-line data. *}
 #define MACH_SEND_INVALID_DEST		0x10000003
-		{* Bogus destination port. */
+		{* Bogus destination port. *}
 #define MACH_SEND_TIMED_OUT		0x10000004
-		{* Message not sent before timeout expired. */
+		{* Message not sent before timeout expired. *}
 #define MACH_SEND_INTERRUPTED		0x10000007
-		{* Software interrupt. */
+		{* Software interrupt. *}
 #define MACH_SEND_MSG_TOO_SMALL		0x10000008
-		{* Data doesn't contain a complete message. */
+		{* Data doesn't contain a complete message. *}
 #define MACH_SEND_INVALID_REPLY		0x10000009
-		{* Bogus reply port. */
+		{* Bogus reply port. *}
 #define MACH_SEND_INVALID_RIGHT		0x1000000a
-		{* Bogus port rights in the message body. */
+		{* Bogus port rights in the message body. *}
 #define MACH_SEND_INVALID_NOTIFY	0x1000000b
-		{* Bogus notify port argument. */
+		{* Bogus notify port argument. *}
 #define MACH_SEND_INVALID_MEMORY	0x1000000c
-		{* Invalid out-of-line memory pointer. */
+		{* Invalid out-of-line memory pointer. *}
 #define MACH_SEND_NO_BUFFER		0x1000000d
-		{* No message buffer is available. */
+		{* No message buffer is available. *}
 #define MACH_SEND_TOO_LARGE		0x1000000e
-		{* Send is too large for port */
+		{* Send is too large for port *}
 #define MACH_SEND_INVALID_TYPE		0x1000000f
-		{* Invalid msg-type specification. */
+		{* Invalid msg-type specification. *}
 #define MACH_SEND_INVALID_HEADER	0x10000010
-		{* A field in the header had a bad value. */
+		{* A field in the header had a bad value. *}
 #define MACH_SEND_INVALID_TRAILER	0x10000011
-		{* The trailer to be sent does not match kernel format. */
+		{* The trailer to be sent does not match kernel format. *}
 #define MACH_SEND_INVALID_RT_OOL_SIZE	0x10000015
-		{* compatibility: no longer a returned error */
+		{* compatibility: no longer a returned error *}
 
 #define MACH_RCV_IN_PROGRESS		0x10004001
-		{* Thread is waiting for receive.  (Internal use only.) */
+		{* Thread is waiting for receive.  (Internal use only.) *}
 #define MACH_RCV_INVALID_NAME		0x10004002
-		{* Bogus name for receive port/port-set. */
+		{* Bogus name for receive port/port-set. *}
 #define MACH_RCV_TIMED_OUT		0x10004003
-		{* Didn't get a message within the timeout value. */
+		{* Didn't get a message within the timeout value. *}
 #define MACH_RCV_TOO_LARGE		0x10004004
-		{* Message buffer is not large enough for inline data. */
+		{* Message buffer is not large enough for inline data. *}
 #define MACH_RCV_INTERRUPTED		0x10004005
-		{* Software interrupt. */
+		{* Software interrupt. *}
 #define MACH_RCV_PORT_CHANGED		0x10004006
-		{* compatibility: no longer a returned error */
+		{* compatibility: no longer a returned error *}
 #define MACH_RCV_INVALID_NOTIFY		0x10004007
-		{* Bogus notify port argument. */
+		{* Bogus notify port argument. *}
 #define MACH_RCV_INVALID_DATA		0x10004008
-		{* Bogus message buffer for inline data. */
+		{* Bogus message buffer for inline data. *}
 #define MACH_RCV_PORT_DIED		0x10004009
-		{* Port/set was sent away/died during receive. */
+		{* Port/set was sent away/died during receive. *}
 #define	MACH_RCV_IN_SET			0x1000400a
-		{* compatibility: no longer a returned error */
+		{* compatibility: no longer a returned error *}
 #define	MACH_RCV_HEADER_ERROR		0x1000400b
-		{* Error receiving message header.  See special bits. */
+		{* Error receiving message header.  See special bits. *}
 #define	MACH_RCV_BODY_ERROR		0x1000400c
-		{* Error receiving message body.  See special bits. */
+		{* Error receiving message body.  See special bits. *}
 #define	MACH_RCV_INVALID_TYPE		0x1000400d
-		{* Invalid msg-type specification in scatter list. */
+		{* Invalid msg-type specification in scatter list. *}
 #define	MACH_RCV_SCATTER_SMALL		0x1000400e
-		{* Out-of-line overwrite region is not large enough */
+		{* Out-of-line overwrite region is not large enough *}
 #define MACH_RCV_INVALID_TRAILER	0x1000400f
-		{* trailer type or number of trailer elements not supported */
+		{* trailer type or number of trailer elements not supported *}
 #define MACH_RCV_IN_PROGRESS_TIMED      0x10004011
-                {* Waiting for receive with timeout. (Internal use only.) */
+                {* Waiting for receive with timeout. (Internal use only.) *}
 
 
 __BEGIN_DECLS
@@ -1107,7 +1224,7 @@ __BEGIN_DECLS
  *		In addition to a distinct receive buffer, that buffer may
  *		already contain scatter control information to direct the
  *		receiving of the message.
- */
+ *}
 
 extern mach_msg_return_t	mach_msg_overwrite(
 					mach_msg_header_t *msg,
@@ -1128,7 +1245,7 @@ extern mach_msg_return_t	mach_msg_overwrite(
  *		is interrupted, and the user did not request an indication
  *		of that fact, then restart the appropriate parts of the
  *		operation silently (trap version does not restart).
- */
+ *}
 extern mach_msg_return_t	mach_msg(
 					mach_msg_header_t *msg,
 					mach_msg_option_t option,
@@ -1141,7 +1258,7 @@ extern mach_msg_return_t	mach_msg(
 
 __END_DECLS
 
-#endif	{* _MACH_MESSAGE_H_ */   *)
+#endif	{* _MACH_MESSAGE_H_ *}   *)
 
 
 // ----- policy.h --------------------------------------------------------------
@@ -1170,9 +1287,8 @@ const
 
   POLICYCLASS_FIXEDPRI=	(POLICY_RR or POLICY_FIFO) ;
 {
-{*
  *	Check if policy is valid.
- */
+
 #define invalid_policy(policy)			\
 	((policy) != POLICY_TIMESHARE &&	\
 	 (policy) != POLICY_RR &&		\
@@ -1521,7 +1637,7 @@ type
     resident_size  : natural_t;    // resident memory size (bytes)
     user_time      : time_value_t; // total user run time for terminated threads
     system_time    : time_value_t; // total system run time for terminated threads
-	  policy         : policy_t;		 // default policy for new threads */
+	  policy         : policy_t;		 // default policy for new threads *}
   end;
   task_basic_info_32_data_t = _task_basic_info_32;
   task_basic_info_32_t = ^_task_basic_info_32;
@@ -2067,13 +2183,13 @@ function pid_for_task(t: mach_port_name_t; var x: integer): kern_return_t;
   cdecl external name 'pid_for_task';
 
 //#if		!defined(__LP64__)
-// these should go away altogether - so no 64 legacy please */
+// these should go away altogether - so no 64 legacy please *}
 
 function map_fd(fd: integer; offset: vm_offset_t;	var va: vm_offset_t;
 	findspace: boolean_t; 	size: vm_size_t): kern_return_t;
   cdecl external name 'map_fd';
 
-//#endif	{* !defined(__LP64__) */
+//#endif	{* !defined(__LP64__) *}
 
 {*
  *	File:	memory_object.h
@@ -2983,6 +3099,7 @@ function mach_vm_inherit (target_task: vm_map_t; address: mach_vm_address_t;	siz
 	new_inheritance: vm_inherit_t): kern_return_t; cdecl; external;
 
 {* Routine mach_vm_read *}
+
 function mach_vm_read(target_task: vm_map_t; address: mach_vm_address_t;
 	size: mach_vm_size_t; 	data: pvm_offset_t; dataCnt: Pmach_msg_type_number_t): kern_return_t; cdecl; external;
 
@@ -2992,10 +3109,12 @@ function mach_vm_read_list(target_task: vm_map_t;	data_list: mach_vm_read_entry_
 	count: natural_t): kern_return_t; cdecl; external;
 
 {* Routine mach_vm_write *}
-function mach_vm_write(	target_task: vm_map_t;	address: mach_vm_address_t;	data: vm_offset_t;
+
+function mach_vm_write(target_task: vm_map_t;	address: mach_vm_address_t;	data: vm_offset_t;
 	dataCnt: mach_msg_type_number_t): kern_return_t; cdecl; external;
 
 {* Routine mach_vm_copy *}
+
 function mach_vm_copy(target_task: vm_map_t;source_address: mach_vm_address_t;
   size: mach_vm_size_t; 	dest_address: mach_vm_address_t): kern_return_t; cdecl; external;
 
@@ -3005,10 +3124,12 @@ function mach_vm_read_overwrite(target_task: vm_map_t;	address: mach_vm_address_
 	size: mach_vm_size_t;	data: mach_vm_address_t;	outsize: pmach_vm_size_t): kern_return_t; cdecl; external;
 
 {* Routine mach_vm_msync *}
+
 function  mach_vm_msync(target_task: vm_map_t;	address: mach_vm_address_t;
 	size: mach_vm_size_t; sync_flags: vm_sync_t): kern_return_t; cdecl; external;
 
 {* Routine mach_vm_behavior_set *}
+
 function mach_vm_behavior_set (target_task: vm_map_t; address: mach_vm_address_t;
 	size: mach_vm_size_t;	new_behavior: vm_behavior_t): kern_return_t; cdecl; external;
 
@@ -3021,58 +3142,167 @@ function mach_vm_map(target_task: pvm_map_t; address: pmach_vm_address_t; size: 
 
 {* Routine mach_vm_machine_attribute *}
 
-function mach_vm_machine_attribute (	target_task: vm_map_t; 	address: mach_vm_address_t; 	size: mach_vm_size_t;
-	attribute: vm_machine_attribute_t;	value: pvm_machine_attribute_val_t): kern_return_t; cdecl; external;
+function mach_vm_machine_attribute (target_task: vm_map_t; 	address: mach_vm_address_t; 	size: mach_vm_size_t;
+	attribute: vm_machine_attribute_t; value: pvm_machine_attribute_val_t): kern_return_t; cdecl; external;
 
 {* Routine mach_vm_remap *}
 
 function mach_vm_remap (target_task: vm_map_t;	target_address: pmach_vm_address_t;
 	size: mach_vm_size_t;	mask: mach_vm_offset_t;	anywhere: boolean_t; 	src_task: vm_map_t;
-	src_address: mach_vm_address_t; 	copy: boolean_t;	cur_protection: pvm_prot_t;
+	src_address: mach_vm_address_t; copy: boolean_t;	cur_protection: pvm_prot_t;
 	max_protection: pvm_prot_t; inheritance: vm_inherit_t): kern_return_t; cdecl; external;
 
 {* Routine mach_vm_page_query *}
+
 function mach_vm_page_query(target_map: vm_map_t;	offset: mach_vm_offset_t;
 	disposition: pinteger_t;	ref_count : pinteger_t): kern_return_t; cdecl; external;
 
 {* Routine mach_vm_region_recurse *}
+
 function  mach_vm_region_recurse(target_task: vm_map_t; 	address: pmach_vm_address_t;
 	size: pmach_vm_size_t; 	nesting_depth: pnatural_t; 	info: vm_region_recurse_info_t;
 	infoCnt: pmach_msg_type_number_t): kern_return_t; cdecl; external;
 
 {* Routine mach_vm_region *}
-function mach_vm_region
-(
-	target_task: vm_map_t;
-	address: pmach_vm_address_t;
-	size: pmach_vm_size_t;
-	flavor: vm_region_flavor_t;
-	info: vm_region_info_t;
-	infoCnt: pmach_msg_type_number_t;
-	object_name: pmach_port_t
-): kern_return_t; cdecl; external;
+
+function mach_vm_region(target_task: vm_map_t;
+	address: pmach_vm_address_t;size: pmach_vm_size_t;flavor: vm_region_flavor_t;
+	info: vm_region_info_t;	infoCnt:
+  pmach_msg_type_number_t;	object_name: pmach_port_t): kern_return_t; cdecl; external;
 
 {* Routine _mach_make_memory_entry *}
-function _mach_make_memory_entry
-(
-	target_task: vm_map_t;
-	size: pmemory_object_size_t;
-	offset: pmemory_object_offset_t;
-	permission: vm_prot_t;
-	object_handle: mem_entry_name_port_t;
-	parent_handle: mem_entry_name_port_t
-): kern_return_t; cdecl; external;
+
+function _mach_make_memory_entry(	target_task: vm_map_t;	size: pmemory_object_size_t;
+	offset: pmemory_object_offset_t;	permission: vm_prot_t;	object_handle: mem_entry_name_port_t;
+	parent_handle: mem_entry_name_port_t): kern_return_t; cdecl; external;
 
 {* Routine mach_vm_purgable_control *}
-function mach_vm_purgable_control
-(
-	target_task: vm_map_t;
-	address: mach_vm_address_t;
-	control: vm_purgable_t;
-	state: pinteger
-): kern_return_t;  cdecl; external;
+
+function mach_vm_purgable_control(target_task: vm_map_t;	address: mach_vm_address_t;
+	control: vm_purgable_t;	state: pinteger): kern_return_t;  cdecl; external;
+
+
+{
+  Automatically converted by H2Pas 1.0.0 from mach_exception_types.h
+  The following command line parameters were used:
+    mach_exception_types.h
+}
+
+
+const
+  {*	Machine-independent exception definitions. }
+  EXC_BAD_ACCESS = 1;      { Could not access memory  }
+                           { Code contains kern_return_t describing error.  }
+                           { Subcode contains bad memory address.  }
+  EXC_BAD_INSTRUCTION = 2; { Instruction failed  }
+                           { Illegal or undefined instruction or operand  }
+  EXC_ARITHMETIC = 3; { Arithmetic exception  }
+                      { Exact nature of exception is in code field  }
+  EXC_EMULATION = 4;  { Emulation instruction  }
+                      { Emulation support instruction encountered  }
+                      { Details in code and subcode fields	 }
+  EXC_SOFTWARE = 5;   { Software generated exception  }
+                      { Exact exception is in code field.  }
+                      { Codes 0 - 0xFFFF reserved to hardware  }
+                      { Codes 0x10000 - 0x1FFFF reserved for OS emulation (Unix)  }
+  EXC_BREAKPOINT = 6; { Trace, breakpoint, etc.  }
+                      { Details in code field.  }
+  EXC_SYSCALL = 7;    { System calls.  }
+  EXC_MACH_SYSCALL = 8; { Mach system calls.  }
+  EXC_RPC_ALERT = 9;    { RPC alert  }
+  EXC_CRASH = 10;    { Abnormal process exit  }
+
+  {	Machine-independent exception behaviors  }
+
+  EXCEPTION_DEFAULT = 1; {	Send a catch_exception_raise message including the identity. }
+  EXCEPTION_STATE = 2;   {	Send a catch_exception_raise_state message including the	thread state. }
+  EXCEPTION_STATE_IDENTITY = 3; {	Send a catch_exception_raise_state_identity message includingthe thread identity and state. }
+  MACH_EXCEPTION_CODES = $80000000; {	Send 64-bit code and subcode in the exception header  }
+
+
+  {* Masks for exception definitions, above
+   * bit zero is unused, therefore 1 word = 31 exception types  }
+
+  EXC_MASK_BAD_ACCESS = 1 shl EXC_BAD_ACCESS;
+  EXC_MASK_BAD_INSTRUCTION = 1 shl EXC_BAD_INSTRUCTION;
+  EXC_MASK_ARITHMETIC = 1 shl EXC_ARITHMETIC;
+  EXC_MASK_EMULATION = 1 shl EXC_EMULATION;
+  EXC_MASK_SOFTWARE = 1 shl EXC_SOFTWARE;
+  EXC_MASK_BREAKPOINT = 1 shl EXC_BREAKPOINT;
+  EXC_MASK_SYSCALL = 1 shl EXC_SYSCALL;
+  EXC_MASK_MACH_SYSCALL = 1 shl EXC_MACH_SYSCALL;
+  EXC_MASK_RPC_ALERT = 1 shl EXC_RPC_ALERT;
+  EXC_MASK_CRASH = 1 shl EXC_CRASH;
+  EXC_MASK_ALL = EXC_MASK_BAD_ACCESS or
+                 EXC_MASK_BAD_INSTRUCTION or
+                 EXC_MASK_ARITHMETIC or
+                 EXC_MASK_EMULATION or
+                 EXC_MASK_SOFTWARE or
+                 EXC_MASK_BREAKPOINT or
+                 EXC_MASK_SYSCALL or
+                 EXC_MASK_MACH_SYSCALL or
+                 EXC_MASK_RPC_ALERT or
+                 EXC_MASK_CR;
+  { ZERO is illegal  }
+  FIRST_EXCEPTION = 1;
+  {* Machine independent codes for EXC_SOFTWARE
+   * Codes 0x10000 - 0x1FFFF reserved for OS emulation (Unix)
+   * 0x10000 - 0x10002 in use for unix signals }
+  { Unix signal exceptions  }
+  EXC_SOFT_SIGNAL = $10003;
+
+// mach/error.h
+
+// macroses
+
+function err_system(err: integer): Integer; inline;
+function err_sub(err: Integer): Integer; inline;
+
+function err_get_system(err: Integer): integer; inline;
+function err_get_sub(err: Integer): integer; inline;
+function err_get_code(err: Integer): integer; inline;
+
+{*	unix errors get lumped into one subsystem  *}
+function unix_err(errno: Integer): integer; inline;
 
 implementation
+
+function err_system(err: integer): Integer; inline;
+begin
+  Result := ((err and $3f) shr 26);
+end;
+
+function err_sub(err: Integer): Integer; inline;
+begin
+  Result := ((err and $fff) shr 14);
+end;
+
+function err_get_system(err: Integer): integer; inline;
+begin
+  Result := ((err shr 26) and $3f);
+end;
+
+function err_get_sub(err: Integer): integer; inline;
+begin
+  Result := ((err shr 14) and $FFF)
+end;
+
+function err_get_code(err: Integer): integer; inline;
+begin
+  Result := ((err shr 14) and $FFF);
+end;
+
+function unix_err(errno: Integer): integer; inline;
+begin
+  Result := err_kern or err_sub(3) or errno;
+end;
+
+//err_get_system(err)	(((err)>>26)&0x3f) ((| shr 26) and $3f);
+//err_get_sub(err)	(((err)>>14)&0xfff)  ((| shr 14) and $FFF)
+//err_get_code(err)	((err)&0x3fff)       ((| and $3FFF);
+
+//#define	unix_err(errno)		(err_kern|err_sub(3)|errno)
+
 
 end.
 

@@ -101,7 +101,8 @@ const
 
 
 type
-  boolean_t  = Integer;
+//  boolean_t  = Integer;
+  boolean_t  = LongBool;
 //  integer_t  = Integer;
 //  natural_t  = LongWord;
   uint64_t   = QWord;
@@ -1135,89 +1136,57 @@ typedef integer_t mach_msg_option_t;
  *  for some error codes.  MACH_MSG_MASK masks off these special bits.
  *}
 
-typedef kern_return_t mach_msg_return_t;
+ *)
 
-#define MACH_MSG_SUCCESS		0x00000000
+type
+  mach_msg_return_t = kern_return_t;
 
+const
+  MACH_MSG_SUCCESS	= $00000000;
+  MACH_MSG_MASK			= $00003e00;
 
-#define	MACH_MSG_MASK			0x00003e00
-		{* All special error code bits defined below. *}
-#define	MACH_MSG_IPC_SPACE		0x00002000
-		{* No room in IPC name space for another capability name. *}
-#define	MACH_MSG_VM_SPACE		0x00001000
-		{* No room in VM address space for out-of-line memory. *}
-#define	MACH_MSG_IPC_KERNEL		0x00000800
-		{* Kernel resource shortage handling an IPC capability. *}
-#define	MACH_MSG_VM_KERNEL		0x00000400
-		{* Kernel resource shortage handling out-of-line memory. *}
+	{* All special error code bits defined below. *}
 
-#define MACH_SEND_IN_PROGRESS		0x10000001
-		{* Thread is waiting to send.  (Internal use only.) *}
-#define MACH_SEND_INVALID_DATA		0x10000002
-		{* Bogus in-line data. *}
-#define MACH_SEND_INVALID_DEST		0x10000003
-		{* Bogus destination port. *}
-#define MACH_SEND_TIMED_OUT		0x10000004
-		{* Message not sent before timeout expired. *}
-#define MACH_SEND_INTERRUPTED		0x10000007
-		{* Software interrupt. *}
-#define MACH_SEND_MSG_TOO_SMALL		0x10000008
-		{* Data doesn't contain a complete message. *}
-#define MACH_SEND_INVALID_REPLY		0x10000009
-		{* Bogus reply port. *}
-#define MACH_SEND_INVALID_RIGHT		0x1000000a
-		{* Bogus port rights in the message body. *}
-#define MACH_SEND_INVALID_NOTIFY	0x1000000b
-		{* Bogus notify port argument. *}
-#define MACH_SEND_INVALID_MEMORY	0x1000000c
-		{* Invalid out-of-line memory pointer. *}
-#define MACH_SEND_NO_BUFFER		0x1000000d
-		{* No message buffer is available. *}
-#define MACH_SEND_TOO_LARGE		0x1000000e
-		{* Send is too large for port *}
-#define MACH_SEND_INVALID_TYPE		0x1000000f
-		{* Invalid msg-type specification. *}
-#define MACH_SEND_INVALID_HEADER	0x10000010
-		{* A field in the header had a bad value. *}
-#define MACH_SEND_INVALID_TRAILER	0x10000011
-		{* The trailer to be sent does not match kernel format. *}
-#define MACH_SEND_INVALID_RT_OOL_SIZE	0x10000015
-		{* compatibility: no longer a returned error *}
+  MACH_MSG_IPC_SPACE		= $00002000;	{* No room in IPC name space for another capability name. *}
+  MACH_MSG_VM_SPACE		  = $00001000; 		{* No room in VM address space for out-of-line memory. *}
+  MACH_MSG_IPC_KERNEL		= $00000800;	{* Kernel resource shortage handling an IPC capability. *}
+  MACH_MSG_VM_KERNEL		= $00000400;	{* Kernel resource shortage handling out-of-line memory. *}
 
-#define MACH_RCV_IN_PROGRESS		0x10004001
-		{* Thread is waiting for receive.  (Internal use only.) *}
-#define MACH_RCV_INVALID_NAME		0x10004002
-		{* Bogus name for receive port/port-set. *}
-#define MACH_RCV_TIMED_OUT		0x10004003
-		{* Didn't get a message within the timeout value. *}
-#define MACH_RCV_TOO_LARGE		0x10004004
-		{* Message buffer is not large enough for inline data. *}
-#define MACH_RCV_INTERRUPTED		0x10004005
-		{* Software interrupt. *}
-#define MACH_RCV_PORT_CHANGED		0x10004006
-		{* compatibility: no longer a returned error *}
-#define MACH_RCV_INVALID_NOTIFY		0x10004007
-		{* Bogus notify port argument. *}
-#define MACH_RCV_INVALID_DATA		0x10004008
-		{* Bogus message buffer for inline data. *}
-#define MACH_RCV_PORT_DIED		0x10004009
-		{* Port/set was sent away/died during receive. *}
-#define	MACH_RCV_IN_SET			0x1000400a
-		{* compatibility: no longer a returned error *}
-#define	MACH_RCV_HEADER_ERROR		0x1000400b
-		{* Error receiving message header.  See special bits. *}
-#define	MACH_RCV_BODY_ERROR		0x1000400c
-		{* Error receiving message body.  See special bits. *}
-#define	MACH_RCV_INVALID_TYPE		0x1000400d
-		{* Invalid msg-type specification in scatter list. *}
-#define	MACH_RCV_SCATTER_SMALL		0x1000400e
-		{* Out-of-line overwrite region is not large enough *}
-#define MACH_RCV_INVALID_TRAILER	0x1000400f
-		{* trailer type or number of trailer elements not supported *}
-#define MACH_RCV_IN_PROGRESS_TIMED      0x10004011
-                {* Waiting for receive with timeout. (Internal use only.) *}
+  MACH_SEND_IN_PROGRESS		= $10000001;	{* Thread is waiting to send.  (Internal use only.) *}
+  MACH_SEND_INVALID_DATA	= $10000002;	{* Bogus in-line data. *}
+  MACH_SEND_INVALID_DEST	= $10000003;	{* Bogus destination port. *}
+  MACH_SEND_TIMED_OUT		  = $10000004;  {* Message not sent before timeout expired. *}
+  MACH_SEND_INTERRUPTED		= $10000007; 	{* Software interrupt. *}
+  MACH_SEND_MSG_TOO_SMALL	=	$10000008;	{* Data doesn't contain a complete message. *}
+  MACH_SEND_INVALID_REPLY	= $10000009;	{* Bogus reply port. *}
+  MACH_SEND_INVALID_RIGHT	= $1000000a;	{* Bogus port rights in the message body. *}
+  MACH_SEND_INVALID_NOTIFY = $1000000b;	{* Bogus notify port argument. *}
+  MACH_SEND_INVALID_MEMORY = $1000000c;	{* Invalid out-of-line memory pointer. *}
+  MACH_SEND_NO_BUFFER		   = $1000000d;   		{* No message buffer is available. *}
+  MACH_SEND_TOO_LARGE		   = $1000000e;   		{* Send is too large for port *}
+  MACH_SEND_INVALID_TYPE	  = $1000000f;	{* Invalid msg-type specification. *}
+  MACH_SEND_INVALID_HEADER	= $10000010;	{* A field in the header had a bad value. *}
+  MACH_SEND_INVALID_TRAILER	= $10000011;	{* The trailer to be sent does not match kernel format. *}
+  MACH_SEND_INVALID_RT_OOL_SIZE	= $10000015;	{* compatibility: no longer a returned error *}
 
+  MACH_RCV_IN_PROGRESS	= $10004001;	  {* Thread is waiting for receive.  (Internal use only.) *}
+  MACH_RCV_INVALID_NAME	= $10004002;	  {* Bogus name for receive port/port-set. *}
+  MACH_RCV_TIMED_OUT		= $10004003; 		{* Didn't get a message within the timeout value. *}
+  MACH_RCV_TOO_LARGE		= $10004004;	  {* Message buffer is not large enough for inline data. *}
+  MACH_RCV_INTERRUPTED	= $10004005;	  {* Software interrupt. *}
+  MACH_RCV_PORT_CHANGED	= $10004006;	    {* compatibility: no longer a returned error *}
+  MACH_RCV_INVALID_NOTIFY	= $10004007;	  {* Bogus notify port argument. *}
+  MACH_RCV_INVALID_DATA		= $10004008;	  {* Bogus message buffer for inline data. *}
+  MACH_RCV_PORT_DIED		  = $10004009;	  {* Port/set was sent away/died during receive. *}
+  MACH_RCV_IN_SET			    = $1000400a; 		{* compatibility: no longer a returned error *}
+  MACH_RCV_HEADER_ERROR		= $1000400b;	  {* Error receiving message header.  See special bits. *}
+  MACH_RCV_BODY_ERROR		  = $1000400c; 		{* Error receiving message body.  See special bits. *}
+  MACH_RCV_INVALID_TYPE		= $1000400d;	  {* Invalid msg-type specification in scatter list. *}
+  MACH_RCV_SCATTER_SMALL	= $1000400e;	  {* Out-of-line overwrite region is not large enough *}
+  MACH_RCV_INVALID_TRAILER  = $1000400f;	{* trailer type or number of trailer elements not supported *}
+  MACH_RCV_IN_PROGRESS_TIMED = $10004011; {* Waiting for receive with timeout. (Internal use only.) *}
 
+(*
 __BEGIN_DECLS
 
 {*
@@ -3090,109 +3059,233 @@ type
 const
   mach_vm_MSG_COUNT	= 19;
 
-{* Routine mach_vm_allocate *}
+{* Routine mach_vm_allocate
+ *	Allocate zero-filled memory in the address space
+ *	of the target task, either at the specified address,
+ *	or wherever space can be found (controlled by flags),
+ *	of the specified size.  The address at which the
+ *	allocation actually took place is returned.
+*}
 
 function  mach_vm_allocate(target: vm_map_t; address : pmach_vm_address_t;
 	size: mach_vm_size_t; flags: integer): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_deallocate *}
-
+{* Routine mach_vm_deallocate
+ *	Deallocate the specified range from the virtual
+ *	address space of the target virtual memory map.
+ *}
 function mach_vm_deallocate(target: vm_map_t; address : mach_vm_address_t;
 	size : mach_vm_size_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_protect *}
+{* Routine mach_vm_protect
+ *	Set the current or maximum protection attribute
+ *	for the specified range of the virtual address
+ *	space of the target virtual memory map.  The current
+ *	protection limits the memory access rights of threads
+ *	within the map; the maximum protection limits the accesses
+ *	that may be given in the current protection.
+ *	Protections are specified as a set of (read, write, execute)
+ *	*permissions*.
+*}
 function mach_vm_protect (target_task: vm_map_t;	address: mach_vm_address_t;
 	size: mach_vm_size_t;	set_maximum: boolean_t;	new_protection: vm_prot_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_inherit *}
-
+{* Routine mach_vm_inherit
+ *	Set the inheritance attribute for the specified range
+ *	of the virtual address space of the target address space.
+ *	The inheritance value is one of (none, copy, share), and
+ *	specifies how the child address space should acquire
+ *	this memory at the time of a task_create call.
+*}
 function mach_vm_inherit (target_task: vm_map_t; address: mach_vm_address_t;	size: mach_vm_size_t;
 	new_inheritance: vm_inherit_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_read *}
+{* Routine mach_vm_read
+ *	Returns the contents of the specified range of the
+ *	virtual address space of the target task.  [The
+ *	range must be aligned on a virtual page boundary,
+ *	and must be a multiple of pages in extent.  The
+ *	protection on the specified range must permit reading.]
+*}
 
 function mach_vm_read(target_task: vm_map_t; address: mach_vm_address_t;
-	size: mach_vm_size_t; 	data: pvm_offset_t; dataCnt: Pmach_msg_type_number_t): kern_return_t; cdecl; external;
+	size: mach_vm_size_t; data: pvm_offset_t; dataCnt: Pmach_msg_type_number_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_read_list *}
+{* Routine mach_vm_read_list
+ * List corrollary to vm_read, returns mapped contents of specified
+ * ranges within target address space.
+*}
 
 function mach_vm_read_list(target_task: vm_map_t;	data_list: mach_vm_read_entry_t;
 	count: natural_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_write *}
+{* Routine mach_vm_write
+ *	Writes the contents of the specified range of the
+ *	virtual address space of the target task.  [The
+ *	range must be aligned on a virtual page boundary,
+ *	and must be a multiple of pages in extent.  The
+ *	protection on the specified range must permit writing.]
+*}
 
 function mach_vm_write(target_task: vm_map_t;	address: mach_vm_address_t;	data: vm_offset_t;
 	dataCnt: mach_msg_type_number_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_copy *}
+{* Routine mach_vm_copy
+ *	Copy the contents of the source range of the virtual
+ *	address space of the target task to the destination
+ *	range in that same address space.  [Both of the
+ *	ranges must be aligned on a virtual page boundary,
+ *	and must be multiples of pages in extent.  The
+ *	protection on the source range must permit reading,
+ *	and the protection on the destination range must
+ *	permit writing.]
+*}
 
 function mach_vm_copy(target_task: vm_map_t;source_address: mach_vm_address_t;
   size: mach_vm_size_t; 	dest_address: mach_vm_address_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_read_overwrite *}
-
+{* Routine mach_vm_read_overwrite
+ *	Returns the contents of the specified range of the
+ *	virtual address space of the target task.  [There
+ *	are no alignment restrictions, and the results will
+ *      overwrite the area pointed to by data - which must
+ *      already exist. The protection on the specified range
+ *	must permit reading.]
+*}
 function mach_vm_read_overwrite(target_task: vm_map_t;	address: mach_vm_address_t;
-	size: mach_vm_size_t;	data: mach_vm_address_t;	outsize: pmach_vm_size_t): kern_return_t; cdecl; external;
+	size: mach_vm_size_t;	data: mach_vm_address_t; var outsize: mach_vm_size_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_msync *}
+{* Routine mach_vm_msync
+   no def :(
+*}
 
 function  mach_vm_msync(target_task: vm_map_t;	address: mach_vm_address_t;
 	size: mach_vm_size_t; sync_flags: vm_sync_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_behavior_set *}
+{* Routine mach_vm_behavior_set
+ *	Set the paging behavior attribute for the specified range
+ *	of the virtual address space of the target task.
+ *	The behavior value is one of (default, random, forward
+ *	sequential, reverse sequential) and indicates the expected
+ *	page reference pattern for the specified range.
+*}
 
 function mach_vm_behavior_set (target_task: vm_map_t; address: mach_vm_address_t;
 	size: mach_vm_size_t;	new_behavior: vm_behavior_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_map *}
+{* Routine mach_vm_map
+ *	Map a user-supplie memory object into the virtual address
+ *	space of the target task.  If desired (anywhere is TRUE),
+ *	the kernel will find a suitable address range of the
+ *	specified size; else, the specific address will be allocated.
+ *
+ *	The beginning address of the range will be aligned on a virtual
+ *	page boundary, be at or beyond the address specified, and
+ *	meet the mask requirements (bits turned on in the mask must not
+ *	be turned on in the result); the size of the range, in bytes,
+ *	will be rounded	up to an integral number of virtual pages.
+ *
+ *	The memory in the resulting range will be associated with the
+ *	specified memory object, with the beginning of the memory range
+ *	referring to the specified offset into the memory object.
+ *
+ *	The mapping will take the current and maximum protections and
+ *	the inheritance attributes specified; see the vm_protect and
+ *	vm_inherit calls for a description of these attributes.
+ *
+ *	If desired (copy is TRUE), the memory range will be filled
+ *	with a copy of the data from the memory object; this copy will
+ *	be private to this mapping in this target task.  Otherwise,
+ *	the memory in this mapping will be shared with other mappings
+ *	of the same memory object at the same offset (in this task or
+ *	in other tasks).  [The Mach kernel only enforces shared memory
+ *	consistency among mappings on one host with similar page alignments.
+ *	The user-defined memory manager for this object is responsible
+ *	for further consistency.]
+*}
 
 function mach_vm_map(target_task: pvm_map_t; address: pmach_vm_address_t; size: mach_vm_size_t;
 	mask: mach_vm_offset_t;	flags:integer;	_object :mem_entry_name_port_t; offset: memory_object_offset_t;
 	copy: boolean_t;	cur_protection: vm_prot_t;	max_protection: vm_prot_t;
   inheritance: vm_inherit_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_machine_attribute *}
+{* Routine mach_vm_machine_attribute
+ *	Set/Get special properties of memory associated
+ *	to some virtual address range, such as cachability,
+ *	migrability, replicability.  Machine-dependent.
+*}
 
 function mach_vm_machine_attribute (target_task: vm_map_t; 	address: mach_vm_address_t; 	size: mach_vm_size_t;
 	attribute: vm_machine_attribute_t; value: pvm_machine_attribute_val_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_remap *}
+{* Routine mach_vm_remap
+ *      Map portion of a task's address space.
+*}
 
 function mach_vm_remap (target_task: vm_map_t;	target_address: pmach_vm_address_t;
 	size: mach_vm_size_t;	mask: mach_vm_offset_t;	anywhere: boolean_t; 	src_task: vm_map_t;
 	src_address: mach_vm_address_t; copy: boolean_t;	cur_protection: pvm_prot_t;
 	max_protection: pvm_prot_t; inheritance: vm_inherit_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_page_query *}
+{* Routine mach_vm_page_query
+*      Give the caller information on the given location in a virtual
+*      address space.  If a page is mapped return ref and dirty info.
+*}
 
 function mach_vm_page_query(target_map: vm_map_t;	offset: mach_vm_offset_t;
 	disposition: pinteger_t;	ref_count : pinteger_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_region_recurse *}
+{* Routine mach_vm_region_recurse
+  no def :(
+*}
 
 function  mach_vm_region_recurse(target_task: vm_map_t; 	address: pmach_vm_address_t;
 	size: pmach_vm_size_t; 	nesting_depth: pnatural_t; 	info: vm_region_recurse_info_t;
 	infoCnt: pmach_msg_type_number_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_region *}
+{* Routine mach_vm_region
+ *      Returns information about the contents of the virtual
+ *      address space of the target task at the specified
+ *      address.  The returned protection, inheritance, sharing
+ *      and memory object values apply to the entire range described
+ *      by the address range returned; the memory object offset
+ *      corresponds to the beginning of the address range.
+ *      [If the specified address is not allocated, the next
+ *      highest address range is described.  If no addresses beyond
+ *      the one specified are allocated, the call returns KERN_NO_SPACE.]
+*}
 
 function mach_vm_region(target_task: vm_map_t;
 	address: pmach_vm_address_t;size: pmach_vm_size_t;flavor: vm_region_flavor_t;
 	info: vm_region_info_t;	infoCnt:
   pmach_msg_type_number_t;	object_name: pmach_port_t): kern_return_t; cdecl; external;
 
-{* Routine _mach_make_memory_entry *}
+{* Routine _mach_make_memory_entry
+ *	Allow application level processes to create named entries which
+ *	correspond to mapped portions of their address space.  These named
+ *	entries can then be manipulated, shared with other processes in
+ *	other address spaces and ultimately mapped in ohter address spaces
+ *
+ *	THIS INTERFACE IS STILL EVOLVING.
+*}
 
 function _mach_make_memory_entry(	target_task: vm_map_t;	size: pmemory_object_size_t;
 	offset: pmemory_object_offset_t;	permission: vm_prot_t;	object_handle: mem_entry_name_port_t;
 	parent_handle: mem_entry_name_port_t): kern_return_t; cdecl; external;
 
-{* Routine mach_vm_purgable_control *}
+{* Routine mach_vm_purgable_control
+ *	Control behavior and investigate state of a "purgable" object in
+ *	the virtual address space of the target task.  A purgable object is
+ *	created via a call to mach_vm_allocate() with VM_FLAGS_PURGABLE
+ *	specified.  See the routine implementation for a complete
+ *	definition of the routine.
+*}
 
 function mach_vm_purgable_control(target_task: vm_map_t;	address: mach_vm_address_t;
 	control: vm_purgable_t;	state: pinteger): kern_return_t;  cdecl; external;
 
 
+//  mach_exception_types.h
 {
   Automatically converted by H2Pas 1.0.0 from mach_exception_types.h
   The following command line parameters were used:

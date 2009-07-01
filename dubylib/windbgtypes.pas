@@ -179,6 +179,7 @@ begin
     end;
   
     fTerminated := (Event.Kind = dek_ProcessTerminated);
+    Event.Debug := '*'+Event.Debug + ' ' + IntToStr(fLastEvent.dwDebugEventCode);
   end else
     event.Debug := 'GetLastError = ' + IntToStr(GetLastError);
 end;

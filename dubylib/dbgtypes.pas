@@ -85,8 +85,8 @@ type
     function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; virtual; abstract;
     function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; virtual; abstract;
   end;
-  
- 
+
+
 var
   DebugProcessStart: function(const ACmdLine: String): TDbgProcess = nil;
 

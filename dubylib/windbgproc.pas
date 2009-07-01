@@ -15,7 +15,7 @@ function CreateDebugProcess(const CmdLine: String; out Info: TProcessInformation
 function ReadProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; var data: array of byte): Integer;
 function WriteProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; const data: array of byte): Integer;
 
-procedure WinEventToDbgEvent(ProcessHandle: THandle; const Win: TDebugEvent; out Dbg: TDbgEvent);
+procedure WinEventToDbgEvent(ProcessHandle: THandle; const Win: TDebugEvent; var Dbg: TDbgEvent);
 
 implementation
 
@@ -125,12 +125,13 @@ begin
     CreateFlags, nil, nil, StartUpInfo, Info);
 end;
 
-procedure WinBreakPointToDbg(const Win: TDebugEvent; out Dbg: TDbgEvent);
+procedure WinBreakPointToDbg(const Win: TDebugEvent; var Dbg: TDbgEvent);
 begin
   Dbg.Kind := dek_BreakPoint;
   {$ifdef CPUI386}
   Dbg.Addr := TDbgPtr(Win.Exception.ExceptionRecord.ExceptionAddress);
   {$endif}
+  Dbg.Thread := Win.dwThreadId;
 end;
 
 function DebugWinEvent(ProcessHandle: THandle; const Win: TDebugEvent): String;
@@ -143,7 +144,7 @@ begin
       Result := Result + 'EXCEPTION';
     end;
     CREATE_THREAD_DEBUG_EVENT: begin
-      Result := Result + 'CREATE_THREAD';
+      Result := Result + '  CREATE_THREAD';
     end;
     CREATE_PROCESS_DEBUG_EVENT: begin
       Result := Result + 'CREATE_PROCESS';
@@ -177,7 +178,7 @@ begin
   end;
 end;
 
-procedure WinEventToDbgEvent(ProcessHandle: THandle; const Win: TDebugEvent; out Dbg: TDbgEvent);
+procedure WinEventToDbgEvent(ProcessHandle: THandle; const Win: TDebugEvent; var Dbg: TDbgEvent);
 begin
   Dbg.Debug := DebugWinEvent(ProcessHandle, Win);
   case Win.dwDebugEventCode of
@@ -185,13 +186,14 @@ begin
       Dbg.Kind := dek_ProcessStart;
     EXIT_PROCESS_DEBUG_EVENT:     
       Dbg.Kind := dek_ProcessTerminated;
-    EXCEPTION_DEBUG_EVENT: 
+    EXCEPTION_DEBUG_EVENT:  
+    begin
       case Win.Exception.ExceptionRecord.ExceptionCode  of
-        EXCEPTION_BREAKPOINT: 
-          WinBreakPointToDbg(Win, Dbg);
+        EXCEPTION_BREAKPOINT: WinBreakPointToDbg(Win, Dbg);
       else
         Dbg.Kind := dek_Other;
       end;
+    end;
   else
     Dbg.Kind := dek_Other;
   end;

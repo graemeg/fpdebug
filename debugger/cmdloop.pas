@@ -20,6 +20,7 @@ var
 
 const
   CmdPrefix = 'duby> ';
+  HexSize   = sizeof(TDbgPtr) * 2;
 
 type
   { TRunComand }
@@ -156,6 +157,8 @@ begin
         writeln('process terminated?')
       else begin
         writeln('event: ', DbgEvent.Debug);
+        if DbgEvent.Kind = dek_SysExc then
+          writeln('system exception at ', IntToHex(DbgEvent.Addr, HexSize));
       end;
       if DbgEvent.Kind = dek_ProcessTerminated then
         writeln('process has been terminated');

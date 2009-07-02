@@ -19,12 +19,175 @@
 
 unit nixPtrace;
 
+{$ifdef fpc}{$mode delphi}{$h+}{$endif}
+
 interface
 
 uses
+  SysUtils, //todo: remove SysUtils
   BaseUnix{, syscall};
 
+// 08048000
+
 {$linklib libc}
+
+{  Core file format: The core file is written in such a way that gdb
+   can understand it and provide useful information to the user (under
+   linux we use the 'trad-core' bfd).  There are quite a number of
+   obstacles to being able to view the contents of the floating point
+   registers, and until these are solved you will not be able to view the
+   contents of them.  Actually, you can read in the core file and look at
+   the contents of the user struct to find out what the floating point
+   registers contain.
+
+   The actual file contents are as follows:
+
+   UPAGE: 1 page consisting of a user struct that tells gdb what is present
+   in the file.  Directly after this is a copy of the task_struct, which
+   is currently not used by gdb, but it may come in useful at some point.
+   All of the registers are stored as part of the upage.  The upage should
+   always be only one page.
+
+   DATA: The data area is stored.  We use current->end_text to
+   current->brk to pick up all of the user variables, plus any memory
+   that may have been malloced.  No attempt is made to determine if a page
+   is demand-zero or if a page is totally unused, we just cover the entire
+   range.  All of the addresses are rounded in such a way that an integral
+   number of pages is written.
+
+   STACK: We need the stack information in order to get a meaningful
+   backtrace.  We need to write the data from (esp) to
+   current->start_stack, so we round each of these off in order to be able
+   to write an integer number of pages.
+   The minimum core file size is 3 pages, or 12288 bytes.
+}
+
+{$ifdef CPU64}
+  { 8*16 bytes for each FP-reg = 128 bytes  }
+  { 16*16 bytes for each XMM-reg = 256 bytes  }
+
+type
+  user_fpregs_struct = packed record
+    cwd   : uint16_t;
+    swd   : uint16_t;
+    ftw   : uint16_t;
+    fop   : uint16_t;
+    rip   : uint64_t;
+    rdp   : uint64_t;
+    mxcsr : uint32_t;
+    mxcr_mask : uint32_t;
+    st_space  : array[0..31] of uint32_t;
+    xmm_space : array[0..63] of uint32_t;
+    padding   : array[0..23] of uint32_t;
+  end;
+
+  user_regs_struct = packed record
+    r15, r14, r13, r12 : dword;
+    rbp, rbx           : dword;
+    r11, r10, r9, r8   : dword;
+    rax, rcx, rdx      : dword;
+    rsi, rdi           : dword;
+    orig_rax           : dword;
+    rip     : dword;
+    cs      : dword;
+    eflags  : dword;
+    rsp     : dword;
+    ss      : dword;
+    fs_base : dword;
+    gs_base : dword;
+    ds, es, fs, gs : dword;
+  end;
+
+  { When the kernel dumps core, it starts by dumping the user struct -
+   this will be used by gdb to figure out where the data and stack segments
+   are within the file, and what virtual addresses to use. }
+
+  Tuser = packed record
+    regs        : user_regs_struct;   { We start with the registers, to mimic the way that }
+                                      { "memory" is returned from the ptrace(3,...) function.  }
+    u_fpvalid   : longint;            { True if math co-processor being used. }
+                                      { for this mess. Not yet used. }
+    i387        : user_fpregs_struct; { Math Co-processor registers. }
+
+    { The rest of this junk is to help gdb figure out what goes where }
+    u_tsize     : dword;   { Text segment size (pages).  }
+    u_dsize     : dword;   { Data segment size (pages).  }
+    u_ssize     : dword;   { Stack segment size (pages). }
+    start_code  : dword;   { Starting virtual address of text. }
+    start_stack : dword;   { Starting virtual address of stack area. }
+                  				 { This is actually the bottom of the stack, }
+                				   { the top of the stack is always found in the esp register. }
+    signal      : longint; { Signal that caused the core dump. }
+    reserved    : longint;   { No longer used}
+    u_ar0       : ^user_regs_struct;    { Used by gdb to help find the values for the registers }
+    u_fpstate   : ^user_fpregs_struct;  { Math Co-processor pointer. }
+    magic       : dword;                { To uniquely identify a core file }
+    u_comm      : array[0..31] of char; { User command that was responsible }
+    u_debugreg  : array[0..7] of dword; { x86 debug registers? }
+  end;
+
+{$else}
+  { These are the 32-bit x86 structures.   }
+
+type
+  user_fpregs_struct = packed record
+    cwd, swd, twd : longint;
+    fip, fcs, foo : longint;
+    fos           : longint;
+    st_space      : array[0..19] of longint;
+  end;
+
+  { 8*16 bytes for each FP-reg = 128 bytes  }
+  { 8*16 bytes for each XMM-reg = 128 bytes  }
+  user_fpxregs_struct = packed record
+    cwd : word;
+    swd : word;
+    twd : word;
+    fop : word;
+    fip : longint;
+    fcs : longint;
+    foo : longint;
+    fos : longint;
+    mxcsr     : longint;
+    reserved  : longint;
+    st_space  : array[0..31] of longint;
+    xmm_space : array[0..31] of longint;
+    padding   : array[0..55] of longint;
+  end;
+
+  user_regs_struct = packed record
+    ebx, ecx, edx      : longint;
+    esi, edi           : longint;
+    ebp                : longint;
+    eax                : longint;
+    xds, xes, xfs, xgs : longint;
+    orig_eax  : longint;
+    eip       : longint;
+    xcs       : longint;
+    eflags    : longint;
+    esp       : longint;
+    xss       : longint;
+  end;
+
+  Tuser = packed record
+    regs        : user_regs_struct;
+    u_fpvalid   : longint;
+    i387        : user_fpregs_struct;
+    u_tsize     : dword;
+    u_dsize     : dword;
+    u_ssize     : dword;
+    start_code  : dword;
+    start_stack : dword;
+    signal      : longint;
+    reserved    : longint;
+    u_ar0       : ^user_regs_struct;
+    u_fpstate   : ^user_fpregs_struct;
+    magic       : dword;
+    u_comm      : array[0..31] of char;
+    u_debugreg  : array[0..7] of longint;
+  end;
+
+{$endif}
 
 type
   Tptrace_request = Integer;
@@ -172,13 +335,17 @@ const
 
 type
   TPtraceWord = Integer;
+  PPtraceWord = ^TPtraceWord;
 
 function ptrace(request: Tptrace_request; pid: TPid; addr, data: Pointer): TPtraceWord;
  cdecl; external name 'ptrace';
 
-function _ptrace_traceme: TPtraceWord;
-function _ptrace_cont(pid: TPid; Signal: Integer): TPtraceWord;
-function _ptrace_getsiginfo(pid: TPid; var siginfo: tsiginfo): TPtraceWord;
+function ptraceMe: TPtraceWord;
+function ptraceCont(pid: TPid; Signal: Integer): TPtraceWord;
+function ptraceGetSigInfo(pid: TPid; var siginfo: tsiginfo): TPtraceWord;
+function ptracePeekData(pid: TPid; offset: QWord; var w: TPtraceWord): Boolean;
+function ptracePeekUser(pid: TPid; offset: QWord; var w: TPtraceWord): Boolean;
+function ptracePeekSysUser(pid: TPid; var userdata: Tuser): Boolean;
 
 implementation
 
@@ -187,19 +354,65 @@ begin
   Result := Do_SysCall(syscall_nr_ptrace, PTRACE_CONT, pid, addr, TSysParam(data));
 end;}
 
-function _ptrace_cont(pid: TPid; Signal: Integer): TPtraceWord;
+function ptraceCont(pid: TPid; Signal: Integer): TPtraceWord;
 begin
   Result := ptrace(PTRACE_CONT, pid, nil, Pointer(Signal));
 end;
 
-function _ptrace_traceme: TPtraceWord;
+function ptraceMe: TPtraceWord;
 begin
   Result := ptrace(PTRACE_TRACEME, FpGetpid, nil, nil);
 end;
 
-function _ptrace_getsiginfo(pid: TPid; var siginfo: tsiginfo): TPtraceWord;
+function ptraceGetSigInfo(pid: TPid; var siginfo: tsiginfo): TPtraceWord;
 begin
   Result := ptrace(PTRACE_GETSIGINFO, pid, nil, @siginfo);
+end;
+
+function ptracePeekData(pid: TPid; offset: QWord; var w: TPtraceWord): Boolean;
+var
+  p : PtrInt;
+  err : integer;
+begin
+  p := offset;
+  w := ptrace(PTRACE_PEEKDATA, pid, Pointer(p), nil);
+  err := fpgeterrno;
+  Result := err = 0;
+  if not Result then
+    writeln('errno = ', err);
+end;
+
+function ptracePeekUser(pid: TPid; offset: QWord; var w: TPtraceWord): Boolean;
+var
+  p : PtrInt;
+  err : Integer;
+begin
+  p := offset;
+  w := ptrace(PTRACE_PEEKUSER, pid, Pointer(p), nil);
+  err := fpgeterrno;
+  Result := err = 0;
+  if not Result then
+    writeln('errno = ', err);
+end;
+
+function ptracePeekSysUser(pid: TPid; var userdata: Tuser): Boolean;
+type
+  TByteArray = array [word] of byte;
+  PByteArray = ^TByteArray;
+var
+  p : PByteArray;
+  i : PtrInt;
+begin
+  p := @userdata;
+  i := 0;
+  Result := true;
+  while i < sizeof(Tuser) do begin
+    PPtraceWord(@p[i])^:= ptrace(PTRACE_PEEKUSER, pid, Pointer(i), nil);
+    inc(i, sizeof(TPtraceWord));
+    Result := errno = 0;
+    if not Result then Break;
+  end;
+  writeln;
 end;
 
 end.

@@ -51,6 +51,7 @@ begin
   //readln(s);
 
   //writeln('hello ', s);
-  ExitCode := 55;
   *)
+  ExitCode := 55;
+  writeln('exiting with error code = ', exitCode);
 end.

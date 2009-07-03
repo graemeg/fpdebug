@@ -12,7 +12,7 @@
       <MainUnit Value="0"/>
       <TargetFileExt Value=".exe"/>
       <UseXPManifest Value="True"/>
-      <ActiveEditorIndexAtStart Value="1"/>
+      <ActiveEditorIndexAtStart Value="2"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -31,15 +31,15 @@
         <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <Units Count="9">
+    <Units Count="35">
       <Unit0>
         <Filename Value="fpdebugger.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="fpdebugger"/>
-        <CursorPos X="40" Y="8"/>
+        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="49"/>
+        <UsageCount Value="54"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -47,27 +47,21 @@
         <UnitName Value="stabsinfo"/>
         <CursorPos X="1" Y="9"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="6"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="pesource.pas"/>
         <UnitName Value="PESource"/>
         <CursorPos X="1" Y="30"/>
         <TopLine Value="18"/>
-        <EditorIndex Value="1"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\dubylib\dbginfotypes.pas"/>
         <UnitName Value="dbgInfoTypes"/>
-        <CursorPos X="1" Y="29"/>
-        <TopLine Value="10"/>
-        <EditorIndex Value="5"/>
+        <CursorPos X="54" Y="24"/>
+        <TopLine Value="2"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit3>
       <Unit4>
         <Filename Value="E:\FPC_Laz\fpc\packages\fcl-res\src\resource.pp"/>
@@ -81,21 +75,17 @@
         <UnitName Value="DbgLoader"/>
         <CursorPos X="1" Y="275"/>
         <TopLine Value="266"/>
-        <EditorIndex Value="3"/>
         <UsageCount Value="11"/>
         <Bookmarks Count="1">
           <Item0 X="5" Y="266" ID="1"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\dubylib\dbgpetypes.pp"/>
         <UnitName Value="DbgPETypes"/>
-        <CursorPos X="1" Y="598"/>
-        <TopLine Value="598"/>
-        <EditorIndex Value="2"/>
+        <CursorPos X="10" Y="172"/>
+        <TopLine Value="158"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit6>
       <Unit7>
         <Filename Value="E:\FPC_Laz\fpc\rtl\win32\windows.pp"/>
@@ -108,132 +98,323 @@
         <Filename Value="E:\FPC_Laz\fpc\rtl\win\wininc\struct.inc"/>
         <CursorPos X="16" Y="6927"/>
         <TopLine Value="6904"/>
+        <UsageCount Value="10"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="cmdloop.pas"/>
+        <UnitName Value="cmdloop"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="..\dubylib\dbgtypes.pas"/>
+        <UnitName Value="dbgTypes"/>
+        <CursorPos X="43" Y="65"/>
+        <TopLine Value="49"/>
+        <UsageCount Value="10"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="..\dubylib\pesource.pas"/>
+        <UnitName Value="PESource"/>
+        <CursorPos X="19" Y="33"/>
+        <TopLine Value="10"/>
+        <UsageCount Value="10"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\dubylib\macdbgtype.pas"/>
+        <UnitName Value="macDbgType"/>
+        <CursorPos X="12" Y="57"/>
+        <TopLine Value="46"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="..\..\..\gdb-768\doc\README-relnotes.txt"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="13"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="..\..\..\gdb-768\conf\carbon.gdb"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="..\..\..\gdb-768\conf\macsbug.gdb"/>
+        <CursorPos X="84" Y="3840"/>
+        <TopLine Value="3809"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="..\..\..\gdb-768\bin\config\i386_flavors.txt"/>
+        <CursorPos X="29" Y="10"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="..\..\..\gdb-768\macsbug\README.txt"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="..\..\..\gdb-768\src\README"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="47"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\machoread.c"/>
+        <CursorPos X="33" Y="563"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="C++"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx.defs"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-self-backtrace.c"/>
+        <CursorPos X="80" Y="25"/>
+        <TopLine Value="15"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="C++"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-cfm.c"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="395"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="C++"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="memviewer.pas"/>
+        <UnitName Value="memviewer"/>
+        <CursorPos X="44" Y="72"/>
+        <TopLine Value="53"/>
+        <UsageCount Value="10"/>
+      </Unit23>
+      <Unit24>
+        <Filename Value="macdbgproc.pas"/>
+        <UnitName Value="macDbgProc"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit24>
+      <Unit25>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="5"/>
+        <UsageCount Value="11"/>
+        <Bookmarks Count="1">
+          <Item0 X="1" Y="811" ID="1"/>
+        </Bookmarks>
+        <Loaded Value="True"/>
+        <SyntaxHighlighter Value="C++"/>
+      </Unit25>
+      <Unit26>
+        <Filename Value="..\dubylib\machapi.pas"/>
+        <UnitName Value="machapi"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="12"/>
+      </Unit26>
+      <Unit27>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\ChangeLog"/>
+        <CursorPos X="38" Y="1583"/>
+        <TopLine Value="1570"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit27>
+      <Unit28>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-cmds-load.c"/>
+        <CursorPos X="40" Y="76"/>
+        <TopLine Value="68"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="C++"/>
+      </Unit28>
+      <Unit29>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\gdb.xcodeproj\project.pbxproj"/>
+        <CursorPos X="44" Y="5801"/>
+        <TopLine Value="5794"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit29>
+      <Unit30>
+        <Filename Value="..\..\..\gdb-768\src\gdb\fork-child.c"/>
+        <CursorPos X="36" Y="659"/>
+        <TopLine Value="644"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="C++"/>
+      </Unit30>
+      <Unit31>
+        <Filename Value="..\..\..\gdb-768\src\gdb\environ.c"/>
+        <CursorPos X="16" Y="111"/>
+        <TopLine Value="106"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="C++"/>
+      </Unit31>
+      <Unit32>
+        <Filename Value="..\dubylib\macptrace.pas"/>
+        <UnitName Value="macPtrace"/>
+        <CursorPos X="48" Y="47"/>
+        <TopLine Value="33"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit32>
+      <Unit33>
+        <Filename Value="..\..\..\gdb-768\src\gdb\inf-ptrace.c"/>
+        <CursorPos X="32" Y="103"/>
+        <TopLine Value="91"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <SyntaxHighlighter Value="C++"/>
+      </Unit33>
+      <Unit34>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior-util.c"/>
+        <CursorPos X="26" Y="121"/>
+        <TopLine Value="93"/>
         <EditorIndex Value="4"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
-      </Unit8>
+        <SyntaxHighlighter Value="C++"/>
+      </Unit34>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="29" HistoryIndex="28">
       <Position1>
-        <Filename Value="..\dubylib\dbgpetypes.pp"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\dubylib\macdbgtype.pas"/>
+        <Caret Line="56" Column="5" TopLine="41"/>
       </Position1>
       <Position2>
-        <Filename Value="pesource.pas"/>
-        <Caret Line="11" Column="26" TopLine="1"/>
+        <Filename Value="..\dubylib\macdbgtype.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position2>
       <Position3>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="90" Column="1" TopLine="60"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\inf-ptrace.c"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position3>
       <Position4>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="55" Column="13" TopLine="29"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior-util.c"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position4>
       <Position5>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="27" Column="1" TopLine="16"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="22" Column="32" TopLine="22"/>
       </Position5>
       <Position6>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="59" Column="30" TopLine="44"/>
+        <Filename Value="..\dubylib\macptrace.pas"/>
+        <Caret Line="40" Column="34" TopLine="34"/>
       </Position6>
       <Position7>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="44" Column="42" TopLine="36"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1808" Column="1" TopLine="1790"/>
       </Position7>
       <Position8>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="34" Column="10" TopLine="19"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position8>
       <Position9>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="35" Column="45" TopLine="20"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="209" Column="29" TopLine="193"/>
       </Position9>
       <Position10>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="86" Column="5" TopLine="71"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1856" Column="17" TopLine="1840"/>
       </Position10>
       <Position11>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="88" Column="9" TopLine="71"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1965" Column="35" TopLine="1944"/>
       </Position11>
       <Position12>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="35" Column="50" TopLine="8"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position12>
       <Position13>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="30" Column="10" TopLine="20"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior-util.c"/>
+        <Caret Line="83" Column="21" TopLine="59"/>
       </Position13>
       <Position14>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="37" Column="62" TopLine="22"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1965" Column="35" TopLine="1949"/>
       </Position14>
       <Position15>
-        <Filename Value="pesource.pas"/>
-        <Caret Line="11" Column="26" TopLine="1"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position15>
       <Position16>
-        <Filename Value="pesource.pas"/>
-        <Caret Line="21" Column="29" TopLine="6"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1981" Column="35" TopLine="1965"/>
       </Position16>
       <Position17>
-        <Filename Value="pesource.pas"/>
-        <Caret Line="11" Column="29" TopLine="6"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position17>
       <Position18>
-        <Filename Value="pesource.pas"/>
-        <Caret Line="14" Column="3" TopLine="6"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1970" Column="5" TopLine="1949"/>
       </Position18>
       <Position19>
-        <Filename Value="..\dubylib\dbgpetypes.pp"/>
-        <Caret Line="91" Column="3" TopLine="74"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position19>
       <Position20>
-        <Filename Value="..\dubylib\dbgpetypes.pp"/>
-        <Caret Line="132" Column="1" TopLine="113"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1155" Column="17" TopLine="1139"/>
       </Position20>
       <Position21>
-        <Filename Value="..\dubylib\dbgpetypes.pp"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1970" Column="41" TopLine="1954"/>
       </Position21>
       <Position22>
-        <Filename Value="..\dubylib\dbgpetypes.pp"/>
-        <Caret Line="62" Column="18" TopLine="47"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position22>
       <Position23>
-        <Filename Value="..\dubylib\dbgpetypes.pp"/>
-        <Caret Line="121" Column="49" TopLine="106"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1155" Column="41" TopLine="1139"/>
       </Position23>
       <Position24>
-        <Filename Value="..\dubylib\dbgpetypes.pp"/>
-        <Caret Line="128" Column="45" TopLine="106"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="1970" Column="41" TopLine="1954"/>
       </Position24>
       <Position25>
-        <Filename Value="..\dubylib\dbgpetypes.pp"/>
-        <Caret Line="449" Column="78" TopLine="434"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior.c"/>
+        <Caret Line="2078" Column="56" TopLine="2062"/>
       </Position25>
       <Position26>
-        <Filename Value="..\dubylib\dbgpetypes.pp"/>
-        <Caret Line="450" Column="78" TopLine="434"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior-util.c"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position26>
       <Position27>
-        <Filename Value="..\dubylib\dbgpetypes.pp"/>
-        <Caret Line="453" Column="33" TopLine="434"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior-util.c"/>
+        <Caret Line="125" Column="31" TopLine="102"/>
       </Position27>
       <Position28>
-        <Filename Value="..\dubylib\dbgpetypes.pp"/>
-        <Caret Line="454" Column="1" TopLine="434"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior-util.c"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position28>
       <Position29>
-        <Filename Value="pesource.pas"/>
-        <Caret Line="8" Column="37" TopLine="1"/>
+        <Filename Value="..\..\..\gdb-768\src\gdb\macosx\macosx-nat-inferior-util.c"/>
+        <Caret Line="105" Column="3" TopLine="93"/>
       </Position29>
-      <Position30>
-        <Filename Value="pesource.pas"/>
-        <Caret Line="30" Column="33" TopLine="18"/>
-      </Position30>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>

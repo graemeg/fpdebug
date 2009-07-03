@@ -4,8 +4,8 @@ program fpdebugger;
 
 uses
   dbgTypes,
-  cmdloop, commands, memviewer, stabsinfo
-  {$ifdef windows},winDbgTypes, pesource{$endif}
+  cmdloop, commands, memviewer, PESource
+  {$ifdef windows},winDbgTypes{$endif}
   {$ifdef linux},nixDbgTypes{$endif}
   {$ifdef darwin},macDbgType{$endif}
   ;

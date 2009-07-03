@@ -27,7 +27,7 @@ begin
   try
     Result := false;
     if ASource.Read(DosHeader, sizeof(DosHeader)) <> sizeof(DosHeader) then Exit;
-    if (DosHeader^.e_magic <> IMAGE_DOS_SIGNATURE) or (DosHeader^.e_lfanew = 0) then Exit;
+    if (DosHeader.e_magic <> IMAGE_DOS_SIGNATURE) or (DosHeader.e_lfanew = 0) then Exit;
   except
     Result := false;
   end;
@@ -41,12 +41,12 @@ end;
 
 function TPEFileSource.DataCount(Source: TStream): Integer; 
 begin
-  Source.Position := 0;
-  Source.Read
+  Result := 0;
 end;
 
 function TPEFileSource.GetDataStream(Source: TStream; SourceIndex: Integer; var Offset, Size: Int64): Boolean; 
 begin
+  Result := false;
 end;
 
 

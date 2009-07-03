@@ -13,19 +13,15 @@ interface
 
 const
   KERN_SUCCESS= 0;
-  KERN_INVALID_ADDRESS	  =	1;{* Specified address is not currently valid. *}
-  KERN_PROTECTION_FAILURE	=	2;{* Specified memory is valid, but does not permit the required forms of access.*}
-  KERN_NO_SPACE		        =	3; {* The address range specified is already in use, or no address range of the size specified could be found. *}
-  KERN_INVALID_ARGUMENT	  =	4;{* The function requested was not applicable to this type of argument, or an argument is invalid		 *}
-  KERN_FAILURE			      = 5;
-		{* The function could not be performed.  A catch-all.	 *}
-  KERN_RESOURCE_SHORTAGE	=	6;
-		{* A system resource could not be allocated to fulfill
-		 * this request.  This failure may not be permanent. *}
-
-  KERN_NOT_RECEIVER	  =	7;{* The task in question does not hold receive rights for the port argument. *}
-  KERN_NO_ACCESS		  =	8;{* Bogus access restriction.*}
-  KERN_MEMORY_FAILURE	=	9;
+  KERN_INVALID_ADDRESS	  =	1;  {* Specified address is not currently valid. *}
+  KERN_PROTECTION_FAILURE	=	2;  {* Specified memory is valid, but does not permit the required forms of access.*}
+  KERN_NO_SPACE		        =	3;  {* The address range specified is already in use, or no address range of the size specified could be found. *}
+  KERN_INVALID_ARGUMENT	  =	4;  {* The function requested was not applicable to this type of argument, or an argument is invalid		 *}
+  KERN_FAILURE			      = 5;  {* The function could not be performed.  A catch-all.	 *}
+  KERN_RESOURCE_SHORTAGE	=	6;  {* A system resource could not be allocated to fulfill  this request.  This failure may not be permanent.  *}
+  KERN_NOT_RECEIVER	      = 7;  {* The task in question does not hold receive rights for the port argument. *}
+  KERN_NO_ACCESS		      =	8;  {* Bogus access restriction.*}
+  KERN_MEMORY_FAILURE	    =	9;
 		{* During a page fault, the target address refers to a
 		 * memory object that has been destroyed.  This
 		 * failure is permanent.		 *}
@@ -2154,7 +2150,7 @@ function task_self_trap: mach_port_name_t; cdecl external name 'task_self_trap';
  *}
 
 function task_for_pid(target_tport: mach_port_name_t; pid: integer;
-  var t: mach_port_name_t): kern_return_t; cdecl external name 'task_for_pid';
+  var t: mach_port_name_t): kern_return_t; cdecl external{ name 'task_for_pid'};
 
 function task_name_for_pid(target_tport: mach_port_name_t; pid: integer;
 	var tn: mach_port_name_t): kern_return_t; cdecl external name 'task_name_for_pid';

@@ -14,7 +14,7 @@ type
   TMachDbgProcess = class(TDbgProcess)
   private
     fchildpid   : TPid;
-    fchildtask  : mach_port_name_t;
+    fchildtask  : mach_port_t;
 
     catchport   : mach_port_t;
   protected
@@ -40,24 +40,21 @@ type
 
 implementation
 
-//todo: consider using mach api to launch the child process, rather than unix's fork?
-function ForkAndRun(const CommandLine: String; var ChildId: TPid; var ChildTask: mach_port_name_t): Boolean;
+function ForkAndRun(const CommandLine: String; var ChildId: TPid; var ChildTask: mach_port_t): Boolean;
 var
-  apipe : TFilDes;
   len   : Integer;
   res   : Integer;
+  pname : mach_port_name_t;
+  kret  : kern_return_t;
 begin
   Result := false;
-  if FpPipe(apipe) < 0 then Exit;
-
   childid := FpFork;
   if childid < 0 then Exit;
 
   if childid = 0 then begin
-    task_for_pid( mach_task_self, FpGetpid, childtask);
-    FpWrite(apipe[1], childtask, sizeof(childtask));
     ptraceme;
-    ptrace_sig_as_exc;
+    //todo: ptrace_sig_as_exc, what needs to be initialized after going from signals to exceptions?
+    //ptrace_sig_as_exc;
 
     res := FpExecV(CommandLine, nil);
     if res < 0 then begin
@@ -66,11 +63,22 @@ begin
     end;
 
   end else begin
-    len := FpRead(apipe[0], ChildTask, sizeof(childtask) );
-    Result := len = sizeof(childtask);
+    writeln('self  task = ', mach_task_self);
+    writeln('child pid  = ', ChildId);
+    pname := 0;
+
+    kret := task_for_pid(mach_task_self, ChildId, pname);
+    writeln('task_for_pid 1 = ', kret);
+
+    kret := task_for_pid(mach_task_self, ChildId, pname);
+    writeln('task_for_pid 2 = ', kret);
+
+    ChildTask := mach_port_t(pname);
+    writeln('child task = ', ChildTask);
+
+    //ChildTask := task_self_trap;
+    Result := true;
   end;
-  FpClose(apipe[0]);
-  FpClose(apipe[1]);
 end;
 
 function TMachDbgProcess.GetProcessState: TDbgState;
@@ -95,9 +103,28 @@ end;
 
 function TMachDbgProcess.ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
 var
-  r : mach_msg_type_number_t;
+  r : QWord;
+  portarray : mach_port_array_t;
+  portcount : integer;
+  res : kern_return_t;
+
+  threads: Pointer;
+  threadscount: mach_msg_type_number_t;
+
+  pname : mach_port_name_t;
+
 begin
-  if mach_vm_read(fchildtask, Offset, Count, @Data[0], @r) <> 0 then
+  writeln('child pid = ', fchildpid);
+  debugout_kret(task_for_pid(mach_task_self, fchildpid, pname), 'task_for_pid');
+  writeln('task = ', pname);
+
+  res := debugout_kret(task_threads(pname, threads, threadscount), 'task_threads');
+  if res = KERN_SUCCESS then writeln('threads count');
+
+  res := debugout_kret( mach_ports_lookup(fchildtask, portarray, portcount), 'mach_ports_lookup');
+  if res = KERN_SUCCESS then writeln('ports = ', portcount);
+
+  if ReadTaskMem(fchildtask, Offset, Count, @Data[0], r) <> 0 then
     Result := -1
   else
     Result := r;
@@ -113,14 +140,14 @@ var
   res : Integer;
 begin
   //task_set_exception_ports
-  catchport := AllocMachPort;
+{  catchport := AllocMachPort;
   res :=  task_set_exception_ports(
     child,
     EXC_MASK_ALL,
     catchport,
     EXCEPTION_DEFAULT,
     0);
-  writeln('task_set_exception_ports = ', res);
+  if res <> KERN_SUCCESS then writeln('task_set_exception_ports = ', macherr(res));}
 end;
 
 procedure TMachDbgProcess.Terminate;
@@ -223,7 +250,7 @@ end;
 function TMachDbgProcess.StartProcess(const ACmdLine: String): Boolean;
 begin
   Result := ForkAndRun(ACmdLine, fchildpid, fchildtask);
-  SetupChildTask(fchildtask);
+  //SetupChildTask(fchildtask);
 end;
 
 function MachDebugProcessStart(const ACmdLine: String): TDbgProcess;

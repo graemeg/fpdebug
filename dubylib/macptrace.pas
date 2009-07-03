@@ -4,7 +4,6 @@ unit macPtrace;
 
 interface
 
-
 const
  	PT_TRACE_ME	= 0;	// child declares it's being traced
  	PT_READ_I	  = 1;	// read word in child's I space
@@ -18,14 +17,16 @@ const
 	PT_STEP		  = 9;	// single step the child
  	PT_ATTACH	  = 10;	// trace some running process
 	PT_DETACH	  = 11;	// stop tracing a process
+
 	PT_SIGEXC	  = 12;	// signals as exceptions for current_proc
+
   PT_THUPDATE	   = 13;	// signal for thread#
   PT_ATTACHEXC   = 14;	// attach to running process with signal exception
 
  	PT_FORCEQUOTA  = 30;	// Enforce quota for root
  	PT_DENY_ATTACH = 31;
 
-	PT_FIRSTMACH	= 32;	// for machine-specific requests
+	PT_FIRSTMACH	 = 32;	// for machine-specific requests
 
 const
   CONT_STOP_ADDR : PtrUInt = 1;

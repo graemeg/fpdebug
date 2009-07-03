@@ -9,10 +9,9 @@
  ---------------------------------------------------------------------------
 
  @created(Thu May 4th WET 2006)
- @lastmod($Date: 2009-01-16 03:26:10 +0300 (Пт, 16 янв 2009) $)
  @author(Marc Weustink <marc@@dommelstein.nl>)
- 
- @2nd july 2009. Removed "Uses Windows" by dmitry boyarintsev.
+
+ @update (2th july 2009). Removed "Uses Windows" by dmitry boyarintsev.
 
  *****************************************************************************
  *                                                                           *

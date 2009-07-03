@@ -62,7 +62,7 @@ type
   
   TDbgState = (ds_Nonstarted, ds_ReadToRun, ds_Running, ds_Terminated);
    
-  TDbgEventKind = (dek_Other, dek_BreakPoint, dek_ProcessStart, dek_ProcessTerminated);
+  TDbgEventKind = (dek_Other, dek_SysExc, dek_BreakPoint, dek_ProcessStart, dek_ProcessTerminated);
   
   TDbgEvent = record
     Addr    : TDbgPtr;

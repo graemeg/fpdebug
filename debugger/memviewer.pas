@@ -69,7 +69,7 @@ begin
   end;
 
   for i := 0 to 31 do begin
-    ofs := IntToHex(Offset+i*16, sizeof(TDbgPtr)*2);
+    ofs := IntToHex( TDbgPtr(Offset)+TDbgPtr(i*16), sizeof(TDbgPtr)*2);
     hex := BufToHex(buf, i*16, 16);
     bin := BufToStr(buf, i*16, 16);
     writeln(ofs+ ' | ' + hex + ' | ' + bin);

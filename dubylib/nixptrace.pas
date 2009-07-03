@@ -65,6 +65,10 @@ uses
 {$ifdef CPU64}
   { 8*16 bytes for each FP-reg = 128 bytes  }
   { 16*16 bytes for each XMM-reg = 256 bytes  }
+type
+  uint16_t = word;
+  uint32_t = longword;
+  uint64_t = qword;
 
 type
   user_fpregs_struct = packed record

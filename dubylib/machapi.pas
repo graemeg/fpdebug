@@ -673,7 +673,7 @@ const
 type
   mach_msg_bits_t = LongWord;
   mach_msg_size_t =	natural_t;
-  mach_msg_id_t = integer_t ;
+  mach_msg_id_t   = integer_t ;
 
 const
   MACH_MSG_SIZE_NULL = 0; // (mach_msg_size_t *) 0
@@ -698,7 +698,7 @@ const
   MACH_MSG_PHYSICAL_COPY = 0;
   MACH_MSG_VIRTUAL_COPY = 1;
   MACH_MSG_ALLOCATE = 2;
-  MACH_MSG_OVERWRITE = 3;
+  MACH_MSG_OVERWRITE_ = 3;
   MACH_MSG_KALLOC_COPY_T = 4;
 
 type
@@ -710,167 +710,141 @@ const
   MACH_MSG_OOL_PORTS_DESCRIPTOR =	2;
   MACH_MSG_OOL_VOLATILE_DESCRIPTOR = 3;
 
-//#pragma pack(4)
+//#pragma pack(4), not packed records?
 
-(*
+type
+  mach_msg_type_descriptor_t = packed record
+    pad1      : natural_t;
+    pad2      : mach_msg_size_t;
+    pad3_type : LongWord
+  end;
 
-typedef struct
-{
-  natural_t			pad1;
-  mach_msg_size_t		pad2;
-  unsigned int			pad3 : 24;
-  mach_msg_descriptor_type_t	type : 8;
-} mach_msg_type_descriptor_t;
+  mach_msg_port_descriptor_t = packed record
+    name        : mach_port_t;
+    pad1        : mach_msg_size_t;
+    pad2        : word;
+    disposition : byte;
+    _type       : byte;
+  end;
 
-typedef struct
-{
-  mach_port_t			name;
-  mach_msg_size_t		pad1;
-  unsigned int			pad2 : 16;
-  mach_msg_type_name_t		disposition : 8;
-  mach_msg_descriptor_type_t	type : 8;
-} mach_msg_port_descriptor_t;
+  mach_msg_ool_descriptor32_t = packed record
+    address     : uint32_t;
+    size        : mach_msg_size_t;
+    deallocate  : boolean;
+    copy        : byte; // as mach_msg_copy_options_t
+    pad1        : byte;
+    _type       : byte; // as mach_msg_descriptor_type_t
+  end;
 
-typedef struct
-{
-  uint32_t			address;
-  mach_msg_size_t       	size;
-  boolean_t     		deallocate: 8;
-  mach_msg_copy_options_t       copy: 8;
-  unsigned int     		pad1: 8;
-  mach_msg_descriptor_type_t    type: 8;
-} mach_msg_ool_descriptor32_t;
+  mach_msg_ool_descriptor64_t = packed record
+    address     : uint64_t;
+    deallocate  : boolean;
+    copy        : byte; // as mach_msg_copy_options_t
+    pad1        : byte;
+    _type       : byte; // as mach_msg_descriptor_type_t
+    size        : mach_msg_size_t;
+  end;
 
-typedef struct
-{
-  uint64_t			address;
-  boolean_t     		deallocate: 8;
-  mach_msg_copy_options_t       copy: 8;
-  unsigned int     		pad1: 8;
-  mach_msg_descriptor_type_t    type: 8;
-  mach_msg_size_t       	size;
-} mach_msg_ool_descriptor64_t;
+  {$ifdef CPU64}
+  mach_msg_ool_descriptor_t = mach_msg_ool_descriptor64_t;
+  {$else}
+  mach_msg_ool_descriptor_t = mach_msg_ool_descriptor32_t;
+  {$endif}
 
-typedef struct
-{
-  void*				address;
-#if !defined(__LP64__)
-  mach_msg_size_t       	size;
-#endif
-  boolean_t     		deallocate: 8;
-  mach_msg_copy_options_t       copy: 8;
-  unsigned int     		pad1: 8;
-  mach_msg_descriptor_type_t    type: 8;
-#if defined(__LP64__)
-  mach_msg_size_t       	size;
-#endif
-} mach_msg_ool_descriptor_t;
+  mach_msg_ool_ports_descriptor32_t = packed record
+    address     : uint32_t;
+    count       : mach_msg_size_t;
+    deallocate  : boolean;
+    copy        : byte; // as mach_msg_copy_options_t
+    disposition : byte; // as mach_msg_type_name_t
+    _type       : byte; // as mach_msg_descriptor_type_t
+  end;
 
-typedef struct
-{
-  uint32_t			address;
-  mach_msg_size_t		count;
-  boolean_t     		deallocate: 8;
-  mach_msg_copy_options_t       copy: 8;
-  mach_msg_type_name_t		disposition : 8;
-  mach_msg_descriptor_type_t	type : 8;
-} mach_msg_ool_ports_descriptor32_t;
+  mach_msg_ool_ports_descriptor64_t = packed record
+    address     : uint64_t;
+    deallocate  : boolean;
+    copy        : byte; // as mach_msg_copy_options_t
+    disposition : byte; // as mach_msg_type_name_t
+    _type       : byte; // as mach_msg_descriptor_type_t
+    count       : mach_msg_size_t;
+  end;
 
-typedef struct
-{
-  uint64_t			address;
-  boolean_t     		deallocate: 8;
-  mach_msg_copy_options_t       copy: 8;
-  mach_msg_type_name_t		disposition : 8;
-  mach_msg_descriptor_type_t	type : 8;
-  mach_msg_size_t		count;
-} mach_msg_ool_ports_descriptor64_t;
-
-typedef struct
-{
-  void*				address;
-#if !defined(__LP64__)
-  mach_msg_size_t		count;
-#endif
-  boolean_t     		deallocate: 8;
-  mach_msg_copy_options_t       copy: 8;
-  mach_msg_type_name_t		disposition : 8;
-  mach_msg_descriptor_type_t	type : 8;
-#if defined(__LP64__)
-  mach_msg_size_t		count;
-#endif
-} mach_msg_ool_ports_descriptor_t;
+  {$ifdef CPU64}
+  mach_msg_ool_ports_descriptor_t=mach_msg_ool_ports_descriptor64_t;
+  {$else}
+  mach_msg_ool_ports_descriptor_t=mach_msg_ool_ports_descriptor32_t;
+  {$endif}
 
 {*
  * LP64support - This union definition is not really
  * appropriate in LP64 mode because not all descriptors
  * are of the same size in that environment.
  *}
-typedef union
-{
-  mach_msg_port_descriptor_t		port;
-  mach_msg_ool_descriptor_t		out_of_line;
-  mach_msg_ool_ports_descriptor_t	ool_ports;
-  mach_msg_type_descriptor_t		type;
-} mach_msg_descriptor_t;
+  mach_msg_descriptor_t = packed record
+  case byte of
+    0: (port        : mach_msg_port_descriptor_t);
+    1: (out_of_line : mach_msg_ool_descriptor_t);
+    2: (ool_ports   : mach_msg_ool_ports_descriptor_t);
+    3: (_type       : mach_msg_type_descriptor_t);
+  end;
 
-typedef struct
-{
-        mach_msg_size_t msgh_descriptor_count;
-} mach_msg_body_t;
+  mach_msg_body_t = packed record
+    msgh_descriptor_count : mach_msg_size_t;
+  end;
 
-#define MACH_MSG_BODY_NULL (mach_msg_body_t * ) 0
-#define MACH_MSG_DESCRIPTOR_NULL (mach_msg_descriptor_t * ) 0
+const
+  MACH_MSG_BODY_NULL       = nil;
+  MACH_MSG_DESCRIPTOR_NULL = nil;
 
-typedef	struct
-{
-  mach_msg_bits_t	msgh_bits;
-  mach_msg_size_t	msgh_size;
-  mach_port_t		msgh_remote_port;
-  mach_port_t		msgh_local_port;
-  mach_msg_size_t 	msgh_reserved;
-  mach_msg_id_t		msgh_id;
-} mach_msg_header_t;
+type
+  mach_msg_header_t = packed record
+    msgh_bits        : mach_msg_bits_t;
+    msgh_size        : mach_msg_size_t;
+    sgh_remote_port  : mach_port_t;
+    sgh_local_port   : mach_port_t;
+    sgh_reserved     : mach_msg_size_t;
+    sgh_id           : mach_msg_id_t;
+  end;
+  pmach_msg_header_t = ^mach_msg_header_t;
 
-#define MACH_MSG_NULL (mach_msg_header_t * ) 0
+const
+  MACH_MSG_NULL = nil;
 
-typedef struct
-{
-        mach_msg_header_t       header;
-        mach_msg_body_t         body;
-} mach_msg_base_t;
+type
+  mach_msg_base_t = packed record
+    header  : mach_msg_header_t;
+    body    : mach_msg_body_t;
+  end;
 
-typedef	unsigned int mach_msg_trailer_type_t;
+  mach_msg_trailer_type_t = LongWord;
 
-#define	MACH_MSG_TRAILER_FORMAT_0	0
+const
+  MACH_MSG_TRAILER_FORMAT_0	= 0;
 
-typedef	unsigned int mach_msg_trailer_size_t;
+type
+  mach_msg_trailer_size_t = LongWord;
 
-typedef struct
-{
-  mach_msg_trailer_type_t	msgh_trailer_type;
-  mach_msg_trailer_size_t	msgh_trailer_size;
-} mach_msg_trailer_t;
+  mach_msg_trailer_t = packed record
+    msgh_trailer_type : mach_msg_trailer_type_t;
+    msgh_trailer_size : mach_msg_trailer_size_t;
+  end;
 
-typedef struct
-{
-  mach_msg_trailer_type_t       msgh_trailer_type;
-  mach_msg_trailer_size_t       msgh_trailer_size;
-  mach_port_seqno_t             msgh_seqno;
-} mach_msg_seqno_trailer_t;
+  mach_msg_seqno_trailer_t = packed record
+    msgh_trailer_type : mach_msg_trailer_type_t;
+    msgh_trailer_size : mach_msg_trailer_size_t;
+    msgh_seqno        : mach_port_seqno_t;
+  end;
 
-typedef struct
-{
-  unsigned int			val[2];
-} security_token_t;
+  security_token_t = packed record
+    val : array [0..1] of LongWord;
+  end;
 
-typedef struct
-{
-  mach_msg_trailer_type_t	msgh_trailer_type;
-  mach_msg_trailer_size_t	msgh_trailer_size;
-  mach_port_seqno_t		msgh_seqno;
-  security_token_t		msgh_sender;
-} mach_msg_security_trailer_t;
+  mach_msg_security_trailer_t = packed record
+    msgh_trailer_type : mach_msg_trailer_type_t;
+    msgh_trailer_size : mach_msg_trailer_size_t;
+    msgh_seqno        : mach_port_seqno_t;
+    msgh_sender       : security_token_t;
+  end;
 
 {*
  * The audit token is an opaque token which identifies
@@ -881,42 +855,36 @@ typedef struct
  * of the subject identity within the token may change
  * over time.
  *}
-typedef struct
-{
-  unsigned int			val[8];
-} audit_token_t;
+  audit_token_t = packed record
+    val   : array [0..7] of LongWord;
+  end;
 
-typedef struct
-{
-  mach_msg_trailer_type_t	msgh_trailer_type;
-  mach_msg_trailer_size_t	msgh_trailer_size;
-  mach_port_seqno_t		msgh_seqno;
-  security_token_t		msgh_sender;
-  audit_token_t			msgh_audit;
-} mach_msg_audit_trailer_t;
+  mach_msg_audit_trailer_t = packed record
+    msgh_trailer_type : mach_msg_trailer_type_t;
+    msgh_trailer_size : mach_msg_trailer_size_t;
+    msgh_seqno  : mach_port_seqno_t;
+    msgh_sender : security_token_t;
+    msgh_audit  : audit_token_t;
+  end;
 
-typedef struct
-{
-  mach_port_name_t sender;
-} msg_labels_t;
+  msg_labels_t = packed record
+    sender : mach_port_name_t;
+  end;
 
-{*
-   Trailer type to pass MAC policy label info as a mach message trailer.
+{* Trailer type to pass MAC policy label info as a mach message trailer. *}
 
-*}
+  mach_msg_mac_trailer_t = packed record
+    msgh_trailer_type : mach_msg_trailer_type_t;
+    msgh_trailer_size : mach_msg_trailer_size_t;
+    msgh_seqno    : mach_port_seqno_t;
+    msgh_sender   : security_token_t;
+    msgh_audit    : audit_token_t;
+    msgh_labels   : msg_labels_t;
+    msgh_ad       : integer;
+  end;
 
-typedef struct
-{
-  mach_msg_trailer_type_t       msgh_trailer_type;
-  mach_msg_trailer_size_t       msgh_trailer_size;
-  mach_port_seqno_t             msgh_seqno;
-  security_token_t              msgh_sender;
-  audit_token_t			msgh_audit;
-  msg_labels_t                  msgh_labels;
-  int				msgh_ad;
-} mach_msg_mac_trailer_t;
-
-#define MACH_MSG_TRAILER_MINIMUM_SIZE  sizeof(mach_msg_trailer_t)
+const
+  MACH_MSG_TRAILER_MINIMUM_SIZE = sizeof(mach_msg_trailer_t);
 
 {*
  * These values can change from release to release - but clearly
@@ -927,8 +895,11 @@ typedef struct
  * another module may exceed the local modules notion of
  * MAX_TRAILER_SIZE.
  *}
-typedef mach_msg_mac_trailer_t mach_msg_max_trailer_t;
-#define MAX_TRAILER_SIZE sizeof(mach_msg_max_trailer_t)
+type
+  mach_msg_max_trailer_t = mach_msg_mac_trailer_t;
+
+const
+  MAX_TRAILER_SIZE = sizeof(mach_msg_max_trailer_t);
 
 {*
  * Legacy requirements keep us from ever updating these defines (even
@@ -937,58 +908,63 @@ typedef mach_msg_mac_trailer_t mach_msg_max_trailer_t;
  * should be compared against the specific element size requested using
  * REQUESTED_TRAILER_SIZE.
  *}
-typedef mach_msg_security_trailer_t mach_msg_format_0_trailer_t;
+type
+  mach_msg_format_0_trailer_t = mach_msg_security_trailer_t;
 
-{*typedef mach_msg_mac_trailer_t mach_msg_format_0_trailer_t;
-*}
+{*typedef mach_msg_mac_trailer_t mach_msg_format_0_trailer_t; *}
 
-#define MACH_MSG_TRAILER_FORMAT_0_SIZE sizeof(mach_msg_format_0_trailer_t)
+const
+  MACH_MSG_TRAILER_FORMAT_0_SIZE = sizeof(mach_msg_format_0_trailer_t);
 
+(*
 #define   KERNEL_SECURITY_TOKEN_VALUE  { {0, 1} }
 extern security_token_t KERNEL_SECURITY_TOKEN;
 
 #define   KERNEL_AUDIT_TOKEN_VALUE  { {0, 0, 0, 0, 0, 0, 0, 0} }
 extern audit_token_t KERNEL_AUDIT_TOKEN;
+*)
 
-typedef	integer_t mach_msg_options_t;
+type
+  mach_msg_options_t = integer_t;
 
-typedef struct
-{
-  mach_msg_header_t	header;
-} mach_msg_empty_send_t;
+  mach_msg_empty_send_t = packed record
+    header : mach_msg_header_t;
+  end;
 
-typedef struct
-{
-  mach_msg_header_t	header;
-  mach_msg_trailer_t	trailer;
-} mach_msg_empty_rcv_t;
+  mach_msg_empty_rcv_t = packed record
+    header  : mach_msg_header_t;
+    trailer : mach_msg_trailer_t;
+   end;
 
-typedef union
-{
-  mach_msg_empty_send_t	send;
-  mach_msg_empty_rcv_t	rcv;
-} mach_msg_empty_t;
+  mach_msg_empty_t = packed record
+  case byte of
+    0: (send : mach_msg_empty_send_t);
+    1: (rcv: mach_msg_empty_rcv_t);
+  end;
 
-#pragma pack()
+//#pragma pack()
 
 {* utility to round the message size - will become machine dependent *}
-#define round_msg(x)	(((mach_msg_size_t)(x) + sizeof (natural_t) - 1) & \
-				~(sizeof (natural_t) - 1))
+
+//#define round_msg(x)	(((mach_msg_size_t)(x) + sizeof (natural_t) - 1) & \
+//				~(sizeof (natural_t) - 1))
 
 {*
  *  There is no fixed upper bound to the size of Mach messages.
  *}
 
-#define	MACH_MSG_SIZE_MAX	((mach_msg_size_t) ~0)
+//#define	MACH_MSG_SIZE_MAX	((mach_msg_size_t) ~0)
 
 {*
  *  Compatibility definitions, for code written
  *  when there was a msgh_kind instead of msgh_seqno.
  *}
-#define MACH_MSGH_KIND_NORMAL		0x00000000
-#define MACH_MSGH_KIND_NOTIFICATION	0x00000001
-#define	msgh_kind			msgh_seqno
-#define mach_msg_kind_t			mach_port_seqno_t
+
+const
+  MACH_MSGH_KIND_NORMAL	 	    = $00000000;
+  MACH_MSGH_KIND_NOTIFICATION	= $00000001;
+//#define	msgh_kind			msgh_seqno
+//#define mach_msg_kind_t			mach_port_seqno_t
 
 {*
  *  The msgt_number field specifies the number of data elements.
@@ -1015,8 +991,9 @@ typedef union
  *  a mach_msg_type_long_t should be zero.
  *}
 
-typedef natural_t mach_msg_type_size_t;
-typedef natural_t mach_msg_type_number_t;
+type
+  mach_msg_type_size_t  = natural_t;
+  pmach_msg_type_size_t = ^mach_msg_type_size_t;
 
 {*
  *  Values received/carried in messages.  Tells the receiver what
@@ -1027,26 +1004,25 @@ typedef natural_t mach_msg_type_number_t;
  *  are not transferred, just the port name.)
  *}
 
-#define MACH_MSG_TYPE_PORT_NONE		0
+const
+  MACH_MSG_TYPE_PORT_NONE		   = 0;
+  MACH_MSG_TYPE_PORT_NAME	     = 15;
+  MACH_MSG_TYPE_PORT_RECEIVE   = MACH_MSG_TYPE_MOVE_RECEIVE;
+  MACH_MSG_TYPE_PORT_SEND		   = MACH_MSG_TYPE_MOVE_SEND;
+  MACH_MSG_TYPE_PORT_SEND_ONCE = MACH_MSG_TYPE_MOVE_SEND_ONCE;
 
-#define MACH_MSG_TYPE_PORT_NAME		15
-#define MACH_MSG_TYPE_PORT_RECEIVE	MACH_MSG_TYPE_MOVE_RECEIVE
-#define MACH_MSG_TYPE_PORT_SEND		MACH_MSG_TYPE_MOVE_SEND
-#define MACH_MSG_TYPE_PORT_SEND_ONCE	MACH_MSG_TYPE_MOVE_SEND_ONCE
+  MACH_MSG_TYPE_LAST		=  22;		{* Last assigned *}
 
-#define MACH_MSG_TYPE_LAST		22		{* Last assigned *}
-
-{*
- *  A dummy value.  Mostly used to indicate that the actual value
+{*  A dummy value.  Mostly used to indicate that the actual value
  *  will be filled in later, dynamically.
  *}
 
-#define MACH_MSG_TYPE_POLYMORPHIC	((mach_msg_type_name_t) -1)
+  MACH_MSG_TYPE_POLYMORPHIC	= -1;
 
 {*
  *	Is a given item a port type?
  *}
-
+{
 #define MACH_MSG_TYPE_PORT_ANY(x)			\
 	(((x) >= MACH_MSG_TYPE_MOVE_RECEIVE) &&		\
 	 ((x) <= MACH_MSG_TYPE_MAKE_SEND_ONCE))
@@ -1058,25 +1034,28 @@ typedef natural_t mach_msg_type_number_t;
 #define	MACH_MSG_TYPE_PORT_ANY_RIGHT(x)			\
 	(((x) >= MACH_MSG_TYPE_MOVE_RECEIVE) &&		\
 	 ((x) <= MACH_MSG_TYPE_MOVE_SEND_ONCE))
+}
 
-typedef integer_t mach_msg_option_t;
+type
+  mach_msg_option_t = integer_t;
 
-#define MACH_MSG_OPTION_NONE	0x00000000
+const
+  MACH_MSG_OPTION_NONE = $00000000;
 
-#define	MACH_SEND_MSG		0x00000001
-#define	MACH_RCV_MSG		0x00000002
-#define MACH_RCV_LARGE		0x00000004
+  MACH_SEND_MSG		     = $00000001;
+  MACH_RCV_MSG		     = $00000002;
+  MACH_RCV_LARGE	 	   = $00000004;
 
-#define MACH_SEND_TIMEOUT	0x00000010
-#define MACH_SEND_INTERRUPT	0x00000040	{* libmach implements *}
-#define MACH_SEND_CANCEL	0x00000080
-#define MACH_SEND_ALWAYS	0x00010000	{* internal use only *}
-#define MACH_SEND_TRAILER	0x00020000
+  MACH_SEND_TIMEOUT  	 = $00000010;
+  MACH_SEND_INTERRUPT	 = $00000040;	{* libmach implements *}
+  MACH_SEND_CANCEL	   = $00000080;
+  MACH_SEND_ALWAYS	   = $00010000;	{* internal use only *}
+  MACH_SEND_TRAILER  	 = $00020000;
 
-#define MACH_RCV_TIMEOUT	0x00000100
-#define MACH_RCV_NOTIFY		0x00000200
-#define MACH_RCV_INTERRUPT	0x00000400	{* libmach implements *}
-#define MACH_RCV_OVERWRITE	0x00001000
+  MACH_RCV_TIMEOUT	   = $00000100;
+  MACH_RCV_NOTIFY		   = $00000200;
+  MACH_RCV_INTERRUPT	 = $00000400;	{* libmach implements *}
+  MACH_RCV_OVERWRITE	 = $00001000;
 
 {*
  * NOTE: a 0x00------ RCV mask implies to ask for
@@ -1088,18 +1067,18 @@ typedef integer_t mach_msg_option_t;
  * their fields when absolutely required.  This will cause us problems if
  * Apple adds new trailers.
  *}
-#define MACH_RCV_TRAILER_NULL   0
-#define MACH_RCV_TRAILER_SEQNO  1
-#define MACH_RCV_TRAILER_SENDER 2
-#define MACH_RCV_TRAILER_AUDIT  3
-#define MACH_RCV_TRAILER_LABELS 4
-#define MACH_RCV_TRAILER_AV     8
+  MACH_RCV_TRAILER_NULL   = 0;
+  MACH_RCV_TRAILER_SEQNO  = 1;
+  MACH_RCV_TRAILER_SENDER = 2;
+  MACH_RCV_TRAILER_AUDIT  = 3;
+  MACH_RCV_TRAILER_LABELS = 4;
+  MACH_RCV_TRAILER_AV     = 8;
 
-#define MACH_RCV_TRAILER_TYPE(x)     (((x) & 0xf) << 28)
-#define MACH_RCV_TRAILER_ELEMENTS(x) (((x) & 0xf) << 24)
-#define MACH_RCV_TRAILER_MASK 	     ((0xff << 24))
+//#define MACH_RCV_TRAILER_TYPE(x)     (((x) & 0xf) << 28)
+//#define MACH_RCV_TRAILER_ELEMENTS(x) (((x) & 0xf) << 24)
+  MACH_RCV_TRAILER_MASK 	= $ff shl 24;
 
-#define GET_RCV_ELEMENTS(y) (((y) >> 24) & 0xf)
+ // #define GET_RCV_ELEMENTS(y) (((y) >> 24) & 0xf)
 
 {*
  * XXXMAC: note that in the case of MACH_RCV_TRAILER_AV and
@@ -1109,6 +1088,7 @@ typedef integer_t mach_msg_option_t;
  * It also makes things work properly if MACH_RCV_TRAILER_AV or
  * MACH_RCV_TRAILER_LABELS are ORed with one of the other options.
  *}
+{
 #define REQUESTED_TRAILER_SIZE(y) 				\
 	((mach_msg_trailer_size_t)				\
 	 ((GET_RCV_ELEMENTS(y) == MACH_RCV_TRAILER_NULL) ?	\
@@ -1120,6 +1100,7 @@ typedef integer_t mach_msg_option_t;
 	   ((GET_RCV_ELEMENTS(y) == MACH_RCV_TRAILER_AUDIT) ?	\
 	    sizeof(mach_msg_audit_trailer_t) :      		\
 	    sizeof(mach_msg_max_trailer_t))))))
+}
 
 {*
  *  Much code assumes that mach_msg_return_t == kern_return_t.
@@ -1131,8 +1112,6 @@ typedef integer_t mach_msg_option_t;
  *  The high bits of the code field communicate extra information
  *  for some error codes.  MACH_MSG_MASK masks off these special bits.
  *}
-
- *)
 
 type
   mach_msg_return_t = kern_return_t;
@@ -1182,8 +1161,7 @@ const
   MACH_RCV_INVALID_TRAILER  = $1000400f;	{* trailer type or number of trailer elements not supported *}
   MACH_RCV_IN_PROGRESS_TIMED = $10004011; {* Waiting for receive with timeout. (Internal use only.) *}
 
-(*
-__BEGIN_DECLS
+
 
 {*
  *	Routine:	mach_msg_overwrite
@@ -1202,17 +1180,9 @@ __BEGIN_DECLS
  *		receiving of the message.
  *}
 
-extern mach_msg_return_t	mach_msg_overwrite(
-					mach_msg_header_t *msg,
-					mach_msg_option_t option,
-					mach_msg_size_t send_size,
-					mach_msg_size_t rcv_size,
-					mach_port_name_t rcv_name,
-					mach_msg_timeout_t timeout,
-					mach_port_name_t notify,
-					mach_msg_header_t *rcv_msg,
-					mach_msg_size_t rcv_limit);
-
+function mach_msg_overwrite( msg: pmach_msg_header_t; option: mach_msg_option_t;
+  send_size: mach_msg_size_t;	rcv_size: mach_msg_size_t; rcv_name: mach_port_name_t;
+	rcv_limit: mach_msg_size_t): mach_msg_return_t; cdecl; external;
 
 {*
  *	Routine:	mach_msg
@@ -1222,19 +1192,15 @@ extern mach_msg_return_t	mach_msg_overwrite(
  *		of that fact, then restart the appropriate parts of the
  *		operation silently (trap version does not restart).
  *}
-extern mach_msg_return_t	mach_msg(
-					mach_msg_header_t *msg,
-					mach_msg_option_t option,
-					mach_msg_size_t send_size,
-					mach_msg_size_t rcv_size,
-					mach_port_name_t rcv_name,
-					mach_msg_timeout_t timeout,
-					mach_port_name_t notify);
+function mach_msg(
+  msg: pmach_msg_header_t;
+  option: mach_msg_option_t;
+  send_size: mach_msg_size_t;
+  rcv_size: mach_msg_size_t;
+  rcv_name: mach_port_name_t;
+	timeout: mach_msg_timeout_t;
+  notify: mach_port_name_t): mach_msg_return_t; cdecl; external;
 
-
-__END_DECLS
-
-#endif	{* _MACH_MESSAGE_H_ *}   *)
 
 
 // ----- policy.h --------------------------------------------------------------

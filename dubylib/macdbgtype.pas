@@ -54,7 +54,7 @@ begin
   if childid = 0 then begin
     ptraceme;
     //todo: ptrace_sig_as_exc, what needs to be initialized after going from signals to exceptions?
-    //ptrace_sig_as_exc;
+    ptrace_sig_as_exc;
 
     res := FpExecV(CommandLine, nil);
     if res < 0 then begin
@@ -69,9 +69,6 @@ begin
 
     kret := task_for_pid(mach_task_self, ChildId, pname);
     writeln('task_for_pid 1 = ', kret);
-
-    kret := task_for_pid(mach_task_self, ChildId, pname);
-    writeln('task_for_pid 2 = ', kret);
 
     ChildTask := mach_port_t(pname);
     writeln('child task = ', ChildTask);
@@ -140,14 +137,11 @@ var
   res : Integer;
 begin
   //task_set_exception_ports
-{  catchport := AllocMachPort;
-  res :=  task_set_exception_ports(
-    child,
-    EXC_MASK_ALL,
-    catchport,
-    EXCEPTION_DEFAULT,
-    0);
-  if res <> KERN_SUCCESS then writeln('task_set_exception_ports = ', macherr(res));}
+  catchport := AllocSelfPort;
+  res := debugout_kret(
+  task_set_exception_ports( child, EXC_MASK_ALL, catchport,  EXCEPTION_DEFAULT or MACH_EXCEPTION_CODES,  0),
+    'task_set_exception_ports' );
+
 end;
 
 procedure TMachDbgProcess.Terminate;
@@ -184,8 +178,8 @@ begin
   SIGXCPU:  Result := 'SIGXCPU';  { exceeded CPU time limit  }
   SIGXFSZ:  Result := 'SIGXFSZ';  { exceeded file size limit  }
   SIGVTALRM:  Result := 'SIGVTALRM';  { virtual time alarm  }
-  SIGPROF:  Result := 'SIGPROF'  ;  { profiling time alarm  }
-  SIGWINCH:  Result := 'SIGWINCH' ;  { window size changes  }
+  SIGPROF:    Result := 'SIGPROF'  ;  { profiling time alarm  }
+  SIGWINCH:   Result := 'SIGWINCH' ;  { window size changes  }
   SIGINFO:  Result := 'SIGINFO';  { information request  }
   SIGUSR1:  Result := 'SIGUSR1';   { user defined signal 1  }
   SIGUSR2:  Result := 'SIGUSR2';   { user defined signal 2  }
@@ -198,6 +192,7 @@ var
   sig : integer;
   res : Integer;
 begin
+  Event.Debug := '';
   if fchildpid = 0 then begin
     Result := false;
     Exit;
@@ -214,7 +209,7 @@ begin
 
   waited := false;
   res := FpWaitpid(fchildpid, st, 0);
-  Result := res > 0;
+  Result := res >= 0;
   if not Result then begin
     writeln('waitpid = ', res);
     Exit;
@@ -243,6 +238,8 @@ begin
         Debug := Debug + ' unknown state?';
       Debug := Debug + '; ';
     end;
+
+    RecvMessage(catchport);
   end;
 end;
 
@@ -250,7 +247,7 @@ end;
 function TMachDbgProcess.StartProcess(const ACmdLine: String): Boolean;
 begin
   Result := ForkAndRun(ACmdLine, fchildpid, fchildtask);
-  //SetupChildTask(fchildtask);
+  SetupChildTask(fchildtask);
 end;
 
 function MachDebugProcessStart(const ACmdLine: String): TDbgProcess;

@@ -824,7 +824,7 @@ type
   PImageAuxSymbolTokenDef = ^TImageAuxSymbolTokenDef;
 
 {$packrecords 4}
-
+  
 implementation
 
 function BTYPE(x: Byte): Byte; inline;
@@ -861,5 +861,6 @@ function DECREF(x: Byte): Byte; inline;
 begin
   Result := ((x shr N_TSHIFT) and not N_BTMASK) or (x and N_BTMASK);
 end;
-  
+    
+
 end.

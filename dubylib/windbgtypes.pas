@@ -42,7 +42,7 @@ type
     
     function GetThreadsCount: Integer; override;
     function GetThreadID(AIndex: Integer): TDbgThreadID; override;
-    function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters): Boolean; override;
+    function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
 
     function GetProcessState: TDbgState; override;
     
@@ -150,7 +150,7 @@ begin
       with fLastEvent do 
         ContinueDebugEvent(dwProcessId, dwThreadId, Cont);
     except
-      writeln('exception while ContinueDebugEvent');
+      //writeln('exception while ContinueDebugEvent');
     end;
     
   end;
@@ -164,7 +164,7 @@ begin
   try
     Result := Windows.WaitForDebugEvent(fLastEvent, INFINITE);
   except
-    writeln('exception while WaitForDebugEvent');
+    //writeln('exception while WaitForDebugEvent');
   end;
   
   fWaited := Result;
@@ -196,7 +196,7 @@ begin
     else Result := fThreads[AIndex].id;
 end;
 
-function TWinDbgProcess.GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters): Boolean;  
+function TWinDbgProcess.GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;  
 begin
   Result := false;  
 end;

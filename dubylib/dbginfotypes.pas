@@ -5,37 +5,38 @@ unit dbgInfoTypes;
 interface
 
 uses
-  contnrs, Classes, dbgTypes; 
+  contnrs, SysUtils, Classes, dbgTypes; 
 
 type
-  // STABS or DWARF 
-  TDbgInfo = class(TObject)
-  public
-    //todo:
-    function GetLineInfo(const Addr: TDbgPtr; var FileName: String; var LineNum, ColumnNum: Integer): Boolean; virtual; abstract;
-  end;
-  
-  TDbgInfoReader = class(TObject)
-  public
-    function CreateDebugInfo(DebugData: TStream; OwnInfoStream: Boolean): TDbgInfo; virtual; abstract;
-  end;
-  
   { TDbgDataSource }
 
   TDbgDataSource = class(TObject) // executable parser
   public
-    constructor Create(ASource: TStream; OwnSource: Boolean); virtual; 
     class function isValid(ASource: TStream): Boolean; virtual; abstract;
-    function DataCount(Source: TStream): Integer; virtual; abstract;
-    function GetDataStream(Source: TStream; SourceIndex: Integer; var Offset, Size: Int64): Boolean; virtual; abstract;    
+    constructor Create(ASource: TStream; OwnSource: Boolean); virtual; 
+
+    function SectionsCount: Integer; virtual; abstract;
+    function GetSectionInfo(SourceIndex: Integer; var SourceName: AnsiString; var Offset, Size: Int64): Boolean; virtual; abstract;    
+    function GetSource: TStream; virtual; abstract;
   end;
   TDbgDataSourceClass = class of TDbgDataSource;
   
+  { TDbgInfo }
+
+  TDbgInfo = class(TObject)
+  public
+    class function isPresent(ASource: TDbgDataSource): Boolean; virtual; abstract;
+    constructor Create(ASource: TDbgDataSource); virtual; 
+    function GetLineInfo(const Addr: TDbgPtr; var FileName: String; var LineNum, ColumnNum: Integer): Boolean; virtual; abstract;
+  end;
+  TDbgInfoClass = class of TDbgInfo;
+  
+ 
 function GetDataSource(ASource: TStream; OwnSource: Boolean): TDbgDataSource;
 function GetDebugInfo(InfoStream: TStream; OwnInfoStream: Boolean): TDbgInfo; 
 
 procedure RegisterDataSource( DataSource: TDbgDataSourceClass); 
-procedure RegisterReader( DebugInfoReader: TDbgInfoReader ); 
+procedure RegisterDebugInfo( DebugInfo: TDbgInfoClass ); 
   
 implementation
 
@@ -53,16 +54,25 @@ begin
   if not Assigned(ASource) then Exit;
   
   p := ASource.Position;
+  writeln('-- sources count ', sources.Count);
   for i := 0 to sources.Count - 1 do begin
     cls :=  TDbgDataSourceClass(sources[i]);
     try
       ASource.Position := P;
       if cls.isValid(ASource) then begin 
+        writelN('-- is valid source!');
         ASource.Position := p;
+        writelN('-- creating! cls = ', cls.ClassName);
         Result := cls.Create(ASource, OwnSource);
+        writeln('result = ', PtrUInt(Result));
         Exit;
-      end;
+      end else
+        writeln('-- failed to detect for ', cls.ClassName);
+        
     except
+      on e: exception do begin
+        writeln('exception! WHY? ', e.Message);
+      end;
     end;
   end;
   Result := nil;
@@ -72,10 +82,10 @@ function GetDebugInfo(InfoStream: TStream; OwnInfoStream: Boolean): TDbgInfo;
 var
   i   : Integer;
   p   : Int64;
-  reader : TDbgInfoReader;
+//  reader : TDbgInfoReader;
 begin
   Result := nil;
-  if not Assigned(InfoStream) then Exit;  
+{  if not Assigned(InfoStream) then Exit;  
 
   p := InfoStream.Position;  
   for i := 0 to readers.Count - 1 do begin
@@ -86,19 +96,20 @@ begin
       if Assigned(Result) then Exit;
     except
     end;
-  end;
+  end;}
 end;
 
 procedure RegisterDataSource( DataSource: TDbgDataSourceClass); 
 begin
-  if Assigned(DataSource) and (sources.IndexOf(DataSource) < 0) then 
+  if Assigned(DataSource) and (sources.IndexOf(DataSource) < 0) then  begin
+    writeln('-- added new data source ', DataSource.ClassName);
     sources.Add(DataSource)
+  end;
 end;
 
-procedure RegisterReader( DebugInfoReader: TDbgInfoReader ); 
+procedure RegisterDebugInfo(DebugInfo: TDbgInfoClass); 
 begin
-  if Assigned(DebugInfoReader) and (readers.IndexOf(DebugInfoReader) < 0) then 
-    readers.Add(DebugInfoReader);
+
 end;
 
 procedure InitDebugInfoLists;
@@ -117,7 +128,14 @@ end;
 
 constructor TDbgDataSource.Create(ASource: TStream; OwnSource: Boolean); 
 begin
+  inherited Create;
+end;
 
+{ TDbgInfo }
+
+constructor TDbgInfo.Create(ASource: TDbgDataSource); 
+begin
+  inherited Create;
 end;
 
 initialization

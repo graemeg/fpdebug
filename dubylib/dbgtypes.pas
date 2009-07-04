@@ -9,9 +9,9 @@ type
   TDbgThreadID = TThreadID;
   
   
-  { TDbgRegister }
+  { TDbgData }
 
-  TDbgRegister = class(TObject)
+  TDbgData = class(TObject)
   private
     function GetSInt16: ShortInt;
     function GetSInt32: Integer;
@@ -51,13 +51,13 @@ type
     property UInt8: Byte read GetUInt8 write SetUInt8;
   end;
   
-  TDbgRegisters = class(TObject)
+  TDbgDataList = class(TObject)
   protected
     function GetCount: Integer; virtual; abstract;
-    function GetRegister(const Name: String): TDbgRegister; virtual; abstract;
+    function GetRegister(const Name: String): TDbgData; virtual; abstract;
   public
     property Count: Integer read GetCount;
-    property Reg[const Name: String]: TDbgRegister read GetRegister; default;
+    property Reg[const Name: String]: TDbgData read GetRegister; default;
   end;
   
   TDbgState = (ds_Nonstarted, ds_ReadToRun, ds_Running, ds_Terminated);
@@ -80,7 +80,7 @@ type
     
     function GetThreadsCount: Integer; virtual; abstract;
     function GetThreadID(AIndex: Integer): TDbgThreadID; virtual; abstract;
-    function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters): Boolean; virtual; abstract;
+    function GetThreadRegs(ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; virtual; abstract;
     
     function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; virtual; abstract;
     function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; virtual; abstract;
@@ -104,82 +104,82 @@ end;
 
 { TDbgRegister }
 
-function TDbgRegister.GetUInt8: Byte; 
+function TDbgData.GetUInt8: Byte; 
 begin
   GetValue(Result, 8);
 end;
 
-function TDbgRegister.GetSInt8: SmallInt;
+function TDbgData.GetSInt8: SmallInt;
 begin
   GetValue(Result, 8);
 end;
 
-function TDbgRegister.GetSInt16: ShortInt;
+function TDbgData.GetSInt16: ShortInt;
 begin
   GetValue(Result, 16);
 end;
 
-function TDbgRegister.GetUInt16: Word;
+function TDbgData.GetUInt16: Word;
 begin
   GetValue(Result, 16);
 end;
 
-function TDbgRegister.GetSInt32: Integer;
+function TDbgData.GetSInt32: Integer;
 begin
   GetValue(Result, 32);
 end;
 
-function TDbgRegister.GetUInt32: LongWord;
+function TDbgData.GetUInt32: LongWord;
 begin
   GetValue(Result, 32);
 end;
 
-function TDbgRegister.GetSInt64: Int64;
+function TDbgData.GetSInt64: Int64;
 begin
   GetValue(Result, 64);
 end;
 
-function TDbgRegister.GetUInt64: QWord;
+function TDbgData.GetUInt64: QWord;
 begin
   GetValue(Result, 64);
 end;
 
-procedure TDbgRegister.SetSInt16(const AValue: ShortInt);
+procedure TDbgData.SetSInt16(const AValue: ShortInt);
 begin
   SetValue(AValue, 16);
 end;
 
-procedure TDbgRegister.SetSInt32(const AValue: Integer);
+procedure TDbgData.SetSInt32(const AValue: Integer);
 begin
   SetValue(AValue, 32);
 end;
 
-procedure TDbgRegister.SetSInt64(const AValue: Int64);
+procedure TDbgData.SetSInt64(const AValue: Int64);
 begin
   SetValue(AValue, 64);
 end;
 
-procedure TDbgRegister.SetSInt8(const AValue: SmallInt);
+procedure TDbgData.SetSInt8(const AValue: SmallInt);
 begin
   SetValue(AValue, 8);
 end;
 
-procedure TDbgRegister.SetUInt8(const AValue: Byte); 
+procedure TDbgData.SetUInt8(const AValue: Byte); 
 begin
   SetValue(AValue, 8);
 end;
 
-procedure TDbgRegister.SetUInt16(const AValue: Word);
+procedure TDbgData.SetUInt16(const AValue: Word);
 begin
   SetValue(AValue, 16);
 end;
 
-procedure TDbgRegister.SetUInt32(const AValue: LongWord);
+procedure TDbgData.SetUInt32(const AValue: LongWord);
 begin
   SetValue(AValue, 32);
 end;
 
-procedure TDbgRegister.SetUInt64(const AValue: QWord); 
+procedure TDbgData.SetUInt64(const AValue: QWord); 
 begin
   SetValue(AValue, 64);
 end;

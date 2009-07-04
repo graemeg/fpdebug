@@ -3,12 +3,11 @@ program fpdebugger;
 {$mode objfpc}{$H+}
 
 uses
-  dbgTypes,
-  cmdloop, commands, memviewer, PESource
-  {$ifdef windows},winDbgTypes{$endif}
-  {$ifdef linux},nixDbgTypes{$endif}
-  {$ifdef darwin},macDbgType{$endif}
-  ;
+  dbgTypes, dbgInfoTypes, 
+  cmdloop, commands, memviewer, execview,
+  PESource, dbgInfoStabs,
+  winDbgTypes;
+  //nixDbgTypes,macDbgType;
 
 procedure RunDebugger;
 var
@@ -29,6 +28,7 @@ begin
   end;
   try
     try
+      SetCommandLine(cmd);
       RunLoop(dbg);
     finally
       dbg.Free;

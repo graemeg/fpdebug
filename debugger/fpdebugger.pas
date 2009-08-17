@@ -4,9 +4,12 @@ program fpdebugger;
 
 uses
   dbgTypes, dbgInfoTypes, 
-  cmdloop, commands, memviewer, execview,
-  PESource, dbgInfoStabs,
-  winDbgTypes;
+  cmdloop, commands, memviewer, // todo: sync this unit -> execview,
+  PESource, dbgInfoStabs
+  {$ifdef windows}
+  ,  winDbgTypes
+  {$endif}
+  ;
   //nixDbgTypes,macDbgType;
 
 procedure RunDebugger;
@@ -28,7 +31,7 @@ begin
   end;
   try
     try
-      SetCommandLine(cmd);
+      //SetCommandLine(cmd);
       RunLoop(dbg);
     finally
       dbg.Free;

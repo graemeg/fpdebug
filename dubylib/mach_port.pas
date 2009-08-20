@@ -208,18 +208,14 @@ function mach_port_request_notification
 	previous  : pmach_port_t
 ): kern_return_t; cdecl; external;
 
-{* Routine mach_port_insert_right
- *	Inserts the specified rights into the target task,
- *	using the specified name.  If inserting send/receive
- *	rights and the task already has send/receive rights
- *	for the port, then the names must agree.  In any case,
- *	the task gains a user ref for the port.
-*}
-function mach_port_insert_right
-(
-	task  : ipc_space_t;
-	name  : mach_port_name_t;
-	poly  : mach_port_t;
+{ Routine mach_port_insert_right  Inserts the specified rights into the target task,
+ 	using the specified name.  If inserting send/receive rights and the task already 
+  has send/receive rights 	for the port, then the names must agree.  In any case,
+ 	the task gains a user ref for the port.                                         }
+function mach_port_insert_right (
+	task      : ipc_space_t;
+	name      : mach_port_name_t;
+	poly      : mach_port_t;
 	polyPoly  : mach_msg_type_name_t
 ): kern_return_t; cdecl; external;
 

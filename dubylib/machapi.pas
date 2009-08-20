@@ -5,6 +5,32 @@ unit machapi;
 
 interface
 
+type
+  NDR_record_t = packed record
+    mig_vers      : byte;    
+    if_vers       : byte;    
+    reserved1     : byte;    
+    mig_encoding  : byte;    
+    int_rep       : byte;    
+    char_rep      : byte;    
+    float_rep     : byte;    
+    reserved2     : byte;    
+  end;
+  
+const
+  { MIG supported protocols for Network Data Representation }
+  NDR_PROTOCOL_2_0     =  0;
+
+  { NDR 2.0 format flag type definition and values. }
+  NDR_INT_BIG_ENDIAN    = 0;
+  NDR_INT_LITTLE_ENDIAN = 1;
+  NDR_FLOAT_IEEE        = 0;
+  NDR_FLOAT_VAX         = 1;
+  NDR_FLOAT_CRAY        = 2; 
+  NDR_FLOAT_IBM         = 3;
+  NDR_CHAR_ASCII        = 0;
+  NDR_CHAR_EBCDIC       = 1;
+  
 {*	File:	h/kern_return.h
  *	Author:	Avadis Tevanian, Jr.
  *	Date:	1985
@@ -61,21 +87,19 @@ const
 		 * seen by users.
 		 *}
 
-  KERN_MEMORY_RESTART_COPY	= 25;
-		{* A strategic copy was attempted of an object
-		 * upon which a quicker copy is now possible.
-		 * The caller should retry the copy using
-		 * vm_object_copy_quickly. This error code
-		 * is seen only by the kernel.
-		 *}
-
+  KERN_MEMORY_RESTART_COPY	= 25;	{* A strategic copy was attempted of an object *}
+                                	{* upon which a quicker copy is now possible.  *}
+                                	{* The caller should retry the copy using      *}
+                                 	{* vm_object_copy_quickly. This error code     *}
+                                 	{* is seen only by the kernel.                 *}
   KERN_INVALID_PROCESSOR_SET	= 26;	{* An argument applied to assert processor set privilege  was not a processor set control port. *}
-  KERN_POLICY_LIMIT	    =	27;	{* The specified scheduling attributes exceed the thread's limits. *}
-  KERN_INVALID_POLICY		= 28;	{* The specified scheduling policy is not currently enabled for the processor set. *}
-  KERN_INVALID_OBJECT	  =	29; {* The external memory manager failed to initialize the  memory object. *}
-  KERN_ALREADY_WAITING	=	30;	{* A thread is attempting to wait for an event for which there is already a waiting thread. *}
-  KERN_DEFAULT_SET		  = 31;	{* An attempt was made to destroy the default processor set. *}
-  KERN_EXCEPTION_PROTECTED	  = 32; {* An attempt was made to fetch an exception port that is protected, or to abort a thread while processing a protected exception. *}
+  KERN_POLICY_LIMIT	          =	27;	{* The specified scheduling attributes exceed the thread's limits. *}
+  KERN_INVALID_POLICY		      = 28;	{* The specified scheduling policy is not currently enabled for the processor set. *}
+  KERN_INVALID_OBJECT	        =	29; {* The external memory manager failed to initialize the  memory object. *}
+  KERN_ALREADY_WAITING	      =	30;	{* A thread is attempting to wait for an event for which there is already a waiting thread. *}
+  KERN_DEFAULT_SET		        = 31;	{* An attempt was made to destroy the default processor set. *}
+  KERN_EXCEPTION_PROTECTED	  = 32; {* An attempt was made to fetch an exception port that is protected, *}
+                                    {*  or to abort a thread while processing a protected exception.     *}
   KERN_INVALID_LEDGER		      = 33;	{* A ledger was required but not supplied. *}
   KERN_INVALID_MEMORY_CONTROL	= 34;	{* The port was not a memory cache control port. *}
   KERN_INVALID_SECURITY		= 35;	{* An argument supplied to assert security privilege was not a host security port. *}
@@ -438,10 +462,10 @@ const
   MACH_PORT_RIGHT_NUMBER		= 6;
 
 type
-  mach_port_type_t = natural_t;
-  mach_port_type_array_t = ^mach_port_type_t;
+  mach_port_type_t        = natural_t;
+  mach_port_type_array_t  = ^mach_port_type_t;
 
-  pmach_port_type_t = ^mach_port_type_t;
+  pmach_port_type_t       = ^mach_port_type_t;
   pmach_port_type_array_t = ^mach_port_type_array_t;
 
 {#define MACH_PORT_TYPE(right)						\
@@ -815,6 +839,7 @@ type
     header  : mach_msg_header_t;
     body    : mach_msg_body_t;
   end;
+  pmach_msg_base_t = ^mach_msg_base_t;
 
   mach_msg_trailer_type_t = LongWord;
 
@@ -1757,7 +1782,7 @@ type
   exception_type_t = integer;
   exception_data_type_t = integer_t;
   mach_exception_data_type_t = int64_t;
-  exception_behavior_t = integer;
+  exception_behavior_t = longword;
   exception_data_t = ^exception_data_type_t;
   mach_exception_data_t = ^mach_exception_data_type_t;
   exception_mask_t = LongWord;
@@ -3330,6 +3355,28 @@ function err_get_code(err: Integer): integer; inline;
 
 {*	unix errors get lumped into one subsystem  *}
 function unix_err(errno: Integer): integer; inline;
+
+
+// mach/exc.h
+
+// exc.h
+type
+  __Request__exception_raise_state_identity_t = record
+		Head      : mach_msg_header_t;
+		{ start of the kernel processed data }
+		msgh_body : mach_msg_body_t;
+		thread    : mach_msg_port_descriptor_t;
+		task      : mach_msg_port_descriptor_t;
+		{ end of the kernel processed data }
+		NDR       : NDR_record_t;
+		exception : exception_type_t;
+		codeCnt   : mach_msg_type_number_t;
+		code      : array [0..1] of integer_t;
+		flavor    : integer;
+		old_stateCnt  : mach_msg_type_number_t;
+		old_state     : array [0..143] of natural_t;
+	end;
+  pexception_raise_state_identity_t = ^__Request__exception_raise_state_identity_t;
 
 implementation
 

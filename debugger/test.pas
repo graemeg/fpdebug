@@ -1,8 +1,21 @@
 {$mode objfpc}
 
+procedure DoBreak; assembler;
+asm
+  int 3;
+end;
+
+
 var
   p : PInteger;
-begin 
+begin
+  writeln('testing break point'); 
+  try
+    DoBreak;
+  except
+    writelN('handled!'); 
+  end;
+
   writeln('testing access violation');
   p := nil;
   try

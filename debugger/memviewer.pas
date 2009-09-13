@@ -1,20 +1,24 @@
-unit memviewer; 
+unit memviewer;
 
 {$ifdef fpc}{$mode delphi}{$H+}{$endif}
 
 interface
 
 uses
-  Classes, SysUtils, 
-  dbgTypes, commands; 
+  Classes, SysUtils,
+  dbgTypes, dbgUtils, commands;
 
-type  
-  
+type
+
   { TViewMemCommand }
 
   TViewMemCommand = class(TCommand)
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
-    function ResetParamsCache: Boolean; override; 
+    function ResetParamsCache: Boolean; override;
+  end;
+
+  TRegistersView = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
   end;
 
 implementation
@@ -105,8 +109,33 @@ begin
   Result := true;
 end;
 
+{ TRegistersView }
+
+procedure TRegistersView.Execute(CmdParams: TStrings; Process: TDbgProcess);
+var
+  regs  : TDbgDataBytesList;
+  data  : TDbgData;
+  i     : Integer;
+begin
+  regs := TDbgDataBytesList.Create;
+  Process.GetThreadRegs( Process.MainThreadID, regs );
+
+  for i := 0 to regs.Count - 1 do begin
+    data := regs.RegByIndex(i);
+    case data.BitSize of
+      8:  writeln( data.Name, ' ', IntToHex(data.UInt8, 2));
+      16: writeln( data.Name, ' ', IntToHex(data.UInt16, 4));
+      32: writeln( data.Name, ' ', IntToHex(data.UInt32, 8));
+      64: writeln( data.Name, ' ', IntToHex(data.UInt64, 16));
+    end;
+  end;
+  
+  regs.Free;
+end;
+
 initialization
   RegisterCommand(['view','v'], TViewMemCommand.Create);
+  RegisterCommand(['reg','g'], TRegistersView.Create);
 
 end.
 

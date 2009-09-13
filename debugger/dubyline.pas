@@ -13,11 +13,9 @@ uses
   commands,
   memviewer,
   PESource,
-  dbgInfoStabs 
+  dbgInfoStabs
   {$ifdef darwin},macDbgType, macdbgproc {$endif}
   {$ifdef mswindows},winDbgTypes {$endif};
-
-//nixDbgTypes,macDbgType;
 
 procedure RunDebugger;
 var

@@ -86,7 +86,10 @@ end;
 procedure TDbgDataBytes.SetValue(const Value; ValueBitSize: Integer);
 begin
   fBitSize := ValueBitSize;
-  if Length(fData) < fBitSize div 8 then SetLength(fData, fBitsize div 8);
+  if Length(fData) < fBitSize div 8 then
+    SetLength(fData, fBitsize div 8);
+  if fBitSize > 0 then Move(Value, fdata[0], ValueBitSize div 8);
+
 end;
 
 { TDbgDataBytesList }

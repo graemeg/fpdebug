@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils,
-  dbgTypes, dbgUtils, commands;
+  dbgTypes, dbgUtils, commands, dbgConsts;
 
 type
 
@@ -104,12 +104,47 @@ begin
   end;
 end;
 
-function TViewMemCommand.ResetParamsCache: Boolean;  
+function TViewMemCommand.ResetParamsCache: Boolean;
 begin
   Result := true;
 end;
 
 { TRegistersView }
+
+procedure PrintAllRegs(list: TDbgDataList);
+var
+  i     : Integer;
+  data  : TDbgData;
+begin
+  for i := 0 to list.Count - 1 do begin
+    data := list.RegByIndex(i);
+    case data.BitSize of
+      8:  writeln( data.Name, ' ', IntToHex(data.UInt8, 2));
+      16: writeln( data.Name, ' ', IntToHex(data.UInt16, 4));
+      32: writeln( data.Name, ' ', IntToHex(data.UInt32, 8));
+      64: writeln( data.Name, ' ', IntToHex(data.UInt64, 16));
+    end;
+  end;
+end;
+
+
+procedure PrintI386Regs(list: TDbgDataList);
+
+  function StrHex(const regname: String): string;
+  begin
+    Result := IntToHex(list[regname].UInt32, 8);
+  end;
+
+begin
+  with list do begin
+    WriteLn(Format('EAX: %s;  GS: %s;     EBP: %s;     ', [ StrHex(_Eax), StrHex(_Gs), StrHex(_Ebp)]));
+    WriteLn(Format('EBX: %s;  FS: %s;     EIP: %s;     ', [ StrHex(_Ebx), StrHex(_Fs), StrHex(_Eip)]));
+    WriteLn(Format('ECX: %s;  ES: %s;  EFLAGS: %s;     ', [ StrHex(_Ecx), StrHex(_Es), StrHex(_EFlags)]));
+    WriteLn(Format('EDX: %s;  DS: %s;     ESI: %s;     ', [ StrHex(_Edx), StrHex(_Ds), StrHex(_Esi)]));
+    WriteLn(Format('EDI: %s;  CS: %s;                  ', [ StrHex(_Edi), StrHex(_Cs)]));
+    WriteLn(Format('ESI: %s;  SS: %s;                  ', [ StrHex(_Esi), StrHex(_Ss)]));
+  end;
+end;
 
 procedure TRegistersView.Execute(CmdParams: TStrings; Process: TDbgProcess);
 var
@@ -120,16 +155,9 @@ begin
   regs := TDbgDataBytesList.Create;
   Process.GetThreadRegs( Process.MainThreadID, regs );
 
-  for i := 0 to regs.Count - 1 do begin
-    data := regs.RegByIndex(i);
-    case data.BitSize of
-      8:  writeln( data.Name, ' ', IntToHex(data.UInt8, 2));
-      16: writeln( data.Name, ' ', IntToHex(data.UInt16, 4));
-      32: writeln( data.Name, ' ', IntToHex(data.UInt32, 8));
-      64: writeln( data.Name, ' ', IntToHex(data.UInt64, 16));
-    end;
-  end;
-  
+  //PrintAllRegs(regs);
+  PrintI386Regs(regs);
+
   regs.Free;
 end;
 

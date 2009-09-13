@@ -1,19 +1,23 @@
 program dubyline;
 
-{$mode objfpc}{$H+}
+{$ifdef fpc}
+{$mode delphi}{$H+}
+{$else}
+{$apptype CONSOLE}
+{$endif}
 
 uses
-  dbgTypes, dbgInfoTypes, 
-  cmdloop, commands, memviewer, // todo: sync this unit -> execview,
-  PESource, dbgInfoStabs
-  {$ifdef darwin}
-  , macDbgType, macdbgproc
-  {$endif}
-  {$ifdef mswindows}
-  , winDbgTypes
-  {$endif}
-  ;
-  //nixDbgTypes,macDbgType;
+  dbgTypes,
+  dbgInfoTypes,
+  cmdloop,
+  commands,
+  memviewer,
+  PESource,
+  dbgInfoStabs 
+  {$ifdef darwin},macDbgType, macdbgproc {$endif}
+  {$ifdef mswindows},winDbgTypes {$endif};
+
+//nixDbgTypes,macDbgType;
 
 procedure RunDebugger;
 var

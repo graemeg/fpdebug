@@ -1,6 +1,6 @@
 unit commands; 
 
-{$mode objfpc}{$H+}
+{$ifdef fpc}{$mode delphi}{$H+}{$endif}
 
 interface
 

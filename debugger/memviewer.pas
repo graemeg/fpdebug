@@ -1,6 +1,6 @@
 unit memviewer; 
 
-{$mode objfpc}{$H+}
+{$ifdef fpc}{$mode delphi}{$H+}{$endif}
 
 interface
 

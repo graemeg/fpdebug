@@ -1,6 +1,6 @@
-unit cmdloop; 
+unit cmdloop;
 
-{$mode objfpc}{$H+}
+{$ifdef fpc}{$mode delphi}{$H+}{$endif}
 
 interface
 
@@ -12,11 +12,12 @@ procedure RunLoop(Process: TDbgProcess);
 implementation
 
 var
-  LastCommand : String;
-  DbgEvent    : TDbgEvent;
+  LastCommand   : String;
+  DbgEvent      : TDbgEvent;
 
-  Running       : Boolean = false;
-  callwaitnext  : Boolean = false;
+  Running       : Boolean = False;
+  WaitForNext   : Boolean = False;
+  StopOnSysCall : Boolean = False;
 
 const
   CmdPrefix = 'duby> ';
@@ -42,7 +43,7 @@ begin
   if not Running then
     writeln('not running')
   else
-    callwaitnext := true;
+    WaitForNext := true;
 end;
 
 { TRunComand }
@@ -52,7 +53,7 @@ begin
   if not Running then begin
     running := true;
     writeln('starting process');
-    callwaitnext := true;
+    WaitForNext := true;
   end else
     writelN('process already started');
 end;
@@ -140,7 +141,8 @@ end;
 
 procedure DoRunLoop(Process: TDbgProcess);
 var
-  ProcTerm  : Boolean;
+  ProcTerm     : Boolean;
+  StopForUser  : Boolean;
 begin
   if not Assigned(Process) then begin
     writeln('no process to debug (internal error?)');
@@ -148,17 +150,30 @@ begin
   end;
 
   ProcTerm := false;
-  while true do begin
-    callwaitnext := false;
-    ExecuteNextCommand(Process);
+  StopForUser := true;
 
-    if CallWaitNext and not ProcTerm then begin
+  while true do begin
+    if StopForUser then begin
+      WaitForNext := false;
+      ExecuteNextCommand(Process);
+    end else
+      WaitForNext := true;
+    StopForUser  := true;
+
+    if WaitForNext and not ProcTerm then begin
       if not Process.WaitNextEvent(DbgEvent) then
         writeln('process terminated?')
       else begin
         writeln('event: ', DbgEvent.Debug);
-        if DbgEvent.Kind = dek_SysExc then
-          writeln('system exception at ', IntToHex(DbgEvent.Addr, HexSize));
+        case DbgEvent.Kind of
+          dek_SysExc:
+            writeln('system exception at ', IntToHex(DbgEvent.Addr, HexSize));
+          dek_SysCall:
+          begin
+            writeln('system call: ', DbgEvent.Debug);
+            StopForUser := StopOnSysCall;
+          end;
+        end;
       end;
       if DbgEvent.Kind = dek_ProcessTerminated then
         writeln('process has been terminated');

@@ -29,7 +29,8 @@ type
     procedure SetUInt16(const AValue: Word);
     procedure SetUInt32(const AValue: LongWord);
     procedure SetUInt64(const AValue: QWord);
-    
+  protected
+    function GetName: String; virtual; abstract;
   public
     function isFloatPoint: Boolean; virtual; abstract;
     function isReadOnly: Boolean; virtual; abstract;
@@ -49,6 +50,8 @@ type
     
     property SInt8: SmallInt read GetSInt8 write SetSInt8;
     property UInt8: Byte read GetUInt8 write SetUInt8;
+  
+    property Name: String read GetName;
   end;
   
   TDbgDataList = class(TObject)
@@ -58,11 +61,12 @@ type
   public
     property Count: Integer read GetCount;
     property Reg[const Name: String]: TDbgData read GetRegister; default;
+    function RegByIndex(idx: Integer): TDbgData; virtual; abstract;
   end;
   
   TDbgState = (ds_Nonstarted, ds_ReadToRun, ds_Running, ds_Terminated);
    
-  TDbgEventKind = (dek_Other, dek_SysExc, dek_BreakPoint, dek_ProcessStart, dek_ProcessTerminated);
+  TDbgEventKind = (dek_Other, dek_SysExc, dek_BreakPoint, dek_ProcessStart, dek_ProcessTerminated, dek_SysCall);
   
   TDbgEvent = record
     Addr    : TDbgPtr;
@@ -71,6 +75,8 @@ type
     Debug   : String;
   end;   
   
+  { TDbgProcess }
+
   TDbgProcess = class(TObject)
   protected
   public
@@ -81,6 +87,7 @@ type
     function GetThreadsCount: Integer; virtual; abstract;
     function GetThreadID(AIndex: Integer): TDbgThreadID; virtual; abstract;
     function GetThreadRegs(ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; virtual; abstract;
+    function MainThreadID: TDbgThreadID; virtual; 
     
     function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; virtual; abstract;
     function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; virtual; abstract;
@@ -182,6 +189,13 @@ end;
 procedure TDbgData.SetUInt64(const AValue: QWord); 
 begin
   SetValue(AValue, 64);
+end;
+
+{ TDbgProcess }
+
+function TDbgProcess.MainThreadID: TDbgThreadID; 
+begin
+  Result := GetThreadID(0);
 end;
 
 initialization

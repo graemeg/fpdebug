@@ -13,7 +13,7 @@
       <TargetFileExt Value=".exe"/>
       <Title Value="dubyline"/>
       <UseXPManifest Value="True"/>
-      <ActiveEditorIndexAtStart Value="2"/>
+      <ActiveEditorIndexAtStart Value="4"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -32,7 +32,7 @@
         <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <Units Count="48">
+    <Units Count="49">
       <Unit0>
         <Filename Value="dubyline.pas"/>
         <IsPartOfProject Value="True"/>
@@ -104,16 +104,20 @@
       <Unit9>
         <Filename Value="cmdloop.pas"/>
         <UnitName Value="cmdloop"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
-        <UsageCount Value="9"/>
+        <CursorPos X="20" Y="169"/>
+        <TopLine Value="161"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
       </Unit9>
       <Unit10>
         <Filename Value="..\dubylib\dbgtypes.pas"/>
         <UnitName Value="dbgTypes"/>
-        <CursorPos X="1" Y="74"/>
-        <TopLine Value="58"/>
+        <CursorPos X="40" Y="206"/>
+        <TopLine Value="196"/>
+        <EditorIndex Value="4"/>
         <UsageCount Value="10"/>
+        <Loaded Value="True"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\dubylib\pesource.pas"/>
@@ -125,8 +129,8 @@
       <Unit12>
         <Filename Value="..\dubylib\macdbgtype.pas"/>
         <UnitName Value="macDbgType"/>
-        <CursorPos X="1" Y="261"/>
-        <TopLine Value="247"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
         <EditorIndex Value="2"/>
         <UsageCount Value="13"/>
         <Bookmarks Count="2">
@@ -208,9 +212,11 @@
       <Unit23>
         <Filename Value="memviewer.pas"/>
         <UnitName Value="memviewer"/>
-        <CursorPos X="44" Y="72"/>
-        <TopLine Value="53"/>
-        <UsageCount Value="9"/>
+        <CursorPos X="75" Y="149"/>
+        <TopLine Value="134"/>
+        <EditorIndex Value="5"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
       </Unit23>
       <Unit24>
         <Filename Value="macdbgproc.pas"/>
@@ -234,7 +240,7 @@
         <UnitName Value="machapi"/>
         <CursorPos X="12" Y="3373"/>
         <TopLine Value="3362"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="8"/>
         <UsageCount Value="12"/>
         <Bookmarks Count="1">
           <Item0 X="24" Y="838" ID="3"/>
@@ -388,7 +394,7 @@
         <UnitName Value="macDbgProc"/>
         <CursorPos X="17" Y="1"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="5"/>
+        <EditorIndex Value="9"/>
         <UsageCount Value="22"/>
         <Loaded Value="True"/>
       </Unit46>
@@ -397,131 +403,140 @@
         <UnitName Value="mach_port"/>
         <CursorPos X="33" Y="142"/>
         <TopLine Value="127"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="7"/>
         <UsageCount Value="11"/>
         <Loaded Value="True"/>
       </Unit47>
+      <Unit48>
+        <Filename Value="..\dubylib\dbgUtils.pas"/>
+        <UnitName Value="dbgUtils"/>
+        <CursorPos X="41" Y="28"/>
+        <TopLine Value="23"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit48>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="1031" Column="20" TopLine="1022"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position1>
       <Position2>
         <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="1033" Column="18" TopLine="1022"/>
+        <Caret Line="3309" Column="62" TopLine="3293"/>
       </Position2>
       <Position3>
         <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="1034" Column="20" TopLine="1022"/>
+        <Caret Line="3340" Column="1" TopLine="3323"/>
       </Position3>
       <Position4>
         <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="1035" Column="20" TopLine="1022"/>
+        <Caret Line="3415" Column="46" TopLine="3391"/>
       </Position4>
       <Position5>
-        <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="1039" Column="12" TopLine="1022"/>
+        <Filename Value="..\dubylib\macdbgtype.pas"/>
+        <Caret Line="241" Column="17" TopLine="228"/>
       </Position5>
       <Position6>
-        <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="1042" Column="12" TopLine="1022"/>
+        <Filename Value="..\dubylib\macdbgtype.pas"/>
+        <Caret Line="221" Column="23" TopLine="212"/>
       </Position6>
       <Position7>
-        <Filename Value="..\dubylib\mach_port.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\dubylib\machapi.pas"/>
+        <Caret Line="3367" Column="19" TopLine="3361"/>
       </Position7>
       <Position8>
         <Filename Value="..\dubylib\macdbgtype.pas"/>
-        <Caret Line="254" Column="19" TopLine="238"/>
+        <Caret Line="259" Column="42" TopLine="239"/>
       </Position8>
       <Position9>
         <Filename Value="..\dubylib\macdbgtype.pas"/>
-        <Caret Line="218" Column="33" TopLine="205"/>
+        <Caret Line="257" Column="35" TopLine="241"/>
       </Position9>
       <Position10>
-        <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="1068" Column="39" TopLine="1309"/>
+        <Filename Value="..\dubylib\macdbgtype.pas"/>
+        <Caret Line="202" Column="9" TopLine="186"/>
       </Position10>
       <Position11>
-        <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="205" Column="1" TopLine="188"/>
+        <Filename Value="..\dubylib\macdbgtype.pas"/>
+        <Caret Line="257" Column="49" TopLine="241"/>
       </Position11>
       <Position12>
-        <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="13" Column="7" TopLine="1"/>
+        <Filename Value="..\dubylib\macdbgtype.pas"/>
+        <Caret Line="256" Column="42" TopLine="240"/>
       </Position12>
       <Position13>
         <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="3369" Column="23" TopLine="3353"/>
       </Position13>
       <Position14>
-        <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="3309" Column="62" TopLine="3293"/>
+        <Filename Value="..\dubylib\macdbgtype.pas"/>
+        <Caret Line="256" Column="42" TopLine="240"/>
       </Position14>
       <Position15>
         <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="3340" Column="1" TopLine="3323"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position15>
       <Position16>
         <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="3415" Column="46" TopLine="3391"/>
+        <Caret Line="3319" Column="36" TopLine="3308"/>
       </Position16>
       <Position17>
         <Filename Value="..\dubylib\macdbgtype.pas"/>
-        <Caret Line="241" Column="17" TopLine="228"/>
+        <Caret Line="221" Column="23" TopLine="212"/>
       </Position17>
       <Position18>
-        <Filename Value="..\dubylib\macdbgtype.pas"/>
-        <Caret Line="221" Column="23" TopLine="212"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position18>
       <Position19>
-        <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="3367" Column="19" TopLine="3361"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="169" Column="20" TopLine="161"/>
       </Position19>
       <Position20>
-        <Filename Value="..\dubylib\macdbgtype.pas"/>
-        <Caret Line="259" Column="42" TopLine="239"/>
+        <Filename Value="..\dubylib\dbgUtils.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position20>
       <Position21>
-        <Filename Value="..\dubylib\macdbgtype.pas"/>
-        <Caret Line="257" Column="35" TopLine="241"/>
+        <Filename Value="..\dubylib\dbgUtils.pas"/>
+        <Caret Line="11" Column="32" TopLine="2"/>
       </Position21>
       <Position22>
-        <Filename Value="..\dubylib\macdbgtype.pas"/>
-        <Caret Line="202" Column="9" TopLine="186"/>
+        <Filename Value="..\dubylib\dbgUtils.pas"/>
+        <Caret Line="21" Column="14" TopLine="11"/>
       </Position22>
       <Position23>
-        <Filename Value="..\dubylib\macdbgtype.pas"/>
-        <Caret Line="257" Column="49" TopLine="241"/>
+        <Filename Value="..\dubylib\dbgUtils.pas"/>
+        <Caret Line="38" Column="14" TopLine="28"/>
       </Position23>
       <Position24>
-        <Filename Value="..\dubylib\macdbgtype.pas"/>
-        <Caret Line="256" Column="42" TopLine="240"/>
+        <Filename Value="..\dubylib\dbgUtils.pas"/>
+        <Caret Line="11" Column="32" TopLine="2"/>
       </Position24>
       <Position25>
-        <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="3369" Column="23" TopLine="3353"/>
+        <Filename Value="..\dubylib\dbgUtils.pas"/>
+        <Caret Line="28" Column="41" TopLine="23"/>
       </Position25>
       <Position26>
-        <Filename Value="..\dubylib\macdbgtype.pas"/>
-        <Caret Line="256" Column="42" TopLine="240"/>
+        <Filename Value="memviewer.pas"/>
+        <Caret Line="72" Column="44" TopLine="53"/>
       </Position26>
       <Position27>
-        <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="746" Column="3" TopLine="882"/>
+        <Filename Value="memviewer.pas"/>
+        <Caret Line="156" Column="32" TopLine="141"/>
       </Position27>
       <Position28>
-        <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="memviewer.pas"/>
+        <Caret Line="149" Column="75" TopLine="134"/>
       </Position28>
       <Position29>
-        <Filename Value="..\dubylib\machapi.pas"/>
-        <Caret Line="3319" Column="36" TopLine="3308"/>
+        <Filename Value="..\dubylib\dbgtypes.pas"/>
+        <Caret Line="80" Column="3" TopLine="77"/>
       </Position29>
       <Position30>
-        <Filename Value="..\dubylib\macdbgtype.pas"/>
-        <Caret Line="221" Column="23" TopLine="212"/>
+        <Filename Value="..\dubylib\dbgtypes.pas"/>
+        <Caret Line="201" Column="1" TopLine="172"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>

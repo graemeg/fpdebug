@@ -29,12 +29,29 @@ type
   TRunComand = class(TCommand)
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
   end;
+  
+  { TStepCommand }
+
+  TStepCommand = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+  end;
 
   { TContinueCommand }
 
   TContinueCommand = class(TCommand)
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
   end;
+
+{ TStepCommand }
+
+procedure TStepCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+begin
+  if not Running then WriteLn('not running');
+    
+  if not Process.Step(DbgEvent) then
+    writeln('unable to step');
+  WaitForNext := false;
+end;
 
 { TContinueCommand }
 
@@ -193,6 +210,7 @@ procedure RegisterLoopCommands;
 begin
   RegisterCommand(['run','r'], TRunComand.Create);
   RegisterCommand(['c'], TContinueCommand.Create);
+  RegisterCommand(['step','s'], TStepCommand.Create);
 end;
 
 initialization

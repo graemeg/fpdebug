@@ -14,24 +14,29 @@ type
   
   TWinThreadInfo = record
     id  : TThreadId;
+    Handle  : THandle;
   end;
 
   TWinDbgProcess = class(TDbgProcess)
   private
     fState    : TDbgState;
     fCmdLine  : String;
+    fis32proc : Boolean; //todo:
     
     fProcInfo     : TProcessInformation;
     fLastEvent    : TDebugEvent;
+    fWaiting      : Boolean;
     fWaited       : Boolean;
     fTerminated   : Boolean;
+    fEHandled     : Boolean;
     
     fThreadsCount : Integer;
     fThreads      : array of TWinThreadInfo;
   protected
     
-    procedure AddThread(ThreadID: TThreadID);
+    procedure AddThread(ThreadID: TThreadID; ThreadHandle: THandle);
     procedure RemoveThread(ThreadID: TThreadID);
+    function GetThreadHandle(ThreadID: TThreadID): THandle;
   public
     constructor Create;
     destructor Destroy; override;
@@ -69,6 +74,7 @@ end;
 
 constructor TWinDbgProcess.Create; 
 begin
+  fis32proc := True;
 end;
 
 destructor TWinDbgProcess.Destroy;  
@@ -91,7 +97,7 @@ begin
   Result := WriteProcMem(fProcInfo.hProcess, Offset, Count, Data);
 end;
 
-procedure TWinDbgProcess.AddThread(ThreadID: TThreadID); 
+procedure TWinDbgProcess.AddThread(ThreadID: TThreadID; ThreadHandle: THandle); 
 var
   i : Integer;
 begin
@@ -103,6 +109,7 @@ begin
     else SetLength(fThreads, fThreadsCount*2);
   end;
   fThreads[fThreadsCount].id := ThreadID;
+  fThreads[fThreadsCount].Handle := ThreadHandle;
   inc(fThreadsCount);  
 end;
 
@@ -119,11 +126,23 @@ begin
     end;
 end;
 
+function TWinDbgProcess.GetThreadHandle(ThreadID: TThreadID): THandle;
+var
+  i : Integer;
+begin
+  for i := 0 to fThreadsCount - 1 do
+    if fThreads[i].id=ThreadID then begin
+      Result := fThreads[i].Handle;
+      Exit;
+    end;
+  Result := 0;
+end;
+
+
 function TWinDbgProcess.Execute(const ACommandLine: String): Boolean;  
 begin
   fCmdLine := ACommandLine;
   fState := ds_ReadToRun;
-  Result := true;
   
   Result := CreateDebugProcess(ACommandLine, fProcInfo);
   if not Result then Exit;
@@ -136,23 +155,23 @@ end;
 
 function TWinDbgProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;  
 var
-  cont  : LongWord;
+  ContStatus  : LongWord;
+const
+  HandledStatus : array [Boolean] of LongWord =(DBG_EXCEPTION_NOT_HANDLED, DBG_CONTINUE);
 begin
-  if fWaited then begin
-    case fLastEvent.dwDebugEventCode of
-      EXCEPTION_DEBUG_EVENT: cont := DBG_EXCEPTION_NOT_HANDLED;
-      EXCEPTION_BREAKPOINT:  cont := DBG_CONTINUE;
-    else
-      cont := DBG_CONTINUE;
-    end;
-    
-    try
-      with fLastEvent do 
-        ContinueDebugEvent(dwProcessId, dwThreadId, Cont);
-    except
-      //writeln('exception while ContinueDebugEvent');
-    end;
-    
+  Result := false;
+  if fWaited and (fLastEvent.dwDebugEventCode = EXCEPTION_DEBUG_EVENT) then begin
+    if fLastEvent.Exception.ExceptionRecord.ExceptionCode = EXCEPTION_BREAKPOINT
+      then ContStatus := DBG_CONTINUE
+      else ContStatus := HandledStatus[fEHandled]
+  end else
+    ContStatus := DBG_CONTINUE;
+
+  try
+    with fLastEvent do
+      ContinueDebugEvent(dwProcessId, dwThreadId, ContStatus);
+  except
+    //writeln('exception while ContinueDebugEvent');
   end;
 
   if fTerminated then begin
@@ -162,19 +181,23 @@ begin
   
   FillChar(fLastEvent, sizeof(fLastEvent), 0);
   try
+    fWaiting:=true;
     Result := Windows.WaitForDebugEvent(fLastEvent, INFINITE);
   except
     //writeln('exception while WaitForDebugEvent');
   end;
-  
-  fWaited := Result;
+  fWaiting:=false;
+
+  fWaited:=Result;
   
   if Result then begin
     WinEventToDbgEvent(fProcInfo.hProcess, fLastEvent, Event);
     case fLastEvent.dwDebugEventCode of
-      CREATE_PROCESS_DEBUG_EVENT, CREATE_THREAD_DEBUG_EVENT: 
-        AddThread(fLastEvent.dwThreadId);
-      EXIT_PROCESS_DEBUG_EVENT, EXIT_THREAD_DEBUG_EVENT: 
+      CREATE_PROCESS_DEBUG_EVENT:
+        AddThread(fLastEvent.dwThreadId, fLastEvent.CreateProcessInfo.hThread);
+      CREATE_THREAD_DEBUG_EVENT:
+        AddThread(fLastEvent.dwThreadId, fLastEvent.CreateThread.hThread);
+      EXIT_PROCESS_DEBUG_EVENT, EXIT_THREAD_DEBUG_EVENT:
         RemoveThread(fLastEvent.dwThreadId);
     end;
   
@@ -197,8 +220,20 @@ begin
 end;
 
 function TWinDbgProcess.GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;  
+var
+  hnd   : THandle;
 begin
-  Result := false;  
+  Result := false;
+  if fWaiting then Exit;
+
+  hnd := GetThreadHandle(ThreadID);
+  Result := hnd <> 0;
+  if not Result then Exit;
+
+  if fis32proc then begin
+    Result:=DoReadThreadRegs32(hnd, Regs);
+  end else
+    Result := false;
 end;
 
 procedure InitWindowsError;

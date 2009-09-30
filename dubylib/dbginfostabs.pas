@@ -114,15 +114,23 @@ type
 
   TStabsInfo = class(TDbgInfo)
   private
+    fSource     : TDbgDataSource;
+    
     fStream     : TStream;
     fOwnSource  : Boolean;
     fStabsList  : TStabsList;
   public
     class function isPresent(ASource: TDbgDataSource): Boolean; override;
     constructor Create(ASource: TDbgDataSource); override;
-    
-    function GetLineInfo(const Addr: TDbgPtr; var FileName: String; var LineNum, ColumnNum: Integer): Boolean; override;
+    function GetDebugData(const DataName: string; DataAddr: TDbgPtr; OutData: TDbgDataList): Boolean; override;
   end;
+  
+const
+  dt_LineInfo   = 'cmn.lineinfo';           // DataName  - requests line number of the give address
+  dt_LineFile   = 'cmn.lineinfo.filename';  //    - name of the file 
+  dt_LineNumber = 'cmn.lineinfo.line';      //    - line number
+  dt_LineColon  = 'cmn.lineinfo.colon';     //    - colon number
+  
 
 implementation
 
@@ -203,14 +211,15 @@ end;
 
 constructor TStabsInfo.Create(ASource: TDbgDataSource);
 begin
-
+  inherited Create(ASource);
+  fSource := ASource;
 end;
 
-function TStabsInfo.GetLineInfo(const Addr: TDbgPtr; var FileName: String; 
-  var LineNum, ColumnNum: Integer): Boolean;  
+function TStabsInfo.GetDebugData(const DataName: string; DataAddr: TDbgPtr; OutData: TDbgDataList): Boolean;  
 begin
-
+  Result := false;
 end;
+
 
 { TStabsList }
 
@@ -265,6 +274,9 @@ begin
   end;
 }
 end;
+
+initialization
+  RegisterDebugInfo(TStabsInfo);
 
 end.
 

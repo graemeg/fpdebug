@@ -16,10 +16,10 @@ type
     fBitSize    : Integer;
     fName       : string;
   protected
-    procedure SetValue(const Value; ValueBitSize: Integer); override;
-    procedure GetValue(var Value; ValueBitSize: Integer); override;
     function GetName: String; override;
   public
+    procedure SetValue(const Value; ValueBitSize: Integer); override;
+    procedure GetValue(var Value; ValueBitSize: Integer); override;
     function isFloatPoint: Boolean; override;
     function isReadOnly: Boolean; override;
     function BitSize: Integer; override;
@@ -42,6 +42,10 @@ type
 
 function Max(a,b: Integer): Integer;
 function Min(a,b: Integer): Integer;
+
+
+function GetProcessRegisters(Process: TDbgProcess; data: TDbgDataList): Boolean; overload;
+function GetProcessRegisters(Process: TDbgProcess): TDbgDataList; overload;
 
 implementation
 
@@ -137,5 +141,30 @@ function TDbgDataBytesList.RegByIndex(idx: Integer): TDbgData;
 begin
   Result := TDbgData(fItems.Objects[idx]);
 end;
+
+function GetProcessRegisters(Process: TDbgProcess; data: TDbgDataList): Boolean; 
+begin
+  Result := false;
+  if not Assigned(Process) or not Assigned(data) then Exit;
+  Result := Process.GetThreadRegs(Process.MainThreadID, data);
+end;
+
+function GetProcessRegisters(Process: TDbgProcess): TDbgDataList; overload;
+var
+  list  : TDbgDataBytesList;
+  res   : Boolean;
+begin
+  Result := nil;
+  if not Assigned(Process) then Exit;
+  list := TDbgDataBytesList.Create;
+  res := GetProcessRegisters(Process, list);
+  if not res then begin
+    list.Free;
+    Result := nil;
+    Exit;
+  end else
+    Result := list;
+end;
+
 
 end.

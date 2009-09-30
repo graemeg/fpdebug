@@ -15,8 +15,10 @@ uses
   PESource,
   dbgInfoStabs
   {$ifdef darwin},macDbgType, macdbgproc {$endif}
-  {$ifdef mswindows},winDbgTypes {$endif};
+  {$ifdef mswindows},winDbgTypes{$endif}
+  ,cmddbg;
 
+ 
 procedure RunDebugger;
 var
   dbg : TDbgProcess;
@@ -29,11 +31,14 @@ begin
   end else
     writeln('debugging process: ', cmd);
 
+  LoadDebugInfo(cmd);
+    
   dbg := DebugProcessStart(cmd);
   if not Assigned(dbg) then begin
     writeln('cannot start debug process');
     Exit;
   end;
+  
   try
     try
       //SetCommandLine(cmd);

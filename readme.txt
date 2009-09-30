@@ -20,7 +20,7 @@ dmitry aka skalogryz
 
 the project structures is the following
 
-fpdbglib/    - dir containg all libraries used for 
+dubylib/     - dir containg all libraries used for 
   dbg*       - common debugging unit. Usually contains classes/types declarations
 
   win*       - Windows specific units
@@ -37,6 +37,7 @@ more to come:
   bsd* - BSD Unix specifi units
   other processors support
 
-debugger/    - A small command-line debugger, implemented using fpdbglib
+debugger/    - A small command-line debugger, implemented using dubylib
+
   
  

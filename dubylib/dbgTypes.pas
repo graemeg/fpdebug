@@ -75,7 +75,7 @@ type
   TDbgState = (ds_Nonstarted, ds_ReadToRun, ds_Running, ds_Terminated);
    
   TDbgEventKind = (
-    dek_Other, dek_SysExc, dek_Stepped, dek_BreakPoint, 
+    dek_Other, dek_SysExc, dek_SingleStep, dek_BreakPoint, 
     dek_ProcessStart, dek_ProcessTerminated, dek_SysCall);
   
   TDbgEvent = record
@@ -99,9 +99,8 @@ type
     function GetThreadsCount: Integer; virtual; abstract;
     function GetThreadID(AIndex: Integer): TDbgThreadID; virtual; abstract;
     function GetThreadRegs(ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; virtual; abstract;
-    
-    function GetThreadRunMode(ThreadID: TDbgThreadID): TDbgRunMode;
-    function SetThreadRunMode(ThreadID: TDbgThreadID; const mode: TDbgRunMode): Boolean;
+
+    function SetSingleStep(ThreadID: TDbgThreadID): Boolean; virtual; abstract;
     
     function MainThreadID: TDbgThreadID; virtual; 
     

@@ -34,10 +34,9 @@ type
  
 function GetDataSource(const FileName: string): TDbgDataSource; overload;
 function GetDataSource(ASource: TStream; OwnSource: Boolean): TDbgDataSource; overload;
-function GetDebugInfo(InfoStream: TStream; OwnInfoStream: Boolean): TDbgInfo; 
 
-procedure RegisterDataSource( DataSource: TDbgDataSourceClass); 
-procedure RegisterDebugInfo( DebugInfo: TDbgInfoClass ); 
+procedure RegisterDataSource(DataSource: TDbgDataSourceClass); 
+procedure RegisterDebugInfo(DebugInfo: TDbgInfoClass ); 
   
 implementation
 
@@ -90,27 +89,6 @@ begin
     end;
   end;
   Result := nil;
-end;
-
-function GetDebugInfo(InfoStream: TStream; OwnInfoStream: Boolean): TDbgInfo; 
-var
-  i   : Integer;
-  p   : Int64;
-//  reader : TDbgInfoReader;
-begin
-  Result := nil;
-{  if not Assigned(InfoStream) then Exit;  
-
-  p := InfoStream.Position;  
-  for i := 0 to readers.Count - 1 do begin
-    InfoStream.Position := p;
-    reader := TDbgInfoReader(readers[i]);      
-    try
-      Result := reader.CreateDebugInfo(InfoStream, OwnInfoStream);
-      if Assigned(Result) then Exit;
-    except
-    end;
-  end;}
 end;
 
 procedure RegisterDataSource( DataSource: TDbgDataSourceClass); 

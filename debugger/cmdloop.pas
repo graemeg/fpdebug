@@ -48,9 +48,9 @@ procedure TStepCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);
 begin
   if not Running then WriteLn('not running');
     
-  if not Process.Step(DbgEvent) then
-    writeln('unable to step');
-  WaitForNext := false;
+  Process.SetSingleStep( Process.MainThreadID );
+  
+  WaitForNext := true;
 end;
 
 { TContinueCommand }

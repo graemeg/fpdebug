@@ -86,6 +86,8 @@ procedure WinEventToDbgEvent(ProcessHandle: THandle; const Win: TDebugEvent; var
 
 function DoReadThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
 
+function SetThread32SingleStep(ThreadHandle: THandle): Boolean;
+
 implementation
 
 function DoReadThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
@@ -127,10 +129,25 @@ begin
     Regs.Reg[_Dr3].UInt32 := Dr3;
     Regs.Reg[_Dr6].UInt32 := Dr6;
     Regs.Reg[_Dr7].UInt32 := Dr7;
-
   end;
-
 end;
+
+function SetThread32SingleStep(ThreadHandle: THandle): Boolean;
+var
+  ctx : TContext32;
+begin
+  FillChar(ctx, sizeof(ctx), 0);
+  ctx.ContextFlags := CONTEXT_CONTROL;
+  Result := GetThreadContext(ThreadHandle, @ctx);
+  if not Result then Exit;
+  
+  ctx.ContextFlags := CONTEXT_CONTROL;
+  ctx.EFlags := ctx.EFlags or FLAG_TRACE_BIT;  
+  
+  // PContext(@ctx)^ is a bit hacky 
+  Result := SetThreadContext(ThreadHandle, PContext(@ctx)^);
+end;
+
 
 function ReadPointerSize(dwProc: THandle; Offset: TDbgPtr): TDbgPtr;
 begin

@@ -13,7 +13,7 @@ type
   { TWinDbgProcess }
   
   TWinThreadInfo = record
-    id  : TThreadId;
+    ID      : TThreadId;
     Handle  : THandle;
   end;
 
@@ -36,7 +36,7 @@ type
     
     procedure AddThread(ThreadID: TThreadID; ThreadHandle: THandle);
     procedure RemoveThread(ThreadID: TThreadID);
-    function GetThreadHandle(ThreadID: TThreadID): THandle;
+    function GetThreadIndex(ThreadID: TThreadID): Integer;
   public
     constructor Create;
     destructor Destroy; override;
@@ -48,6 +48,7 @@ type
     function GetThreadsCount: Integer; override;
     function GetThreadID(AIndex: Integer): TDbgThreadID; override;
     function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
+    function SetSingleStep(ThreadID: TDbgThreadID): Boolean; override;
 
     function GetProcessState: TDbgState; override;
     
@@ -126,16 +127,16 @@ begin
     end;
 end;
 
-function TWinDbgProcess.GetThreadHandle(ThreadID: TThreadID): THandle;
+function TWinDbgProcess.GetThreadIndex(ThreadID: TThreadID): Integer;
 var
   i : Integer;
 begin
   for i := 0 to fThreadsCount - 1 do
     if fThreads[i].id=ThreadID then begin
-      Result := fThreads[i].Handle;
+      Result := i;
       Exit;
     end;
-  Result := 0;
+  Result := -1;
 end;
 
 
@@ -161,9 +162,12 @@ const
 begin
   Result := false;
   if fWaited and (fLastEvent.dwDebugEventCode = EXCEPTION_DEBUG_EVENT) then begin
-    if fLastEvent.Exception.ExceptionRecord.ExceptionCode = EXCEPTION_BREAKPOINT
-      then ContStatus := DBG_CONTINUE
-      else ContStatus := HandledStatus[fEHandled]
+    case fLastEvent.Exception.ExceptionRecord.ExceptionCode of
+      EXCEPTION_BREAKPOINT,
+      EXCEPTION_SINGLE_STEP: ContStatus := DBG_CONTINUE
+    else 
+      ContStatus := HandledStatus[fEHandled]
+    end;
   end else
     ContStatus := DBG_CONTINUE;
 
@@ -221,18 +225,36 @@ end;
 
 function TWinDbgProcess.GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;  
 var
+  idx   : Integer;
   hnd   : THandle;
 begin
   Result := false;
   if fWaiting then Exit;
 
-  hnd := GetThreadHandle(ThreadID);
-  Result := hnd <> 0;
+  idx := GetThreadIndex(ThreadID);
+  Result := idx >= 0;
   if not Result then Exit;
-
+  
+  hnd := fThreads[idx].Handle;
+  
   if fis32proc then begin
     Result:=DoReadThreadRegs32(hnd, Regs);
   end else
+    Result := false;
+end;
+
+function TWinDbgProcess.SetSingleStep(ThreadID: TDbgThreadID): Boolean;  
+var
+  idx : Integer;
+begin
+  idx := GetThreadIndex(ThreadID);
+  Result := idx >= 0;
+  if not Result then Exit;
+
+  if fis32proc then 
+    Result := SetThread32SingleStep(fThreads[idx].Handle)
+  else 
+    //todo:
     Result := false;
 end;
 

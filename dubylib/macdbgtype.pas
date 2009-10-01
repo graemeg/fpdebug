@@ -32,6 +32,7 @@ type
     function GetThreadsCount: Integer; override;
     function GetThreadID(AIndex: Integer): TDbgThreadID; override;
     function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
+    function SetSingleStep(ThreadID: TDbgThreadID): Boolean; override;
 
     function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
     function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
@@ -96,6 +97,11 @@ end;
 function TMachDbgProcess.GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;
 begin
   Result:=false;
+end;
+
+function TMachDbgProcess.SetSingleStep(ThreadID: TDbgThreadID): Boolean;
+begin
+  Result := false;
 end;
 
 function TMachDbgProcess.ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
@@ -163,43 +169,42 @@ end;
 function GetSigStr(sig: integer): String;
 begin
   case sig of
-  SIGHUP:  Result := 'SIGHUP';  { hangup  }
-  SIGINT:  Result := 'SIGINT'; { interrupt  }
-  SIGQUIT:  Result := 'SIGQUIT'; { quit  }
-  SIGILL :  Result := 'SIGILL'; { illegal instruction (not reset when caught)  }
-  SIGTRAP:  Result := 'SIGTRAP';  { trace trap (not reset when caught)  }
-  SIGABRT:  Result := 'SIGABRT'; { abort()  }
-  //SIGIOT:   Result := 'SIGIOT'; { compatibility  }
-  SIGEMT:   Result := 'SIGEMT'; { EMT instruction  }
-  SIGFPE:   Result := 'SIGFPE'; { floating point exception  }
-  SIGKILL:  Result := 'SIGKILL'; { kill (cannot be caught or ignored)  }
-  SIGBUS :  Result := 'SIGBUS'; { bus error  }
-  SIGSEGV:  Result := 'SIGSEGV';  { segmentation violation  }
-  SIGSYS :  Result := 'SIGSYS';  { bad argument to system call  }
-  SIGPIPE:  Result := 'SIGPIPE';  { write on a pipe with no one to read it  }
-  SIGALRM:  Result := 'SIGALRM';  { alarm clock  }
-  SIGTERM:  Result := 'SIGTERM'; { software termination signal from kill  }
-  SIGURG:   Result := 'SIGURG'; { urgent condition on IO channel  }
-  SIGSTOP:  Result := 'SIGSTOP';  { sendable stop signal not from tty  }
-  SIGTSTP:  Result := 'SIGTSTP';  { stop signal from tty  }
-  SIGCONT:  Result := 'SIGCONT'; { continue a stopped process  }
-  SIGCHLD:  Result := 'SIGCHLD'; { to parent on child stop or exit  }
-  SIGTTIN:  Result := 'SIGTTIN';  { to readers pgrp upon background tty read  }
-  SIGTTOU:  Result := 'SIGTTOU'; { like TTIN for output if (tp->t_local&LTOSTOP)  }
-  SIGIO:    Result := 'SIGIO';  { input/output possible signal  }
-  SIGXCPU:  Result := 'SIGXCPU';  { exceeded CPU time limit  }
-  SIGXFSZ:  Result := 'SIGXFSZ';  { exceeded file size limit  }
-  SIGVTALRM:  Result := 'SIGVTALRM';  { virtual time alarm  }
-  SIGPROF:    Result := 'SIGPROF'  ;  { profiling time alarm  }
-  SIGWINCH:   Result := 'SIGWINCH' ;  { window size changes  }
-  SIGINFO:  Result := 'SIGINFO';  { information request  }
-  SIGUSR1:  Result := 'SIGUSR1';   { user defined signal 1  }
-  SIGUSR2:  Result := 'SIGUSR2';   { user defined signal 2  }
+    SIGHUP:  Result := 'SIGHUP';  { hangup  }
+    SIGINT:  Result := 'SIGINT'; { interrupt  }
+    SIGQUIT:  Result := 'SIGQUIT'; { quit  }
+    SIGILL :  Result := 'SIGILL'; { illegal instruction (not reset when caught)  }
+    SIGTRAP:  Result := 'SIGTRAP';  { trace trap (not reset when caught)  }
+    SIGABRT:  Result := 'SIGABRT'; { abort()  }
+    //SIGIOT:   Result := 'SIGIOT'; { compatibility  }
+    SIGEMT:   Result := 'SIGEMT'; { EMT instruction  }
+    SIGFPE:   Result := 'SIGFPE'; { floating point exception  }
+    SIGKILL:  Result := 'SIGKILL'; { kill (cannot be caught or ignored)  }
+    SIGBUS :  Result := 'SIGBUS'; { bus error  }
+    SIGSEGV:  Result := 'SIGSEGV';  { segmentation violation  }
+    SIGSYS :  Result := 'SIGSYS';  { bad argument to system call  }
+    SIGPIPE:  Result := 'SIGPIPE';  { write on a pipe with no one to read it  }
+    SIGALRM:  Result := 'SIGALRM';  { alarm clock  }
+    SIGTERM:  Result := 'SIGTERM'; { software termination signal from kill  }
+    SIGURG:   Result := 'SIGURG'; { urgent condition on IO channel  }
+    SIGSTOP:  Result := 'SIGSTOP';  { sendable stop signal not from tty  }
+    SIGTSTP:  Result := 'SIGTSTP';  { stop signal from tty  }
+    SIGCONT:  Result := 'SIGCONT'; { continue a stopped process  }
+    SIGCHLD:  Result := 'SIGCHLD'; { to parent on child stop or exit  }
+    SIGTTIN:  Result := 'SIGTTIN';  { to readers pgrp upon background tty read  }
+    SIGTTOU:  Result := 'SIGTTOU'; { like TTIN for output if (tp->t_local&LTOSTOP)  }
+    SIGIO:    Result := 'SIGIO';  { input/output possible signal  }
+    SIGXCPU:  Result := 'SIGXCPU';  { exceeded CPU time limit  }
+    SIGXFSZ:  Result := 'SIGXFSZ';  { exceeded file size limit  }
+    SIGVTALRM:  Result := 'SIGVTALRM';  { virtual time alarm  }
+    SIGPROF:    Result := 'SIGPROF'  ;  { profiling time alarm  }
+    SIGWINCH:   Result := 'SIGWINCH' ;  { window size changes  }
+    SIGINFO:  Result := 'SIGINFO';  { information request  }
+    SIGUSR1:  Result := 'SIGUSR1';   { user defined signal 1  }
+    SIGUSR2:  Result := 'SIGUSR2';   { user defined signal 2  }
   end;
 end;
 
-{
-exc_msg {
+(* exc_msg {
     mach_msg_header_t          Head;
     mach_msg_body_t            msgh_body; // start of kernel-processed data
     mach_msg_port_descriptor_t thread;    // victim thread
@@ -209,8 +214,8 @@ exc_msg {
     mach_msg_type_number_t     codeCnt;   // number of elements in code[]
     exception_data_t           code;      // an array of integer_t
     char                       pad[512];  // for avoiding MACH_MSG_RCV_TOO_LARGE
-}
-}
+  }
+*)
 
   
 function TMachDbgProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;
@@ -222,6 +227,7 @@ var
   st      : Integer;
   pidres  : pid_t;
 begin
+  Result := false;
 //mach code
 
 {  waited := false;

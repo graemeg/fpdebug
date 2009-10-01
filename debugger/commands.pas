@@ -78,8 +78,8 @@ end;
 
 procedure THelpCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);  
 var
-  i, j  : Integer;
-  nm : String;
+  i   : Integer;
+  nm  : String;
   cmd : TCommand;
 begin
   if CmdParams.Count > 1 then begin

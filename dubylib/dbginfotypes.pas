@@ -13,11 +13,13 @@ type
   TDbgDataSource = class(TObject) // executable parser
   public
     class function isValid(ASource: TStream): Boolean; virtual; abstract;
+    class function UserName: AnsiString; virtual; abstract;
     constructor Create(ASource: TStream; OwnSource: Boolean); virtual; 
 
     function SectionsCount: Integer; virtual; abstract;
-    function GetSectionInfo(SourceIndex: Integer; var SourceName: AnsiString; var Offset, Size: Int64): Boolean; virtual; abstract;    
-    function GetSource: TStream; virtual; abstract;
+    function GetSection(index: Integer; var Name: AnsiString; var Size: Int64): Boolean; virtual; abstract;
+    function GetSectionData(index: Integer; outStream: TStream): Boolean; virtual; abstract;
+
   end;
   TDbgDataSourceClass = class of TDbgDataSource;
   
@@ -36,8 +38,8 @@ function GetDataSource(const FileName: string): TDbgDataSource; overload;
 function GetDataSource(ASource: TStream; OwnSource: Boolean): TDbgDataSource; overload;
 
 procedure RegisterDataSource(DataSource: TDbgDataSourceClass); 
-procedure RegisterDebugInfo(DebugInfo: TDbgInfoClass ); 
-  
+procedure RegisterDebugInfo(DebugInfo: TDbgInfoClass );
+
 implementation
 
 var
@@ -67,24 +69,25 @@ begin
   if not Assigned(ASource) then Exit;
   
   p := ASource.Position;
-  writeln('-- sources count ', sources.Count);
+  //writeln('-- sources count ', sources.Count);
   for i := 0 to sources.Count - 1 do begin
     cls :=  TDbgDataSourceClass(sources[i]);
     try
       ASource.Position := P;
       if cls.isValid(ASource) then begin 
-        writelN('-- is valid source!');
+        //writelN('-- is valid source!');
         ASource.Position := p;
-        writelN('-- creating! cls = ', cls.ClassName);
+        //writelN('-- creating! cls = ', cls.ClassName);
         Result := cls.Create(ASource, OwnSource);
-        writeln('result = ', PtrUInt(Result));
+        //writeln('result = ', PtrUInt(Result));
         Exit;
       end else
-        writeln('-- failed to detect for ', cls.ClassName);
+        ;
+        //writeln('-- failed to detect for ', cls.ClassName);
         
     except
       on e: exception do begin
-        writeln('exception! WHY? ', e.Message);
+        //writeln('exception! WHY? ', e.Message);
       end;
     end;
   end;
@@ -94,7 +97,7 @@ end;
 procedure RegisterDataSource( DataSource: TDbgDataSourceClass); 
 begin
   if Assigned(DataSource) and (sources.IndexOf(DataSource) < 0) then  begin
-    writeln('-- added new data source ', DataSource.ClassName);
+    //writeln('-- added new data source ', DataSource.ClassName);
     sources.Add(DataSource)
   end;
 end;

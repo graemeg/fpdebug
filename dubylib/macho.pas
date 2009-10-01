@@ -28,7 +28,7 @@ interface
 
 {$IFDEF FPC}
 {$PACKRECORDS C}
-{$ENUMSIZE 4}
+{$PACKENUM 4}
 {$ENDIF}
 
 
@@ -433,28 +433,15 @@ const
 
   {* Constants for the section attributes part of the flags field of a section
    * structure.  }
-  { User setable attributes  }
-     SECTION_ATTRIBUTES_USR = $ff000000;
-  { section contains only true
-  						   machine instructions  }
-     S_ATTR_PURE_INSTRUCTIONS = $80000000;
-  { section contains coalesced
-  						   symbols that are not to be
-  						   in a ranlib table of
-  						   contents  }
-     S_ATTR_NO_TOC = $40000000;
-  { ok to strip static symbols
-  						   in this section in files
-  						   with the MH_DYLDLINK flag  }
-     S_ATTR_STRIP_STATIC_SYMS = $20000000;
-  { no dead stripping  }
-     S_ATTR_NO_DEAD_STRIP = $10000000;
-  { blocks are live if they
-  						   reference live blocks  }
-     S_ATTR_LIVE_SUPPORT = $08000000;
-  { Used with i386 code stubs
-  						   written on by dyld  }
-     S_ATTR_SELF_MODIFYING_CODE = $04000000;
+  SECTION_ATTRIBUTES_USR = $ff000000; { User setable attributes  }
+
+  S_ATTR_PURE_INSTRUCTIONS = $80000000; { section contains only true machine instructions  }
+  S_ATTR_NO_TOC = $40000000; { section contains coalesced symbols that are not to be in a ranlib table of contents  }
+  S_ATTR_STRIP_STATIC_SYMS = $20000000; { ok to strip static symbols in this section in files with the MH_DYLDLINK flag  }
+  S_ATTR_NO_DEAD_STRIP = $10000000;{ no dead stripping  }
+  S_ATTR_LIVE_SUPPORT = $08000000; { blocks are live if they reference live blocks  }
+  S_ATTR_SELF_MODIFYING_CODE = $04000000; { Used with i386 code stubs written on by dyld  }
+
   {
    * If a segment contains any sections marked with S_ATTR_DEBUG then all
    * sections in that segment must have this attribute.  No section other than
@@ -463,19 +450,14 @@ const
    * a section type S_REGULAR.  The static linker will not copy section contents
    * from sections with this attribute into its output file.  These sections
    * generally contain DWARF debugging info.
-    }  { a debug section  }
-     S_ATTR_DEBUG = $02000000;
-  { system setable attributes  }
-     SECTION_ATTRIBUTES_SYS = $00ffff00;
-  { section contains some
-  						   machine instructions  }
-     S_ATTR_SOME_INSTRUCTIONS = $00000400;
-  { section has external
-  						   relocation entries  }
-     S_ATTR_EXT_RELOC = $00000200;
-  { section has local
-  						   relocation entries  }
-     S_ATTR_LOC_RELOC = $00000100;
+    }
+  S_ATTR_DEBUG = $02000000; { a debug section  }
+
+  SECTION_ATTRIBUTES_SYS = $00ffff00; { system setable attributes  }
+  S_ATTR_SOME_INSTRUCTIONS = $00000400; { section contains some machine instructions  }
+  S_ATTR_EXT_RELOC = $00000200; { section has external relocation entries  }
+  S_ATTR_LOC_RELOC = $00000100; { section has local relocation entries  }
+
   {
    * The names of segments and sections in them are mostly meaningless to the
    * link-editor.  But there are few things to support traditional UNIX
@@ -489,8 +471,8 @@ const
    * section in the "__DATA" segment.  It will create the section and segment
    * if needed.
     }
-  { The currently known segment names and the section names in those segments  }
 
+  { The currently known segment names and the section names in those segments  }
 
   SEG_PAGEZERO = '__PAGEZERO'; { the pagezero segment which has no  }
                                { protections and catches NULL references for MH_EXECUTE files  }

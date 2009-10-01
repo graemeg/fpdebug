@@ -1,3 +1,4 @@
+
 program dubyline;
 
 {$ifdef fpc}
@@ -13,10 +14,11 @@ uses
   commands,
   memviewer,
   PESource,
+  dbgInfoDwarf,
   dbgInfoStabs
-  {$ifdef darwin},macDbgType, macdbgproc {$endif}
+  {$ifdef darwin},macDbgType, macDbgProc {$endif}
   {$ifdef mswindows},winDbgTypes{$endif}
-  ,cmddbg;
+  ,cmddbg, dwarfproc, machoDbgSource, machofile;
 
  
 procedure RunDebugger;

@@ -45,7 +45,6 @@ function BufToHex(const buf: array of byte; index, Count: Integer): string;
 var
   i : Integer;
   j : Integer;
-  s : string;
 const 
   hexd : array [0..$F] of char = ('0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F');
 begin
@@ -149,8 +148,6 @@ end;
 procedure TRegistersView.Execute(CmdParams: TStrings; Process: TDbgProcess);
 var
   regs  : TDbgDataBytesList;
-  data  : TDbgData;
-  i     : Integer;
 begin
   regs := TDbgDataBytesList.Create;
   Process.GetThreadRegs( Process.MainThreadID, regs );

@@ -92,13 +92,14 @@ type
     fOwnStream  : Boolean;
   public
     class function isValid(ASource: TStream): Boolean; override;
-    
+    class function UserName: AnsiString; override;
+  public
     constructor Create(ASource: TStream; OwnSource: Boolean); override;
     destructor Destroy; override;
     
     function SectionsCount: Integer; override;
-    function GetSectionInfo(Index: Integer; var Name: AnsiString; var Offset, Size: Int64): Boolean; override;
-    function GetSource: TStream; override;
+    function GetSection(index: Integer; var Name: AnsiString; var Size: Int64): Boolean; override;
+    function GetSectionData(index: Integer; outData: TStream): Boolean; override;
   end;
 
 implementation
@@ -140,25 +141,32 @@ begin
   Result := isValidPEStream(ASource);
 end;
 
+class function TPEFileSource.UserName: AnsiString;
+begin
+  Result:='PE file';
+end;
+
 function TPEFileSource.SectionsCount: Integer; 
 begin
   Result := fLoader.SectionsCount;
 end;
 
-function TPEFileSource.GetSectionInfo(Index: Integer; var Name: AnsiString; var Offset, Size: Int64): Boolean; 
+function TPEFileSource.GetSection(Index: Integer; var Name: AnsiString; var Size: Int64): Boolean;
 var
   sc : PDbgImageSection;
 begin
   sc := fLoader.GetSectionByIndex(Index);
   Result := Assigned(sc);
   if not Result then Exit;
-  Offset := sc^.VirtualAdress;
+  //Offset := sc^.VirtualAdress;
   Size := sc^.Size;
 end;
 
-function TPEFileSource.GetSource: TStream;  
+function TPEFileSource.GetSectionData(index: Integer; outData: TStream): Boolean;
 begin
-  Result:=fStream;
+  //  Result:=fStream;
+  //todo:
+  Result := false;
 end;
 
 { TDbgImageLoader }

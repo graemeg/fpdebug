@@ -16,10 +16,12 @@ type
     class function UserName: AnsiString; virtual; abstract;
     constructor Create(ASource: TStream; OwnSource: Boolean); virtual; 
 
-    function SectionsCount: Integer; virtual; abstract;
-    function GetSection(index: Integer; var Name: AnsiString; var Size: Int64): Boolean; virtual; abstract;
-    function GetSectionData(index: Integer; outStream: TStream): Boolean; virtual; abstract;
+  {  function SectionsCount: Integer; virtual; abstract;
+    function GetSection(index: Integer; var Name: AnsiString; var Size: Int64): Boolean; virtual; abstract; //todo: remove?
+    function GetSectionData(index: Integer; outStream: TStream): Boolean; virtual; abstract; //todo: remove?}
 
+    function GetSectionInfo(const SectionName: AnsiString; var Size: int64): Boolean; virtual; abstract;
+    function GetSectionData(const SectionName: AnsiString; Offset, Size: Int64; var Buf: array of byte): Integer; virtual; abstract;
   end;
   TDbgDataSourceClass = class of TDbgDataSource;
   
@@ -30,10 +32,23 @@ type
     class function isPresent(ASource: TDbgDataSource): Boolean; virtual; abstract;
     constructor Create(ASource: TDbgDataSource); virtual; 
     function GetDebugData(const DataName: string; DataAddr: TDbgPtr; OutData: TDbgDataList): Boolean; virtual; abstract;
+    function GetAddrByName(const SymbolName: String; var Addr: TDbgPtr): Boolean; virtual; abstract;
+    procedure GetNames(strings: TStrings); virtual; abstract;
   end;
   TDbgInfoClass = class of TDbgInfo;
-  
- 
+
+type
+  TCallConv = (cc_fastcall, cc_cdecl, cc_stdcall); //todo:
+
+const
+  dinfo_LineInfo   = 'cmn.lineinfo';  // DataName  - requests line number of the give address
+  dinfo_FileName   = 'filename';      //    - name of the file
+  dinfo_Number     = 'line';          //    - line number
+  dinfo_Colon      = 'colon';         //    - colon number
+
+  dinfo_GlobalSymAddr = 'cmn.gsymboladdr';  // Global Symbol address - requests addr of the symbol, specified by name
+  dinfo_Addr          = 'addr';             //    - returned address (always 64-bit?)
+
 function GetDataSource(const FileName: string): TDbgDataSource; overload;
 function GetDataSource(ASource: TStream; OwnSource: Boolean): TDbgDataSource; overload;
 

@@ -546,9 +546,9 @@ type
    * at runtime is exactly the same as used to built the program.  }
 
   dylib = record
-    name            : lc_str;         { library's path name  }
-    timestamp       : uint32_t;       { library's build time stamp  }
-    current_version : uint32_t;       { library's current version number  }
+    name                  : lc_str;   { library's path name  }
+    timestamp             : uint32_t; { library's build time stamp  }
+    current_version       : uint32_t; { library's current version number  }
     compatibility_version : uint32_t; { library's compatibility vers number }
   end;
 
@@ -581,7 +581,6 @@ type
   end;
   psub_framework_command = ^sub_framework_command;
 
-
   {* For dynamically linked shared libraries that are subframework of an umbrella
    * framework they can allow clients other than the umbrella framework or other
    * subframeworks in the same umbrella framework.  To do this the subframework
@@ -610,14 +609,13 @@ type
    * Zero or more sub_umbrella frameworks may be use by an umbrella framework.
    * The name of a sub_umbrella framework is recorded in the following structure.
     }
-  { LC_SUB_UMBRELLA  }
-  { includes sub_umbrella string  }
-  { the sub_umbrella framework name  }
-     sub_umbrella_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          sub_umbrella : lc_str;
-       end;
+
+  sub_umbrella_command = record
+    cmd           : uint32_t; { LC_SUB_UMBRELLA  }
+    cmdsize       : uint32_t; { includes sub_umbrella string  }
+    sub_umbrella  : lc_str;   { the sub_umbrella framework name  }
+  end;
+  psub_umbrella_command = ^sub_umbrella_command;
 
   {
    * A dynamically linked shared library may be a sub_library of another shared
@@ -634,14 +632,13 @@ type
    * The name of a sub_library framework is recorded in the following structure.
    * For example /usr/lib/libobjc_profile.A.dylib would be recorded as "libobjc".
     }
-  { LC_SUB_LIBRARY  }
-  { includes sub_library string  }
-  { the sub_library name  }
-     sub_library_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          sub_library : lc_str;
-       end;
+
+  sub_library_command = record
+    cmd         : uint32_t;  { LC_SUB_LIBRARY  }
+    cmdsize     : uint32_t;  { includes sub_library string  }
+    sub_library : lc_str;    { the sub_library name  }
+  end;
+  psub_library_command = ^sub_library_command;
 
   {
    * A program (filetype == MH_EXECUTE) that is
@@ -652,18 +649,15 @@ type
    * of the first byte.  So the bit for the Nth module is:
    * (linked_modules[N/8] >> N%8) & 1
     }
-  { LC_PREBOUND_DYLIB  }
-  { includes strings  }
-  { library's path name  }
-  { number of modules in library  }
-  { bit vector of linked modules  }
-     prebound_dylib_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          name : lc_str;
-          nmodules : uint32_t;
-          linked_modules : lc_str;
-       end;
+
+  prebound_dylib_command = record
+    cmd            : uint32_t; { LC_PREBOUND_DYLIB  }
+    cmdsize        : uint32_t; { includes strings  }
+    name           : lc_str;   { library's path name  }
+    nmodules       : uint32_t; { number of modules in library  }
+    linked_modules : lc_str;   { bit vector of linked modules  }
+  end;
+  pprebound_dylib_command = ^prebound_dylib_command;
 
   {
    * A program that uses a dynamic linker contains a dylinker_command to identify
@@ -671,14 +665,13 @@ type
    * contains a dylinker_command to identify the dynamic linker (LC_ID_DYLINKER).
    * A file can have at most one of these.
     }
-  { LC_ID_DYLINKER or LC_LOAD_DYLINKER  }
-  { includes pathname string  }
-  { dynamic linker's path name  }
-     dylinker_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          name : lc_str;
-       end;
+
+  dylinker_command = record
+    cmd     : uint32_t; { LC_ID_DYLINKER or LC_LOAD_DYLINKER  }
+    cmdsize : uint32_t; { includes pathname string  }
+    name    : lc_str;   { dynamic linker's path name  }
+  end;
+  pdylinker_command = ^dylinker_command;
 
   {
    * Thread commands contain machine-specific data structures suitable for
@@ -807,131 +800,110 @@ type
    * For executable and object modules the relocation entries continue to hang
    * off the section structures.
     }
-  { LC_DYSYMTAB  }
-  { sizeof(struct dysymtab_command)  }
-  {
-       * The symbols indicated by symoff and nsyms of the LC_SYMTAB load command
-       * are grouped into the following three groups:
-       *    local symbols (further grouped by the module they are from)
-       *    defined external symbols (further grouped by the module they are from)
-       *    undefined symbols
-       *
-       * The local symbols are used only for debugging.  The dynamic binding
-       * process may have to use them to indicate to the debugger the local
-       * symbols for a module that is being bound.
-       *
-       * The last two groups are used by the dynamic binding process to do the
-       * binding (indirectly through the module table and the reference symbol
-       * table when this is a dynamically linked shared library file).
-        }
-  { index to local symbols  }
-  { number of local symbols  }
-  { index to externally defined symbols  }
-  { number of externally defined symbols  }
-  { index to undefined symbols  }
-  { number of undefined symbols  }
-  {
-       * For the for the dynamic binding process to find which module a symbol
-       * is defined in the table of contents is used (analogous to the ranlib
-       * structure in an archive) which maps defined external symbols to modules
-       * they are defined in.  This exists only in a dynamically linked shared
-       * library file.  For executable and object modules the defined external
-       * symbols are sorted by name and is use as the table of contents.
-        }
-  { file offset to table of contents  }
-  { number of entries in table of contents  }
-  {
-       * To support dynamic binding of "modules" (whole object files) the symbol
-       * table must reflect the modules that the file was created from.  This is
-       * done by having a module table that has indexes and counts into the merged
-       * tables for each module.  The module structure that these two entries
-       * refer to is described below.  This exists only in a dynamically linked
-       * shared library file.  For executable and object modules the file only
-       * contains one module so everything in the file belongs to the module.
-        }
-  { file offset to module table  }
-  { number of module table entries  }
-  {
-       * To support dynamic module binding the module structure for each module
-       * indicates the external references (defined and undefined) each module
-       * makes.  For each module there is an offset and a count into the
-       * reference symbol table for the symbols that the module references.
-       * This exists only in a dynamically linked shared library file.  For
-       * executable and object modules the defined external symbols and the
-       * undefined external symbols indicates the external references.
-        }
-  { offset to referenced symbol table  }
-  { number of referenced symbol table entries  }
-  {
-       * The sections that contain "symbol pointers" and "routine stubs" have
-       * indexes and (implied counts based on the size of the section and fixed
-       * size of the entry) into the "indirect symbol" table for each pointer
-       * and stub.  For every section of these two types the index into the
-       * indirect symbol table is stored in the section header in the field
-       * reserved1.  An indirect symbol table entry is simply a 32bit index into
-       * the symbol table to the symbol that the pointer or stub is referring to.
-       * The indirect symbol table is ordered to match the entries in the section.
-        }
-  { file offset to the indirect symbol table  }
-  { number of indirect symbol table entries  }
-  {
-       * To support relocating an individual module in a library file quickly the
-       * external relocation entries for each module in the library need to be
-       * accessed efficiently.  Since the relocation entries can't be accessed
-       * through the section headers for a library file they are separated into
-       * groups of local and external entries further grouped by module.  In this
-       * case the presents of this load command who's extreloff, nextrel,
-       * locreloff and nlocrel fields are non-zero indicates that the relocation
-       * entries of non-merged sections are not referenced through the section
-       * structures (and the reloff and nreloc fields in the section headers are
-       * set to zero).
-       *
-       * Since the relocation entries are not accessed through the section headers
-       * this requires the r_address field to be something other than a section
-       * offset to identify the item to be relocated.  In this case r_address is
-       * set to the offset from the vmaddr of the first LC_SEGMENT command.
-       * For MH_SPLIT_SEGS images r_address is set to the the offset from the
-       * vmaddr of the first read-write LC_SEGMENT command.
-       *
-       * The relocation entries are grouped by module and the module table
-       * entries have indexes and counts into them for the group of external
-       * relocation entries for that the module.
-       *
-       * For sections that are merged across modules there must not be any
-       * remaining external relocation entries for them (for merged sections
-       * remaining relocation entries must be local).
-        }
-  { offset to external relocation entries  }
-  { number of external relocation entries  }
-  {
-       * All the local relocation entries are grouped together (they are not
-       * grouped by their module since they are only used if the object is moved
-       * from it staticly link edited address).
-        }
-  { offset to local relocation entries  }
-  { number of local relocation entries  }
-     dysymtab_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          ilocalsym : uint32_t;
-          nlocalsym : uint32_t;
-          iextdefsym : uint32_t;
-          nextdefsym : uint32_t;
-          iundefsym : uint32_t;
-          nundefsym : uint32_t;
-          tocoff : uint32_t;
-          ntoc : uint32_t;
-          modtaboff : uint32_t;
-          nmodtab : uint32_t;
-          extrefsymoff : uint32_t;
-          nextrefsyms : uint32_t;
-          indirectsymoff : uint32_t;
-          nindirectsyms : uint32_t;
-          extreloff : uint32_t;
-          nextrel : uint32_t;
-          locreloff : uint32_t;
-          nlocrel : uint32_t;
-       end;
+
+  dysymtab_command = record
+    cmd             : uint32_t; { LC_DYSYMTAB  }
+    cmdsize         : uint32_t; { sizeof(struct dysymtab_command)  }
+    {
+    * The symbols indicated by symoff and nsyms of the LC_SYMTAB load command
+    * are grouped into the following three groups:
+    *    local symbols (further grouped by the module they are from)
+    *    defined external symbols (further grouped by the module they are from)
+    *    undefined symbols
+    *
+    * The local symbols are used only for debugging.  The dynamic binding
+    * process may have to use them to indicate to the debugger the local
+    * symbols for a module that is being bound.
+    *
+    * The last two groups are used by the dynamic binding process to do the
+    * binding (indirectly through the module table and the reference symbol
+    * table when this is a dynamically linked shared library file). }
+    ilocalsym       : uint32_t; { index to local symbols  }
+    nlocalsym       : uint32_t; { number of local symbols  }
+    iextdefsym      : uint32_t; { index to externally defined symbols  }
+    nextdefsym      : uint32_t; { number of externally defined symbols  }
+    iundefsym       : uint32_t; { index to undefined symbols  }
+    nundefsym       : uint32_t; { number of undefined symbols  }
+    {
+    * For the for the dynamic binding process to find which module a symbol
+    * is defined in the table of contents is used (analogous to the ranlib
+    * structure in an archive) which maps defined external symbols to modules
+    * they are defined in.  This exists only in a dynamically linked shared
+    * library file.  For executable and object modules the defined external
+    * symbols are sorted by name and is use as the table of contents.
+    }
+    tocoff          : uint32_t; { file offset to table of contents  }
+    ntoc            : uint32_t; { number of entries in table of contents  }
+    {
+    * To support dynamic binding of "modules" (whole object files) the symbol
+    * table must reflect the modules that the file was created from.  This is
+    * done by having a module table that has indexes and counts into the merged
+    * tables for each module.  The module structure that these two entries
+    * refer to is described below.  This exists only in a dynamically linked
+    * shared library file.  For executable and object modules the file only
+    * contains one module so everything in the file belongs to the module.
+    }
+    modtaboff       : uint32_t; { file offset to module table  }
+    nmodtab         : uint32_t; { number of module table entries  }
+    {
+    * To support dynamic module binding the module structure for each module
+    * indicates the external references (defined and undefined) each module
+    * makes.  For each module there is an offset and a count into the
+    * reference symbol table for the symbols that the module references.
+    * This exists only in a dynamically linked shared library file.  For
+    * executable and object modules the defined external symbols and the
+    * undefined external symbols indicates the external references.
+    }
+    extrefsymoff    : uint32_t; { offset to referenced symbol table  }
+    nextrefsyms     : uint32_t; { number of referenced symbol table entries  }
+    {
+    * The sections that contain "symbol pointers" and "routine stubs" have
+    * indexes and (implied counts based on the size of the section and fixed
+    * size of the entry) into the "indirect symbol" table for each pointer
+    * and stub.  For every section of these two types the index into the
+    * indirect symbol table is stored in the section header in the field
+    * reserved1.  An indirect symbol table entry is simply a 32bit index into
+    * the symbol table to the symbol that the pointer or stub is referring to.
+    * The indirect symbol table is ordered to match the entries in the section.
+    }
+    indirectsymoff  : uint32_t; { file offset to the indirect symbol table  }
+    nindirectsyms   : uint32_t; { number of indirect symbol table entries  }
+    {
+    * To support relocating an individual module in a library file quickly the
+    * external relocation entries for each module in the library need to be
+    * accessed efficiently.  Since the relocation entries can't be accessed
+    * through the section headers for a library file they are separated into
+    * groups of local and external entries further grouped by module.  In this
+    * case the presents of this load command who's extreloff, nextrel,
+    * locreloff and nlocrel fields are non-zero indicates that the relocation
+    * entries of non-merged sections are not referenced through the section
+    * structures (and the reloff and nreloc fields in the section headers are
+    * set to zero).
+    *
+    * Since the relocation entries are not accessed through the section headers
+    * this requires the r_address field to be something other than a section
+    * offset to identify the item to be relocated.  In this case r_address is
+    * set to the offset from the vmaddr of the first LC_SEGMENT command.
+    * For MH_SPLIT_SEGS images r_address is set to the the offset from the
+    * vmaddr of the first read-write LC_SEGMENT command.
+    *
+    * The relocation entries are grouped by module and the module table
+    * entries have indexes and counts into them for the group of external
+    * relocation entries for that the module.
+    *
+    * For sections that are merged across modules there must not be any
+    * remaining external relocation entries for them (for merged sections
+    * remaining relocation entries must be local).
+    }
+    extreloff       : uint32_t; { offset to external relocation entries  }
+    nextrel         : uint32_t; { number of external relocation entries  }
+    {    * All the local relocation entries are grouped together (they are not
+    * grouped by their module since they are only used if the object is moved
+    * from it staticly link edited address).      }
+    locreloff       : uint32_t; { offset to local relocation entries  }
+    nlocrel         : uint32_t; { number of local relocation entries  }
+  end;
+  pdysymtab_command = ^dysymtab_command;
 
   {
    * An indirect symbol table entry is simply a 32bit index into the symbol table
@@ -941,91 +913,52 @@ type
    * symbol was also absolute INDIRECT_SYMBOL_ABS is or'ed with that.
     }
 
-  const
-     INDIRECT_SYMBOL_LOCAL = $80000000;
-     INDIRECT_SYMBOL_ABS = $40000000;
-  { a table of contents entry  }
-  { the defined external symbol
-  				   (index into the symbol table)  }
-  { index into the module table this symbol
-  				   is defined in  }
+const
+  INDIRECT_SYMBOL_LOCAL = $80000000;
+  INDIRECT_SYMBOL_ABS   = $40000000;
 
 type
+  { a table of contents entry  }
+
   dylib_table_of_contents = record
-    symbol_index : uint32_t;
-    module_index : uint32_t;
+    symbol_index : uint32_t; { the defined external symbol (index into the symbol table)  }
+    module_index : uint32_t; { index into the module table this symbol is defined in  }
   end;
 
   { a module table entry  }
-  { the module name (index into string table)  }
-  { index into externally defined symbols  }
-  { number of externally defined symbols  }
-  { index into reference symbol table  }
-  { number of reference symbol table entries  }
-  { index into symbols for local symbols  }
-  { number of local symbols  }
-  { index into external relocation entries  }
-  { number of external relocation entries  }
-  { low 16 bits are the index into the init
-  				   section, high 16 bits are the index into
-  			           the term section  }
-  { low 16 bits are the number of init section
-  				   entries, high 16 bits are the number of
-  				   term section entries  }
-  { for this module address of the start of  }
-  {  the (__OBJC,__module_info) section  }
-  { for this module size of  }
-  {  the (__OBJC,__module_info) section  }
+
   dylib_module = record
-    module_name : uint32_t;
-    iextdefsym  : uint32_t;
-    nextdefsym  : uint32_t;
-    irefsym     : uint32_t;
-    nrefsym     : uint32_t;
-    ilocalsym   : uint32_t;
-    nlocalsym   : uint32_t;
-    iextrel     : uint32_t;
-    nextrel     : uint32_t;
-    iinit_iterm : uint32_t;
-    ninit_nterm : uint32_t;
-    objc_module_info_addr : uint32_t;
-    objc_module_info_size : uint32_t;
+    module_name : uint32_t; { the module name (index into string table)  }
+    iextdefsym  : uint32_t; { index into externally defined symbols  }
+    nextdefsym  : uint32_t; { number of externally defined symbols  }
+    irefsym     : uint32_t; { index into reference symbol table  }
+    nrefsym     : uint32_t; { number of reference symbol table entries  }
+    ilocalsym   : uint32_t; { index into symbols for local symbols  }
+    nlocalsym   : uint32_t; { number of local symbols  }
+    iextrel     : uint32_t; { index into external relocation entries  }
+    nextrel     : uint32_t; { number of external relocation entries  }
+    iinit_iterm : uint32_t;  { low 16 bits are the index into the init section, high 16 bits are the index into  the term section  }
+    ninit_nterm : uint32_t;  { low 16 bits are the number of init section entries, high 16 bits are the number of term section entries  }
+    objc_module_info_addr : uint32_t; { for this module address of the start of the (__OBJC,__module_info) section  }
+    objc_module_info_size : uint32_t; { for this module size of the (__OBJC,__module_info) section  }
   end;
 
   { a 64-bit module table entry  }
-  { the module name (index into string table)  }
-  { index into externally defined symbols  }
-  { number of externally defined symbols  }
-  { index into reference symbol table  }
-  { number of reference symbol table entries  }
-  { index into symbols for local symbols  }
-  { number of local symbols  }
-  { index into external relocation entries  }
-  { number of external relocation entries  }
-  { low 16 bits are the index into the init
-  				   section, high 16 bits are the index into
-  				   the term section  }
-  { low 16 bits are the number of init section
-  				  entries, high 16 bits are the number of
-  				  term section entries  }
-  { for this module size of  }
-  {  the (__OBJC,__module_info) section  }
-  { for this module address of the start of  }
-  {  the (__OBJC,__module_info) section  }
+
   dylib_module_64 = record
-    module_name : uint32_t;
-    iextdefsym  : uint32_t;
-    nextdefsym  : uint32_t;
-    irefsym     : uint32_t;
-    nrefsym     : uint32_t;
-    ilocalsym   : uint32_t;
-    nlocalsym   : uint32_t;
-    iextrel     : uint32_t;
-    nextrel     : uint32_t;
-    iinit_iterm : uint32_t;
-    ninit_nterm : uint32_t;
-    objc_module_info_size : uint32_t;
-    objc_module_info_addr : uint64_t;
+    module_name : uint32_t; { the module name (index into string table)  }
+    iextdefsym  : uint32_t; { index into externally defined symbols  }
+    nextdefsym  : uint32_t; { number of externally defined symbols  }
+    irefsym     : uint32_t; { index into reference symbol table  }
+    nrefsym     : uint32_t; { number of reference symbol table entries  }
+    ilocalsym   : uint32_t; { index into symbols for local symbols  }
+    nlocalsym   : uint32_t; { number of local symbols  }
+    iextrel     : uint32_t; { index into external relocation entries  }
+    nextrel     : uint32_t; { number of external relocation entries  }
+    iinit_iterm : uint32_t; { low 16 bits are the index into the init section, high 16 bits are the index into the term section  }
+    ninit_nterm : uint32_t; { low 16 bits are the number of init section entries, high 16 bits are the number of term section entries  }
+    objc_module_info_size : uint32_t; { for this module size of the (__OBJC,__module_info) section  }
+    objc_module_info_addr : uint64_t; { for this module address of the start of  the (__OBJC,__module_info) section  }
   end;
 
   {
@@ -1037,39 +970,24 @@ type
    * <mach-o/nlist.h> as they are also used for symbol table entries.
     }
   { index into the symbol table  }
-  { flags to indicate the type of reference  }
+
   dylib_reference = record
-    flag0 : longint;
+    flag0 : longint; { flags to indicate the type of reference  }
   end;
 
 
-{  const
-     bm_dylib_reference_isym = $FFFFFF;
-     bp_dylib_reference_isym = 0;
-     bm_dylib_reference_flags = $FF000000;
-     bp_dylib_reference_flags = 24;
 
-  function isym(var a : dylib_reference) : uint32_t;
-  procedure set_isym(var a : dylib_reference; __isym : uint32_t);
-  function flags(var a : dylib_reference) : uint32_t;
-  procedure set_flags(var a : dylib_reference; __flags : uint32_t);}
+type
+  {* The twolevel_hints_command contains the offset and number of hints in the
+   * two-level namespace lookup hints table.  }
 
-  {
-   * The twolevel_hints_command contains the offset and number of hints in the
-   * two-level namespace lookup hints table.
-    }
-  { LC_TWOLEVEL_HINTS  }
-  { sizeof(struct twolevel_hints_command)  }
-  { offset to the hint table  }
-  { number of hints in the hint table  }
-
-  type
-     twolevel_hints_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          offset : uint32_t;
-          nhints : uint32_t;
-       end;
+  twolevel_hints_command = record
+    cmd     : uint32_t; { LC_TWOLEVEL_HINTS  }
+    cmdsize : uint32_t; { sizeof(struct twolevel_hints_command)  }
+    offset  : uint32_t; { offset to the hint table  }
+    nhints  : uint32_t; { number of hints in the hint table  }
+  end;
+  ptwolevel_hints_command = ^twolevel_hints_command;
 
   {
    * The entries in the two-level namespace lookup hints table are twolevel_hint
@@ -1093,19 +1011,6 @@ type
     flag0 : longint;
   end;
 
-
-{  const
-     bm_twolevel_hint_isub_image = $FF;
-     bp_twolevel_hint_isub_image = 0;
-     bm_twolevel_hint_itoc = $FFFFFF00;
-     bp_twolevel_hint_itoc = 8;
-
-  function isub_image(var a : twolevel_hint) : uint32_t;
-  procedure set_isub_image(var a : twolevel_hint; __isub_image : uint32_t);
-  function itoc(var a : twolevel_hint) : uint32_t;
-  procedure set_itoc(var a : twolevel_hint; __itoc : uint32_t);
-}
-
   {
    * The prebind_cksum_command contains the value of the original check sum for
    * prebound files or zero.  When a prebound file is first created or modified
@@ -1116,75 +1021,57 @@ type
    * is re-done and the cksum field is non-zero it is left unchanged from the
    * input file.
     }
-  { LC_PREBIND_CKSUM  }
-  { sizeof(struct prebind_cksum_command)  }
-  { the check sum or zero  }
 
-  type
-     prebind_cksum_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          cksum : uint32_t;
-       end;
+type
+  prebind_cksum_command = record
+    cmd     : uint32_t; { LC_PREBIND_CKSUM  }
+    cmdsize : uint32_t; { sizeof(struct prebind_cksum_command)  }
+    cksum   : uint32_t; { the check sum or zero  }
+  end;
+  pprebind_cksum_command = ^prebind_cksum_command;
 
-  {
-   * The uuid load command contains a single 128-bit unique random number that
-   * identifies an object produced by the static link editor.
-    }
-  { LC_UUID  }
-  { sizeof(struct uuid_command)  }
-  { the 128-bit uuid  }
-     uuid_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          uuid : array[0..15] of uint8_t;
-       end;
+  {* The uuid load command contains a single 128-bit unique random number that
+   * identifies an object produced by the static link editor. }
 
-  {
-   * The rpath_command contains a path which at runtime should be added to
-   * the current run path used to find @rpath prefixed dylibs.
-    }
-  { LC_RPATH  }
-  { includes string  }
-  { path to add to run path  }
-     rpath_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          path : lc_str;
-       end;
+  uuid_command = record
+    cmd     : uint32_t;                 { LC_UUID  }
+    cmdsize : uint32_t;                 { sizeof(struct uuid_command)  }
+    uuid    : array[0..15] of uint8_t;  { the 128-bit uuid  }
+  end;
+  puuid_command = ^uuid_command;
 
-  {
-   * The linkedit_data_command contains the offsets and sizes of a blob
-   * of data in the __LINKEDIT segment.
-    }
-  { LC_CODE_SIGNATURE or LC_SEGMENT_SPLIT_INFO  }
-  { sizeof(struct linkedit_data_command)  }
-  { file offset of data in __LINKEDIT segment  }
-  { file size of data in __LINKEDIT segment   }
-     linkedit_data_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          dataoff : uint32_t;
-          datasize : uint32_t;
-       end;
+  {* The rpath_command contains a path which at runtime should be added to
+   * the current run path used to find @rpath prefixed dylibs. }
 
-  {
-   * The encryption_info_command contains the file offset and size of an
-   * of an encrypted segment.
-    }
-  { LC_ENCRYPTION_INFO  }
-  { sizeof(struct encryption_info_command)  }
-  { file offset of encrypted range  }
-  { file size of encrypted range  }
-  { which enryption system,
-  				   0 means not-encrypted yet  }
-     encryption_info_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          cryptoff : uint32_t;
-          cryptsize : uint32_t;
-          cryptid : uint32_t;
-       end;
+  rpath_command = record
+    cmd     : uint32_t; { LC_RPATH  }
+    cmdsize : uint32_t; { includes string  }
+    path    : lc_str;   { path to add to run path  }
+  end;
+  prpath_command = ^rpath_command;
+
+  {* The linkedit_data_command contains the offsets and sizes of a blob
+   * of data in the __LINKEDIT segment. }
+
+  linkedit_data_command = record
+    cmd       : uint32_t; { LC_CODE_SIGNATURE or LC_SEGMENT_SPLIT_INFO  }
+    cmdsize   : uint32_t; { sizeof(struct linkedit_data_command)  }
+    dataoff   : uint32_t; { file offset of data in __LINKEDIT segment  }
+    datasize  : uint32_t; { file size of data in __LINKEDIT segment   }
+  end;
+  plinkedit_data_command = ^linkedit_data_command;
+
+  {* The encryption_info_command contains the file offset and size of an
+   * of an encrypted segment. }
+
+  encryption_info_command = record
+    cmd       : uint32_t; { LC_ENCRYPTION_INFO  }
+    cmdsize   : uint32_t; { sizeof(struct encryption_info_command)  }
+    cryptoff  : uint32_t; { file offset of encrypted range  }
+    cryptsize : uint32_t; { file size of encrypted range  }
+    cryptid   : uint32_t; { which enryption system, 0 means not-encrypted yet  }
+  end;
+  pencryption_info_command = ^encryption_info_command;
 
   {
    * The symseg_command contains the offset and size of the GNU style
@@ -1195,46 +1082,38 @@ type
    * roots also being a multiple of a long.  Also the padding must again be
    * zeroed. (THIS IS OBSOLETE and no longer supported).
     }
-  { LC_SYMSEG  }
-  { sizeof(struct symseg_command)  }
-  { symbol segment offset  }
-  { symbol segment size in bytes  }
-     symseg_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          offset : uint32_t;
-          size : uint32_t;
-       end;
 
-  {
-   * The ident_command contains a free format string table following the
+  symseg_command = record
+    cmd     : uint32_t; { LC_SYMSEG  }
+    cmdsize : uint32_t; { sizeof(struct symseg_command)  }
+    offset  : uint32_t; { symbol segment offset  }
+    size    : uint32_t; { symbol segment size in bytes  }
+  end;
+  psymseg_command = ^symseg_command;
+
+  {* The ident_command contains a free format string table following the
    * ident_command structure.  The strings are null terminated and the size of
    * the command is padded out with zero bytes to a multiple of 4 bytes/
-   * (THIS IS OBSOLETE and no longer supported).
-    }
-  { LC_IDENT  }
-  { strings that follow this command  }
-     ident_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-       end;
+   * (THIS IS OBSOLETE and no longer supported). }
 
-  {
-   * The fvmfile_command contains a reference to a file to be loaded at the
+  ident_command = record
+    cmd     : uint32_t; { LC_IDENT  }
+    cmdsize : uint32_t; { strings that follow this command  }
+  end;
+  pident_command = ^ident_command;
+
+  {* The fvmfile_command contains a reference to a file to be loaded at the
    * specified virtual address.  (Presently, this command is reserved for
    * internal use.  The kernel ignores this command when loading a program into
-   * memory).
-    }
-  { LC_FVMFILE  }
-  { includes pathname string  }
-  { files pathname  }
-  { files virtual address  }
-     fvmfile_command = record
-          cmd : uint32_t;
-          cmdsize : uint32_t;
-          name : lc_str;
-          header_addr : uint32_t;
-       end;
+   * memory).  }
+
+  fvmfile_command = record
+    cmd         : uint32_t; { LC_FVMFILE  }
+    cmdsize     : uint32_t; { includes pathname string  }
+    name        : lc_str;   { files pathname  }
+    header_addr : uint32_t; { files virtual address  }
+  end;
+  pfvmfile_command = ^fvmfile_command;
 
   {
    * This header file describes the structures of the file format for "fat"
@@ -1259,27 +1138,19 @@ const
   FAT_MAGIC = $cafebabe;
   FAT_CIGAM = $bebafeca;
 
-  { FAT_MAGIC  }
-  { number of structs that follow  }
+type
+  fat_header = record
+    magic     : uint32_t; { FAT_MAGIC  }
+    nfat_arch : uint32_t; { number of structs that follow  }
+  end;
 
-  type
-     fat_header = record
-          magic : uint32_t;
-          nfat_arch : uint32_t;
-       end;
-
-  { cpu specifier (int)  }
-  { machine specifier (int)  }
-  { file offset to this object file  }
-  { size of this object file  }
-  { alignment as a power of 2  }
-     fat_arch = record
-          cputype : cpu_type_t;
-          cpusubtype : cpu_subtype_t;
-          offset : uint32_t;
-          size : uint32_t;
-          align : uint32_t;
-       end;
+  fat_arch = record
+    cputype    : cpu_type_t;    { cpu specifier (int)  }
+    cpusubtype : cpu_subtype_t; { machine specifier (int)  }
+    offset     : uint32_t;      { file offset to this object file  }
+    size       : uint32_t;      { size of this object file  }
+    align      : uint32_t;      { alignment as a power of 2  }
+  end;
 
 
   {
@@ -1507,47 +1378,32 @@ const
    * the value of the Y-bit if the sign of the displacement changes for non-branch
    * always conditions.
     }
-  { generic relocation as discribed above  }
-  { the second relocation entry of a pair  }
-  { 14 bit branch displacement (to a word address)  }
-  { 24 bit branch displacement (to a word address)  }
-  { a PAIR follows with the low half  }
-  { a PAIR follows with the high half  }
-  { Same as the RELOC_HI16 except the low 16 bits and the
-  			 * high 16 bits are added together with the low 16 bits
-  			 * sign extened first.  This means if bit 15 of the low
-  			 * 16 bits is set the high 16 bits stored in the
-  			 * instruction will be adjusted.
-  			  }
-  { Same as the LO16 except that the low 2 bits are not
-  			 * stored in the instruction and are always zero.  This
-  			 * is used in double word load/store instructions.
-  			  }
-  { a PAIR follows with subtract symbol value  }
-  { prebound lazy pointer  }
-  { section difference forms of above.  a PAIR  }
-  { follows these with subtract symbol value  }
-  { like PPC_RELOC_SECTDIFF, but the symbol
-  				 referenced was local.   }
 
 type
   reloc_type_ppc = (
-    PPC_RELOC_VANILLA,
-    PPC_RELOC_PAIR,
-    PPC_RELOC_BR14,
-    PPC_RELOC_BR24,
-    PPC_RELOC_HI16,
-    PPC_RELOC_LO16,
-    PPC_RELOC_HA16,
-    PPC_RELOC_LO14,
-    PPC_RELOC_SECTDIFF,
-    PPC_RELOC_PB_LA_PTR,
-    PPC_RELOC_HI16_SECTDIFF,
-    PPC_RELOC_LO16_SECTDIFF,
+    PPC_RELOC_VANILLA,    { generic relocation as discribed above  }
+    PPC_RELOC_PAIR,       { the second relocation entry of a pair  }
+    PPC_RELOC_BR14,       { 14 bit branch displacement (to a word address)  }
+    PPC_RELOC_BR24,       { 24 bit branch displacement (to a word address)  }
+    PPC_RELOC_HI16,       { a PAIR follows with the low half  }
+    PPC_RELOC_LO16,       { a PAIR follows with the high half  }
+    PPC_RELOC_HA16,       { Same as the RELOC_HI16 except the low 16 bits and the
+                      			 * high 16 bits are added together with the low 16 bits
+                      			 * sign extened first.  This means if bit 15 of the low
+                      			 * 16 bits is set the high 16 bits stored in the
+                      			 * instruction will be adjusted. }
+    PPC_RELOC_LO14,       { Same as the LO16 except that the low 2 bits are not
+                      			 * stored in the instruction and are always zero.  This
+                      			 * is used in double word load/store instructions.}
+    PPC_RELOC_SECTDIFF,      { a PAIR follows with subtract symbol value  }
+    PPC_RELOC_PB_LA_PTR,     { prebound lazy pointer  }
+    PPC_RELOC_HI16_SECTDIFF, { section difference forms of above.  a PAIR  }
+    PPC_RELOC_LO16_SECTDIFF, { follows these with subtract symbol value  }
     PPC_RELOC_HA16_SECTDIFF,
     PPC_RELOC_JBSR,
     PPC_RELOC_LO14_SECTDIFF,
-    PPC_RELOC_LOCAL_SECTDIFF);
+    PPC_RELOC_LOCAL_SECTDIFF  { like PPC_RELOC_SECTDIFF, but the symbol referenced was local.   }
+  );
 
   {* There are two known orders of table of contents for archives.  The first is
    * the order ranlib(1) originally produced and still produces without any
@@ -1588,8 +1444,6 @@ type
     ran_off : uint32_t;
   end;
 
-
-
    {* Format of a relocation entry of a Mach-O file.  Modified from the 4.3BSD
    * format.  The modifications from the original format were changing the value
    * of the r_symbolnum field for "local" (r_extern == 0) relocation entries.
@@ -1612,29 +1466,6 @@ type
     flag0     : longint;
   end;
 
-
-{const
-  bm_relocation_info_r_symbolnum = $FFFFFF;
-  bp_relocation_info_r_symbolnum = 0;
-  bm_relocation_info_r_pcrel = $1000000;
-  bp_relocation_info_r_pcrel = 24;
-  bm_relocation_info_r_length = $6000000;
-  bp_relocation_info_r_length = 25;
-  bm_relocation_info_r_extern = $8000000;
-  bp_relocation_info_r_extern = 27;
-  bm_relocation_info_r_type = $F0000000;
-  bp_relocation_info_r_type = 28;
-
-function r_symbolnum(var a : relocation_info) : uint32_t;
-procedure set_r_symbolnum(var a : relocation_info; __r_symbolnum : uint32_t);
-function r_pcrel(var a : relocation_info) : uint32_t;
-procedure set_r_pcrel(var a : relocation_info; __r_pcrel : uint32_t);
-function r_length(var a : relocation_info) : uint32_t;
-procedure set_r_length(var a : relocation_info; __r_length : uint32_t);
-function r_extern(var a : relocation_info) : uint32_t;
-procedure set_r_extern(var a : relocation_info; __r_extern : uint32_t);
-function r_type(var a : relocation_info) : uint32_t;
-procedure set_r_type(var a : relocation_info; __r_type : uint32_t);}
 
 { absolute relocation type for Mach-O files  }
 
@@ -1749,50 +1580,6 @@ type
     r_value : int32_t;
   end;
 
-{
-const
-  bm_scattered_relocation_info_r_scattered  = $1;
-  bp_scattered_relocation_info_r_scattered  = 0;
-  bm_scattered_relocation_info_r_pcrel      = $2;
-  bp_scattered_relocation_info_r_pcrel      = 1;
-  bm_scattered_relocation_info_r_length     = $C;
-  bp_scattered_relocation_info_r_length     = 2;
-  bm_scattered_relocation_info_r_type       = $F0;
-  bp_scattered_relocation_info_r_type       = 4;
-  bm_scattered_relocation_info_r_address    = $FFFFFF00;
-  bp_scattered_relocation_info_r_address    = 8;
-  bm_scattered_relocation_info_r_address    = $FFFFFF;
-  bp_scattered_relocation_info_r_address    = 0;
-  bm_scattered_relocation_info_r_type       = $F000000;
-  bp_scattered_relocation_info_r_type       = 24;
-  bm_scattered_relocation_info_r_length     = $30000000;
-  bp_scattered_relocation_info_r_length     = 28;
-  bm_scattered_relocation_info_r_pcrel      = $40000000;
-  bp_scattered_relocation_info_r_pcrel      = 30;
-  bm_scattered_relocation_info_r_scattered  = $80000000;
-  bp_scattered_relocation_info_r_scattered  = 31;
-}
-
-{function r_scattered_(var a : scattered_relocation_info) : uint32_t;
-procedure set_r_scattered_(var a : scattered_relocation_info; __r_scattered : uint32_t);
-function  r_pcrel_(var a : scattered_relocation_info) : uint32_t;
-procedure set_r_pcrel_(var a : scattered_relocation_info; __r_pcrel : uint32_t);
-function r_length_(var a : scattered_relocation_info) : uint32_t;
-procedure set_r_length_(var a : scattered_relocation_info; __r_length : uint32_t);
-function r_type_(var a : scattered_relocation_info) : uint32_t;
-procedure set_r_type_(var a : scattered_relocation_info; __r_type : uint32_t);
-function r_address_(var a : scattered_relocation_info) : uint32_t;
-procedure set_r_address_(var a : scattered_relocation_info; __r_address : uint32_t);
-function r_address_(var a : scattered_relocation_info) : uint32_t;
-procedure set_r_address_(var a : scattered_relocation_info; __r_address : uint32_t);
-function r_type_(var a : scattered_relocation_info) : uint32_t;
-procedure set_r_type_(var a : scattered_relocation_info; __r_type : uint32_t);
-function r_length_(var a : scattered_relocation_info) : uint32_t;
-procedure set_r_length_(var a : scattered_relocation_info; __r_length : uint32_t);
-function r_pcrel_(var a : scattered_relocation_info) : uint32_t;
-procedure set_r_pcrel_(var a : scattered_relocation_info; __r_pcrel : uint32_t);
-function r_scattered_(var a : scattered_relocation_info) : uint32_t;
-procedure set_r_scattered_(var a : scattered_relocation_info; __r_scattered : uint32_t);}
   {
    * Relocation types used in a generic implementation.  Relocation entries for
    * normal things use the generic relocation as discribed above and their r_type
@@ -1811,14 +1598,29 @@ procedure set_r_scattered_(var a : scattered_relocation_info; __r_scattered : ui
    * using the GENERIC_RELOC_PB_LA_PTR r_type.  This is a scattered relocation
    * entry where the r_value feild is the value of the lazy pointer not prebound.
     }
-  { generic relocation as discribed above  }
-  { Only follows a GENERIC_RELOC_SECTDIFF  }
-  { prebound lazy pointer  }
 
 type
-  reloc_type_generic = (GENERIC_RELOC_VANILLA,GENERIC_RELOC_PAIR,
-   GENERIC_RELOC_SECTDIFF,GENERIC_RELOC_PB_LA_PTR,
-   GENERIC_RELOC_LOCAL_SECTDIFF);
+  reloc_type_generic = (
+    GENERIC_RELOC_VANILLA,        { generic relocation as discribed above  }
+    GENERIC_RELOC_PAIR,
+    GENERIC_RELOC_SECTDIFF,       { Only follows a GENERIC_RELOC_SECTDIFF  }
+    GENERIC_RELOC_PB_LA_PTR,      { prebound lazy pointer  }
+    GENERIC_RELOC_LOCAL_SECTDIFF
+  );
+
+type
+  reloc_type_x86_64 = (
+    X86_64_RELOC_UNSIGNED,
+    X86_64_RELOC_SIGNED,
+    X86_64_RELOC_BRANCH,
+    X86_64_RELOC_GOT_LOAD,
+    X86_64_RELOC_GOT,
+    X86_64_RELOC_SUBTRACTOR,
+    X86_64_RELOC_SIGNED_1,
+    X86_64_RELOC_SIGNED_2,
+    X86_64_RELOC_SIGNED_4
+  );
+
 
   {
    * Symbolic debugger symbols.  The comments give the conventional use for
@@ -1831,203 +1633,39 @@ type
     }
 
 const
-   N_GSYM  = $20;   { global symbol: name,,NO_SECT,type,0  }
-   N_FNAME = $22;   { procedure name (f77 kludge): name,,NO_SECT,0,0  }
-   N_FUN   = $24;   { procedure: name,,n_sect,linenumber,address  }
-   N_STSYM = $26;   { static symbol: name,,n_sect,type,address  }
-   N_LCSYM = $28;   { .lcomm symbol: name,,n_sect,type,address  }
-   N_BNSYM = $2e;   { begin nsect sym: 0,,n_sect,0,address  }
-   N_OPT   = $3c;   { emitted with gcc2_compiled and in gcc source  }
-   N_RSYM  = $40;   { register sym: name,,NO_SECT,type,register  }
-   N_SLINE = $44;   { src line: 0,,n_sect,linenumber,address  }
-   N_ENSYM = $4e;   { end nsect sym: 0,,n_sect,0,address  }
-   N_SSYM  = $60;    { structure elt: name,,NO_SECT,type,struct_offset  }
-   N_SO    = $64;      { source file name: name,,n_sect,0,address  }
-   N_OSO   = $66;     { object file name: name,,0,0,st_mtime  }
-   N_LSYM  = $80;    { local sym: name,,NO_SECT,type,offset  }
-   N_BINCL = $82;   { include file beginning: name,,NO_SECT,0,sum  }
-   N_SOL   = $84;     { #included file name: name,,n_sect,0,address  }
-   N_PARAMS  = $86;  { compiler parameters: name,,NO_SECT,0,0  }
+   N_GSYM    = $20; { global symbol: name,,NO_SECT,type,0  }
+   N_FNAME   = $22; { procedure name (f77 kludge): name,,NO_SECT,0,0  }
+   N_FUN     = $24; { procedure: name,,n_sect,linenumber,address  }
+   N_STSYM   = $26; { static symbol: name,,n_sect,type,address  }
+   N_LCSYM   = $28; { .lcomm symbol: name,,n_sect,type,address  }
+   N_BNSYM   = $2e; { begin nsect sym: 0,,n_sect,0,address  }
+   N_OPT     = $3c; { emitted with gcc2_compiled and in gcc source  }
+   N_RSYM    = $40; { register sym: name,,NO_SECT,type,register  }
+   N_SLINE   = $44; { src line: 0,,n_sect,linenumber,address  }
+   N_ENSYM   = $4e; { end nsect sym: 0,,n_sect,0,address  }
+   N_SSYM    = $60; { structure elt: name,,NO_SECT,type,struct_offset  }
+   N_SO      = $64; { source file name: name,,n_sect,0,address  }
+   N_OSO     = $66; { object file name: name,,0,0,st_mtime  }
+   N_LSYM    = $80; { local sym: name,,NO_SECT,type,offset  }
+   N_BINCL   = $82; { include file beginning: name,,NO_SECT,0,sum  }
+   N_SOL     = $84; { #included file name: name,,n_sect,0,address  }
+   N_PARAMS  = $86; { compiler parameters: name,,NO_SECT,0,0  }
    N_VERSION = $88; { compiler version: name,,NO_SECT,0,0  }
-   N_OLEVEL  = $8A;  { compiler -O level: name,,NO_SECT,0,0  }
-   N_PSYM  = $a0;    { parameter: name,,NO_SECT,type,offset  }
-   N_EINCL = $a2;   { include file end: name,,NO_SECT,0,0  }
-   N_ENTRY = $a4;   { alternate entry: name,,n_sect,linenumber,address  }
-   N_LBRAC = $c0;   { left bracket: 0,,NO_SECT,nesting level,address  }
-   N_EXCL  = $c2;    { deleted include file: name,,NO_SECT,0,sum  }
-   N_RBRAC = $e0;   { right bracket: 0,,NO_SECT,nesting level,address  }
-   N_BCOMM = $e2;   { begin common: name,,NO_SECT,0,0  }
-   N_ECOMM = $e4;   { end common: name,,n_sect,0,0  }
-   N_ECOML = $e8;   { end common (local name): 0,,n_sect,0,address  }
-   N_LENG  = $fe;    { second stab entry with length information  }
+   N_OLEVEL  = $8A; { compiler -O level: name,,NO_SECT,0,0  }
+   N_PSYM    = $a0; { parameter: name,,NO_SECT,type,offset  }
+   N_EINCL   = $a2; { include file end: name,,NO_SECT,0,0  }
+   N_ENTRY   = $a4; { alternate entry: name,,n_sect,linenumber,address  }
+   N_LBRAC   = $c0; { left bracket: 0,,NO_SECT,nesting level,address  }
+   N_EXCL    = $c2; { deleted include file: name,,NO_SECT,0,sum  }
+   N_RBRAC   = $e0; { right bracket: 0,,NO_SECT,nesting level,address  }
+   N_BCOMM   = $e2; { begin common: name,,NO_SECT,0,0  }
+   N_ECOMM   = $e4; { end common: name,,n_sect,0,0  }
+   N_ECOML   = $e8; { end common (local name): 0,,n_sect,0,address  }
+   N_LENG    = $fe; { second stab entry with length information  }
    { * for the berkeley pascal compiler, pc(1): }
-   N_PC    = $30;      {   global pascal symbol: name,,NO_SECT,subtype,line  }
-
-type
-  reloc_type_x86_64 = (
-    X86_64_RELOC_UNSIGNED,
-    X86_64_RELOC_SIGNED,
-    X86_64_RELOC_BRANCH,
-    X86_64_RELOC_GOT_LOAD,
-    X86_64_RELOC_GOT,
-    X86_64_RELOC_SUBTRACTOR,
-    X86_64_RELOC_SIGNED_1,
-    X86_64_RELOC_SIGNED_2,
-    X86_64_RELOC_SIGNED_4);
-
+   N_PC      = $30; {   global pascal symbol: name,,NO_SECT,subtype,line  }
 
 implementation
-
-{  function r_symbolnum(var a : relocation_info) : uint32_t;
-    begin
-       r_symbolnum:=(a.flag0 and bm_relocation_info_r_symbolnum) shr bp_relocation_info_r_symbolnum;
-    end;
-
-  procedure set_r_symbolnum(var a : relocation_info; __r_symbolnum : uint32_t);
-    begin
-       a.flag0:=a.flag0 or ((__r_symbolnum shl bp_relocation_info_r_symbolnum) and bm_relocation_info_r_symbolnum);
-    end;
-
-  function r_pcrel(var a : relocation_info) : uint32_t;
-    begin
-       r_pcrel:=(a.flag0 and bm_relocation_info_r_pcrel) shr bp_relocation_info_r_pcrel;
-    end;
-
-  procedure set_r_pcrel(var a : relocation_info; __r_pcrel : uint32_t);
-    begin
-       a.flag0:=a.flag0 or ((__r_pcrel shl bp_relocation_info_r_pcrel) and bm_relocation_info_r_pcrel);
-    end;
-
-  function r_length(var a : relocation_info) : uint32_t;
-    begin
-       r_length:=(a.flag0 and bm_relocation_info_r_length) shr bp_relocation_info_r_length;
-    end;
-
-  procedure set_r_length(var a : relocation_info; __r_length : uint32_t);
-    begin
-       a.flag0:=a.flag0 or ((__r_length shl bp_relocation_info_r_length) and bm_relocation_info_r_length);
-    end;
-
-  function r_extern(var a : relocation_info) : uint32_t;
-    begin
-       r_extern:=(a.flag0 and bm_relocation_info_r_extern) shr bp_relocation_info_r_extern;
-    end;
-
-  procedure set_r_extern(var a : relocation_info; __r_extern : uint32_t);
-    begin
-       a.flag0:=a.flag0 or ((__r_extern shl bp_relocation_info_r_extern) and bm_relocation_info_r_extern);
-    end;
-
-  function r_type(var a : relocation_info) : uint32_t;
-    begin
-       r_type:=(a.flag0 and bm_relocation_info_r_type) shr bp_relocation_info_r_type;
-    end;
-
-  procedure set_r_type(var a : relocation_info; __r_type : uint32_t);
-    begin
-       a.flag0:=a.flag0 or ((__r_type shl bp_relocation_info_r_type) and bm_relocation_info_r_type);
-    end;
-}
-{  function r_scattered(var a : scattered_relocation_info) : uint32_t;
-    begin
-       r_scattered:=(a.flag0 and bm_scattered_relocation_info_r_scattered) shr bp_scattered_relocation_info_r_scattered;
-    end;}
-
-{  procedure set_r_scattered(var a : scattered_relocation_info; __r_scattered : uint32_t);
-    begin
-       a.flag0:=a.flag0 or ((__r_scattered shl bp_scattered_relocation_info_r_scattered) and bm_scattered_relocation_info_r_scattered);
-    end;}
-
-{  function r_pcrel(var a : scattered_relocation_info) : uint32_t;
-    begin
-       r_pcrel:=(a.flag0 and bm_scattered_relocation_info_r_pcrel) shr bp_scattered_relocation_info_r_pcrel;
-    end;}
-
-{  procedure set_r_pcrel(var a : scattered_relocation_info; __r_pcrel : uint32_t);
-    begin
-       a.flag0:=a.flag0 or ((__r_pcrel shl bp_scattered_relocation_info_r_pcrel) and bm_scattered_relocation_info_r_pcrel);
-    end;}
-
-{  function r_length(var a : scattered_relocation_info) : uint32_t;
-    begin
-       r_length:=(a.flag0 and bm_scattered_relocation_info_r_length) shr bp_scattered_relocation_info_r_length;
-    end;}
-
-{  procedure set_r_length(var a : scattered_relocation_info; __r_length : uint32_t);
-    begin
-       a.flag0:=a.flag0 or ((__r_length shl bp_scattered_relocation_info_r_length) and bm_scattered_relocation_info_r_length);
-    end;}
-
-{  function r_type(var a : scattered_relocation_info) : uint32_t;
-    begin
-       r_type:=(a.flag0 and bm_scattered_relocation_info_r_type) shr bp_scattered_relocation_info_r_type;
-    end;}
-
-{  procedure set_r_type(var a : scattered_relocation_info; __r_type : uint32_t);
-    begin
-       a.flag0:=a.flag0 or ((__r_type shl bp_scattered_relocation_info_r_type) and bm_scattered_relocation_info_r_type);
-    end;}
-
-{  function r_address(var a : scattered_relocation_info) : uint32_t;
-    begin
-       r_address:=(a.flag0 and bm_scattered_relocation_info_r_address) shr bp_scattered_relocation_info_r_address;
-    end;}
-
-{  procedure set_r_address(var a : scattered_relocation_info; __r_address : uint32_t);
-    begin
-       a.flag0:=a.flag0 or ((__r_address shl bp_scattered_relocation_info_r_address) and bm_scattered_relocation_info_r_address);
-    end;}
-
-{  function r_address(var a : scattered_relocation_info) : uint32_t;
-    begin
-       r_address:=(a.flag1 and bm_scattered_relocation_info_r_address) shr bp_scattered_relocation_info_r_address;
-    end;}
-
-{  procedure set_r_address(var a : scattered_relocation_info; __r_address : uint32_t);
-    begin
-       a.flag1:=a.flag1 or ((__r_address shl bp_scattered_relocation_info_r_address) and bm_scattered_relocation_info_r_address);
-    end;}
-
-{  function r_type(var a : scattered_relocation_info) : uint32_t;
-    begin
-       r_type:=(a.flag1 and bm_scattered_relocation_info_r_type) shr bp_scattered_relocation_info_r_type;
-    end;}
-
-{  procedure set_r_type(var a : scattered_relocation_info; __r_type : uint32_t);
-    begin
-       a.flag1:=a.flag1 or ((__r_type shl bp_scattered_relocation_info_r_type) and bm_scattered_relocation_info_r_type);
-    end;}
-
-{  function r_length(var a : scattered_relocation_info) : uint32_t;
-    begin
-       r_length:=(a.flag1 and bm_scattered_relocation_info_r_length) shr bp_scattered_relocation_info_r_length;
-    end;}
-
-{  procedure set_r_length(var a : scattered_relocation_info; __r_length : uint32_t);
-    begin
-       a.flag1:=a.flag1 or ((__r_length shl bp_scattered_relocation_info_r_length) and bm_scattered_relocation_info_r_length);
-    end;
-
-  function r_pcrel(var a : scattered_relocation_info) : uint32_t;
-    begin
-       r_pcrel:=(a.flag1 and bm_scattered_relocation_info_r_pcrel) shr bp_scattered_relocation_info_r_pcrel;
-    end;
-
-  procedure set_r_pcrel(var a : scattered_relocation_info; __r_pcrel : uint32_t);
-    begin
-       a.flag1:=a.flag1 or ((__r_pcrel shl bp_scattered_relocation_info_r_pcrel) and bm_scattered_relocation_info_r_pcrel);
-    end;
-
-  function r_scattered(var a : scattered_relocation_info) : uint32_t;
-    begin
-       r_scattered:=(a.flag1 and bm_scattered_relocation_info_r_scattered) shr bp_scattered_relocation_info_r_scattered;
-    end;
-
-  procedure set_r_scattered(var a : scattered_relocation_info; __r_scattered : uint32_t);
-    begin
-       a.flag1:=a.flag1 or ((__r_scattered shl bp_scattered_relocation_info_r_scattered) and bm_scattered_relocation_info_r_scattered);
-    end;
-}
 
 end.
 

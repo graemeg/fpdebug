@@ -96,10 +96,11 @@ type
   public
     constructor Create(ASource: TStream; OwnSource: Boolean); override;
     destructor Destroy; override;
-    
-    function SectionsCount: Integer; override;
-    function GetSection(index: Integer; var Name: AnsiString; var Size: Int64): Boolean; override;
-    function GetSectionData(index: Integer; outData: TStream): Boolean; override;
+
+    //todo: remove
+    function SectionsCount: Integer;
+    function GetSection(index: Integer; var Name: AnsiString; var Size: Int64): Boolean;
+    function GetSectionData(index: Integer; outData: TStream): Boolean;
   end;
 
 implementation
@@ -146,7 +147,7 @@ begin
   Result:='PE file';
 end;
 
-function TPEFileSource.SectionsCount: Integer; 
+function TPEFileSource.SectionsCount: Integer;
 begin
   Result := fLoader.SectionsCount;
 end;

@@ -10,9 +10,9 @@ asm
   int 3;
 end;
 
-procedure TestIntelBreak;
+procedure TestIntelBreak;
 begin
-  writeln('testing break point'); 
+  writeln('testing break point');
   try
     DoBreak;
   except

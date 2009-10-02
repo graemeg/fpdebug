@@ -26,7 +26,7 @@
  *                                                                           *
  *****************************************************************************
 }
-unit DbgPETypes;
+unit dbgPETypes;
 
 {$ifdef fpc}{$mode delphi}{$H+}{$inline on}{$endif}
 
@@ -657,31 +657,31 @@ const
   // Type (fundamental) values.
   //
 
-  IMAGE_SYM_TYPE_NULL                 = $0000;  // no type.
-  IMAGE_SYM_TYPE_VOID                 = $0001;  //
-  IMAGE_SYM_TYPE_CHAR                 = $0002;  // type character.
-  IMAGE_SYM_TYPE_SHORT                = $0003;  // type short integer.
-  IMAGE_SYM_TYPE_INT                  = $0004;  //
-  IMAGE_SYM_TYPE_LONG                 = $0005;  //
-  IMAGE_SYM_TYPE_FLOAT                = $0006;  //
-  IMAGE_SYM_TYPE_DOUBLE               = $0007;  //
-  IMAGE_SYM_TYPE_STRUCT               = $0008;  //
-  IMAGE_SYM_TYPE_UNION                = $0009;  //
-  IMAGE_SYM_TYPE_ENUM                 = $000A;  // enumeration.
-  IMAGE_SYM_TYPE_MOE                  = $000B;  // member of enumeration.
-  IMAGE_SYM_TYPE_BYTE                 = $000C;  //
-  IMAGE_SYM_TYPE_WORD                 = $000D;  //
-  IMAGE_SYM_TYPE_UINT                 = $000E;  //
-  IMAGE_SYM_TYPE_DWORD                = $000F;  //
-  IMAGE_SYM_TYPE_PCODE                = $8000;  //
+  IMAGE_SYM_TYPE_NULL       = $0000;  // no type.
+  IMAGE_SYM_TYPE_VOID       = $0001;  //
+  IMAGE_SYM_TYPE_CHAR       = $0002;  // type character.
+  IMAGE_SYM_TYPE_SHORT      = $0003;  // type short integer.
+  IMAGE_SYM_TYPE_INT        = $0004;  //
+  IMAGE_SYM_TYPE_LONG       = $0005;  //
+  IMAGE_SYM_TYPE_FLOAT      = $0006;  //
+  IMAGE_SYM_TYPE_DOUBLE     = $0007;  //
+  IMAGE_SYM_TYPE_STRUCT     = $0008;  //
+  IMAGE_SYM_TYPE_UNION      = $0009;  //
+  IMAGE_SYM_TYPE_ENUM       = $000A;  // enumeration.
+  IMAGE_SYM_TYPE_MOE        = $000B;  // member of enumeration.
+  IMAGE_SYM_TYPE_BYTE       = $000C;  //
+  IMAGE_SYM_TYPE_WORD       = $000D;  //
+  IMAGE_SYM_TYPE_UINT       = $000E;  //
+  IMAGE_SYM_TYPE_DWORD      = $000F;  //
+  IMAGE_SYM_TYPE_PCODE      = $8000;  //
   //
   // Type (derived) values.
   //
 
-  IMAGE_SYM_DTYPE_NULL                = 0;       // no derived type.
-  IMAGE_SYM_DTYPE_POINTER             = 1;       // pointer.
-  IMAGE_SYM_DTYPE_FUNCTION            = 2;       // function.
-  IMAGE_SYM_DTYPE_ARRAY               = 3;       // array.
+  IMAGE_SYM_DTYPE_NULL      = 0;       // no derived type.
+  IMAGE_SYM_DTYPE_POINTER   = 1;       // pointer.
+  IMAGE_SYM_DTYPE_FUNCTION  = 2;       // function.
+  IMAGE_SYM_DTYPE_ARRAY     = 3;       // array.
 
   //
   // Storage classes.
@@ -721,12 +721,12 @@ const
 
   // type packing constants
 
-  N_BTMASK                            = $000F;
-  N_TMASK                             = $0030;
-  N_TMASK1                            = $00C0;
-  N_TMASK2                            = $00F0;
-  N_BTSHFT                            = 4;
-  N_TSHIFT                            = 2;
+  N_BTMASK = $000F;
+  N_TMASK  = $0030;
+  N_TMASK1 = $00C0;
+  N_TMASK2 = $00F0;
+  N_BTSHFT = 4;
+  N_TSHIFT = 2;
 
   // MACROS
 

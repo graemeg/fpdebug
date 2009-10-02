@@ -65,59 +65,6 @@ function StabsTypeToStr(_type: Byte): string;
 
 implementation
 
-function StabsTypeToStr(_type: Byte): string;
-begin
-  case _type of
-    N_GSYM:   Result := 'N_GSYM';
-    N_FNAME:  Result := 'N_FNAME';
-    N_FUN:    Result := 'N_FUN';
-    N_STSYM:  Result := 'N_STSYM';
-    N_LCSYM:  Result := 'N_LCSYM';
-    N_MAIN:   Result := 'N_MAIN';
-    N_ROSYM:  Result := 'N_ROSYM';
-    N_PC:     Result := 'N_PC';
-    N_NSYMS:  Result := 'N_NSYMS';
-    N_NOMAP:  Result := 'N_NOMAP';
-    N_OBJ:    Result := 'N_OBJ';
-    N_OPT:    Result := 'N_OPT';
-    N_RSYM:   Result := 'N_RSYM';
-    N_M2C:    Result := 'N_M2C';
-    N_SLINE:  Result := 'N_SLINE';
-    N_DSLINE: Result := 'N_DSLINE';
-    N_BSLINE: Result := 'N_BSLINE';
-    //N_BROWS: Result := 'BROWS';
-    N_DEFD:   Result := 'N_DEFD';
-    N_FLINE:  Result := 'N_FLINE';
-    N_EHDECL: Result := 'N_EHDECL';
-    //N_MOD2: Result := 'MOD2';
-    N_CATCH:  Result := 'N_CATCH';
-    N_SSYM:   Result := 'N_SSYM';
-    N_ENDM:   Result := 'N_ENDM';
-    N_SO:     Result := 'N_SO';
-    N_LSYM:   Result := 'N_LSYM';
-    N_BINCL:  Result := 'N_BINCL';
-    N_SOL:    Result := 'N_SOL';
-    N_PSYM:   Result := 'N_PSYM';
-    N_EINCL:  Result := 'N_EINCL';
-    N_ENTRY:  Result := 'N_ENTRY';
-    N_LBRAC:  Result := 'N_LBRAC';
-    N_EXCL:   Result := 'N_EXCL';
-    N_SCOPE:  Result := 'N_SCOPE';
-    N_RBRAC:  Result := 'N_RBRAC';
-    N_BCOMM:  Result := 'N_BCOMM';
-    N_ECOMM:  Result := 'N_ECOMM';
-    N_ECOML:  Result := 'N_ECOML';
-    N_WITH:   Result := 'N_WITH';
-    N_NBTEXT: Result := 'N_NBTEXT';
-    N_NBDATA: Result := 'N_NBDATA';
-    N_NBBSS:  Result := 'N_NBBSS';
-    N_NBSTS:  Result := 'N_NBSTS';
-    N_NBLCS:  Result := 'N_NBLCS';
-  else
-    Result := IntToHex(_type, 2);
-  end;
-end;
-
 { TDbgStabsInfo }
 
 procedure TDbgStabsInfo.ReadSymbols;
@@ -259,6 +206,60 @@ begin
     end;
   writeln('Total symbols = ', SymCount);
 end;
+
+function StabsTypeToStr(_type: Byte): string;
+begin
+  case _type of
+    N_GSYM:   Result := 'N_GSYM';
+    N_FNAME:  Result := 'N_FNAME';
+    N_FUN:    Result := 'N_FUN';
+    N_STSYM:  Result := 'N_STSYM';
+    N_LCSYM:  Result := 'N_LCSYM';
+    N_MAIN:   Result := 'N_MAIN';
+    N_ROSYM:  Result := 'N_ROSYM';
+    N_PC:     Result := 'N_PC';
+    N_NSYMS:  Result := 'N_NSYMS';
+    N_NOMAP:  Result := 'N_NOMAP';
+    N_OBJ:    Result := 'N_OBJ';
+    N_OPT:    Result := 'N_OPT';
+    N_RSYM:   Result := 'N_RSYM';
+    N_M2C:    Result := 'N_M2C';
+    N_SLINE:  Result := 'N_SLINE';
+    N_DSLINE: Result := 'N_DSLINE';
+    N_BSLINE: Result := 'N_BSLINE';
+    //N_BROWS: Result := 'BROWS';
+    N_DEFD:   Result := 'N_DEFD';
+    N_FLINE:  Result := 'N_FLINE';
+    N_EHDECL: Result := 'N_EHDECL';
+    //N_MOD2: Result := 'MOD2';
+    N_CATCH:  Result := 'N_CATCH';
+    N_SSYM:   Result := 'N_SSYM';
+    N_ENDM:   Result := 'N_ENDM';
+    N_SO:     Result := 'N_SO';
+    N_LSYM:   Result := 'N_LSYM';
+    N_BINCL:  Result := 'N_BINCL';
+    N_SOL:    Result := 'N_SOL';
+    N_PSYM:   Result := 'N_PSYM';
+    N_EINCL:  Result := 'N_EINCL';
+    N_ENTRY:  Result := 'N_ENTRY';
+    N_LBRAC:  Result := 'N_LBRAC';
+    N_EXCL:   Result := 'N_EXCL';
+    N_SCOPE:  Result := 'N_SCOPE';
+    N_RBRAC:  Result := 'N_RBRAC';
+    N_BCOMM:  Result := 'N_BCOMM';
+    N_ECOMM:  Result := 'N_ECOMM';
+    N_ECOML:  Result := 'N_ECOML';
+    N_WITH:   Result := 'N_WITH';
+    N_NBTEXT: Result := 'N_NBTEXT';
+    N_NBDATA: Result := 'N_NBDATA';
+    N_NBBSS:  Result := 'N_NBBSS';
+    N_NBSTS:  Result := 'N_NBSTS';
+    N_NBLCS:  Result := 'N_NBLCS';
+  else
+    Result := IntToHex(_type, 2);
+  end;
+end;
+
 
 initialization
   RegisterDebugInfo(TDbgStabsInfo);

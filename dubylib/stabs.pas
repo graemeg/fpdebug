@@ -103,7 +103,15 @@ const
   N_NBBSS  = $f4; // Gould non-base registers; see section Non-base registers on Gould systems.
   N_NBSTS  = $f6; // Gould non-base registers; see section Non-base registers on Gould systems.
   N_NBLCS  = $f8; // Gould non-base registers; see section Non-base registers on Gould systems.
-
+  
+const
+  {darwin (mach-o) special, see: /usr/include/mach-o/nlist.h }
+  
+	N_STAB = $e0;  { if any of these bits set, a symbolic debugging entry }
+	N_PEXT = $10;  { private external symbol bit }
+	N_TYPE = $0e;  { mask for the type bits }
+	//N_EXT	 = $01;  { external symbol bit, set for external symbols }
+  
 type
   bfd_vma = LongWord;
   TStabSym = packed record
@@ -114,113 +122,7 @@ type
     n_value : bfd_vma;   { value of symbol }
   end;
 
-type
-  TStabSymArray = array [Word] of TStabSym;
-  PStabSymArray = ^TStabSymArray;
-  
-  TByteArray = array [Word] of byte;
-  PByteArray = ^TByteArray;
-  
-  TStabProcParams = record
-    Name    : String;    
-  end;
-  
-  TStabsCallback = class(TObject)
-  public
-    procedure DeclareType(const TypeName: AnsiString); virtual; abstract;
-    procedure StartFile(const FileName: AnsiString; FirstAddr: LongWord); virtual; abstract;
-    procedure StartProc(const Name: AnsiString; const StabParams : array of TStabProcParams; ParamsCount: Integer); virtual; abstract;
-    procedure DeclareLocalVar(const Name: AnsiString; Addr: LongWord); virtual; abstract;
-  end;
-  
-  { TStabsReader }
-
-  TStabsReader = class(TObject)
-  private
-    Stabs     : PStabSymArray;
-    StabsCnt  : Integer;
-    StrSyms   : PByteArray;
-    StrLen    : Integer;
-    fCallback : TStabsCallback;
-    
-    procedure DoReadStabs;
-    procedure CallbackStab(stabtype: Integer);
-    
-    procedure HandleSourceFile(var index: Integer);
-    procedure HandleLSym(var index: Integer);
-  public
-    procedure ReadStabs(const StabsBuf : array of Byte; StabsLen: Integer; 
-      const StabStr: array of byte; StabStrLen: Integer; Callback: TStabsCallback);
-  end;
-  
 implementation
-
-function StabStrN(const strs: array of byte; strx: integer): AnsiString;
-begin
-  if strx = 0 then Result := ''
-  else Result := PChar(@strs[strx]);
-end;
-
-{ TStabsReader }
-
-procedure TStabsReader.DoReadStabs; 
-var
-  i, j  : Integer;
-  last  : Integer;
-  callbackOnChange  : Boolean;
-begin
-  last := -1;
-  callbackOnChange := false; 
-  
-
-   i := 0;  
-  while i < StabsCnt do 
-    case Stabs^[i].n_type of
-      N_SO: HandleSourceFile(i);
-      N_LSYM: HandleLSym(i);
-    else
-      inc(i);    
-    end;
-end;
-
-procedure TStabsReader.CallbackStab(stabtype: Integer); 
-begin
-
-end;
-
-procedure TStabsReader.HandleSourceFile(var index: Integer); 
-var
-  fileaddr  : LongWord;
-  filename  : AnsiString;
-begin
-  fileaddr := Stabs^[Index].n_value;
-  filename := '';
-  while (Stabs^[Index].n_type = N_SO) and (Stabs^[Index].n_value = fileaddr) do begin
-    filename := filename + StabStrN(StrSyms^, Stabs^[Index].n_value);
-    inc(index);
-  end;
-  
-  if Assigned(fCallback) then fCallback.StartFile(filename, fileaddr);
-end;
-
-procedure TStabsReader.HandleLSym(var index: Integer); 
-begin
-  if Assigned(fCallback) then 
-    fCallback.DeclareType(StabStrN(StrSyms^, Stabs^[Index].n_value));
-  inc(index);
-end;
-
-procedure TStabsReader.ReadStabs(const StabsBuf: array of Byte; StabsLen: Integer;  
-  const StabStr: array of byte; StabStrLen: Integer; Callback: TStabsCallback); 
-begin
-  Stabs := @StabsBuf;
-  StabsCnt := StabsLen div sizeof(TStabSym);
-  StrSyms := @StabStr[0];
-  StrLen := StabStrLen;
-  fCallback := Callback;
-  DoReadStabs;
-end;
-
 
 end.
 

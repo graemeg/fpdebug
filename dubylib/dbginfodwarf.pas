@@ -20,6 +20,7 @@ type
     constructor Create(ASource: TDbgDataSource); override;
     function GetDebugData(const DataName: string; DataAddr: TDbgPtr; OutData: TDbgDataList): Boolean; override;
 
+    procedure dump_debug_abbrev;
     procedure dump_debug_info;
   end;
 
@@ -56,6 +57,39 @@ begin
   Result := false;
 end;
 
+procedure TDbgDwarf3Info.dump_debug_abbrev;
+var
+  mem : TMemoryStream;
+  i   : integer;
+  nm  : String;
+  sz  : Int64;
+  buf : PByteArray;
+  cu32 : PDwarfCUHeader32;
+  cu64 : PDwarfCUHeader64;
+  c    : Integer;
+begin
+  for i := 0 to fSource.SectionsCount - 1 do begin
+    fSource.GetSection(i, nm, sz);
+    if nm = '.debug_abbrev' then begin
+      mem := TMemoryStream.Create;
+      fSource.GetSectionData(i, mem);
+      mem.Position:=0;
+      Break;
+    end;
+  end;
+  if not Assigned(mem) then Exit;
+
+  try
+    buf := PByteArray(mem.Memory);
+    
+  finally
+    mem.Free;
+  end;
+  
+  
+end;
+
+
 procedure TDbgDwarf3Info.dump_debug_info;
 var
   mem : TMemoryStream;
@@ -77,26 +111,27 @@ begin
     end;
   end;
   if not Assigned(mem) then Exit;
-
-  buf := PByteArray(mem.Memory);
-  i := 0;
-  c := 1;
-  writeln('Compilation Units:');
-  while i < mem.Size do begin
-    writeln('i = ', i);
-    cu32 := @buf^[i];
-    if cu32^.Length = DWARF_HEADER64_SIGNATURE then begin
-      cu64 := PDwarfCUHeader64(cu32);
-      writeln('v: ',cu64^.Version, '; addrsize: ', cu64^.AddressSize, '; ofs: ', cu64^.AbbrevOffset, '; len: ', cu64^.Length);
-      inc(i, sizeof (TDwarfCUHeader64) + cu64^.Length);
-    end else begin
-      writeln('v: ',cu32^.Version, '; addrsize: ', cu32^.AddressSize, '; ofs: ', cu32^.AbbrevOffset, '; len: ', cu32^.Length);
-      inc(i, sizeof(TDwarfCUHeader32) + cu32^.Length);
+  try
+    buf := PByteArray(mem.Memory);
+    i := 0;
+    c := 1;
+    writeln('Compilation Units:');
+    while i < mem.Size do begin
+      writeln('i = ', i);
+      cu32 := @buf^[i];
+      if cu32^.Length = DWARF_HEADER64_SIGNATURE then begin
+        cu64 := PDwarfCUHeader64(cu32);
+        writeln('v: ',cu64^.Version, '; addrsize: ', cu64^.AddressSize, '; ofs: ', cu64^.AbbrevOffset, '; len: ', cu64^.Length);
+        inc(i, sizeof (TDwarfCUHeader64) + cu64^.Length - 12);
+      end else begin
+        writeln('v: ',cu32^.Version, '; addrsize: ', cu32^.AddressSize, '; ofs: ', cu32^.AbbrevOffset, '; len: ', cu32^.Length);
+        inc(i, sizeof(TDwarfCUHeader32) + cu32^.Length - 4);
+      end;
+      inc(c);
     end;
-    inc(c);
+  finally
+    mem.Free;
   end;
-
-  mem.Free;
 end;
 
 end.

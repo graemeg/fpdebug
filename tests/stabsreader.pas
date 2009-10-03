@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Classes, dbgInfoTypes, dbgInfoStabs, stabs,
-  machoDbgSource, PESource;
+  machoDbgSource, PESource, stabsproc;
 
 procedure ReadStabsData(source : TDbgDataSource);
 var

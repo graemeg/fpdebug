@@ -1,4 +1,7 @@
 // compile for stabs: fpc -g test1.pas
+{$ASMMODE intel}
+{$mode objfpc}
+
 program p1;
 
 var
@@ -28,8 +31,18 @@ begin
   inc(b);
 end;
 
+procedure BreakPoint; assembler;
+asm
+  int 3;
+end;
+
+
 begin
   bb := 1;	
+  {try
+    BreakPoint;
+  except
+  end;}
   ProcCdecl(1, bb, nil, 0, 'test');
   ProcFastCall(2, bb, nil, 0, 'test');
   ProcStdCall(3, bb, nil, 0, 'test');

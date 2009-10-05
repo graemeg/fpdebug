@@ -5,40 +5,163 @@ unit cmddbg;
 interface
 
 uses
-  Classes, SysUtils, 
-  dbgTypes, dbgUtils, dbgInfoTypes, cmdlineutils,
+  Classes, SysUtils, contnrs, 
+  dbgTypes, dbgUtils, dbgConsts,
+  dbgInfoTypes, cmdlineutils,
   commands; 
 
 procedure LoadDebugInfo(const FileName: string);
 procedure LoadExeDebugInfo(const cmdLine: string);
 
+function GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: LongWord): Boolean;
+
 implementation
 
 var
-  DbgSources : TList;
+  DbgSources : TFPObjectList;
+  //DbgInfos   : TFPObjectList;
+  CommonInfo : TDbgInfo = nil;
   
 type
+  
+  { TWhereCommand }
+
   TWhereCommand = class(TCommand)
   public
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    function ShortHelp: String; override;
   end;  
+  
+  { TAddrOf }
+
+  TAddrOf = class(TCommand)
+  public
+    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    function ShortHelp: String; override;
+  end;
+  
+  { TListSymbols }
+
+  TListSymbols = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    function ShortHelp: String; override;
+  end;
+
+{ TListSymbols }
+
+procedure TListSymbols.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+var
+  st  : TStringList;
+  i   : Integer;
+  s   : string;
+  addr  : TDbgPtr;
+  maxlen  : integer;
+begin
+  if not Assigned(CommonInfo) then begin
+    WriteLn('no debug info');
+    Exit;    
+  end;
+  
+  st := TStringList.Create;
+  try
+    maxlen := 0;
+    CommonInfo.GetNames(st);
+    for i := 0 to st.Count - 1 do 
+      if length(st[i]) > maxlen then 
+        maxlen := length(st[i]);
+        
+    for i := 0 to st.Count - 1 do begin
+      s := st[i];
+      CommonInfo.GetAddrByName(s, addr);
+      writeln(s:maxlen+1, ' ', IntToHex(addr, sizeof(TDbgPtr)*2));
+    end;
+  finally
+    st.Free;
+  end;  
+end;
+
+function TListSymbols.ShortHelp: String;  
+begin
+  Result:='prints names lists of all known symbols';
+end;
+
+{ TAddrOf }
+
+procedure TAddrOf.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+var
+  name  : String;
+  addr  : TDbgPtr;
+begin
+  if not Assigned(CommonInfo) then begin
+    WriteLn('no debug info');
+    Exit;    
+  end;
+  
+  if CmdParams.Count <= 1 then begin
+    writeln('please specify name of symbol to find');
+    Exit;
+  end;
+  
+  name := CmdParams[1];
+  if CommonInfo.GetAddrByName(name, addr) then
+    writeln('addr = ', addr)
+  else
+    writeln('symbol not found');
+end;
+
+function TAddrOf.ShortHelp: String;  
+begin
+  Result:='returns address of a symbol by it''s name';
+end;
+  
+function GetFileString(const Name: WideString; LineNum: LongWord): String;
+var
+  st  : TStringList;
+begin 
+  st := TStringList.Create;
+  try
+    st.LoadFromFile(Name);
+    dec(LineNum);
+    if (LineNum >= 0) and (LineNum < st.Count) then
+      Result := st[LineNum];
+  except
+    Result := Format('error file opening file: %s', [Name]);
+  end;
+  st.Free;
+end;  
   
 procedure TWhereCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);
 var
   regs : TDbgDataList;
+  fn   : WideString;
+  num  : LongWord;
+  addr : TDbgPtr;
 begin
-  regs := GetProcessRegisters(Process);
-  if not Assigned(regs) then begin
-    writeln('Cannot read process state. ');
-    Exit;
+  if CmdParams.Count <= 1 then begin
+    regs := GetProcessRegisters(Process);
+    if not Assigned(regs) then begin
+      writeln('Cannot read process state. ');
+      Exit;
+    end;
+    addr := regs[_Eip].DbgPtr;
   end;
-  WriteLn('EIP = ', regs['EIP'].SInt32);
+  
+  WriteLn('addr = ', addr);
+  if GetLineInfo( addr, fn, num) then Writeln( GetFileString(fn, num));
+end;
+
+function TWhereCommand.ShortHelp: String;  
+begin
+  Result:='returns current execution address of main thread (if possible: filename and line number/line)';
 end;
 
 procedure InitDebugCommands;
 begin
-  DbgSources := TList.Create;
-  RegisterCommand(['where'], TWhereCommand.Create);
+  DbgSources := TFPObjectList.Create(true);
+  
+  RegisterCommand(['where',  'w'], TWhereCommand.Create);
+  RegisterCommand(['addrof', 'a'], TAddrOf.Create);
+  RegisterCommand(['listsym'], TListSymbols.Create);
 end;
 
 procedure ReleaseDebugCommands;
@@ -48,12 +171,25 @@ end;
   
 procedure LoadDebugInfo(const FileName: string);
 var
-  source  : TDbgDataSource;
+  source   : TDbgDataSource;
+  infolist : TFPList;
+  //i        : Integer;
 begin
   source := GetDataSource(FileName);  
   if not Assigned(source) then 
-    writeln('cannot find reader for the file: ', FileName);
+    writeln('[LoadDebugInfo] cannot find reader for the file: ', FileName);
+  //writeln('[LoadDebugInfo] source file accepted: ', FileName);
   DbgSources.Add(source);
+  
+  infolist := TFPList.Create;
+  GetDebugInfos(source, infolist);
+  if infolist.Count > 0 then 
+    CommonInfo := TDbgInfo(infolist[0]);
+  {for i := 0 to infolist.Count - 1 do begin
+    //writeln('[LoadDebugInfo] debug info found: ', TDbgInfo(infolist[i]).ClassName );
+    DbgInfos.Add( TObject(infolist[i]));
+  end;}
+  infolist.Free;  
 end;  
 
 procedure LoadExeDebugInfo(const cmdLine: string);
@@ -62,6 +198,19 @@ var
 begin
   binName := GetBinaryName(cmdLine);
   LoadDebugInfo(binName);
+end;
+
+function GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: LongWord): Boolean;
+//var
+  //i : Integer;
+  //d : TDbgInfo;
+begin
+  Result := CommonInfo.GetLineByAddr(Addr, FileName, LineNum);
+  {for i := 0 to DbgInfos.Count-1 do begin  
+    d := TDbgInfo(DbgInfos[i]);
+    Result := d.GetLineByAddr(Addr, FileName, LineNum);
+    if Result then Exit;
+  end;}
 end;
 
 initialization

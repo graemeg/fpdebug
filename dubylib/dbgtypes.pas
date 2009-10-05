@@ -21,6 +21,7 @@ type
 
   TDbgData = class(TObject)
   private
+    function GetDbgPtr: TDbgPtr;
     function GetSInt16: ShortInt;
     function GetSInt32: Integer;
     function GetSInt64: Int64;
@@ -29,6 +30,7 @@ type
     function GetUInt16: Word;
     function GetUInt32: LongWord;
     function GetUInt64: QWord;
+    procedure SetDbgPtr(const AValue: TDbgPtr);
     procedure SetSInt16(const AValue: ShortInt);
     procedure SetSInt32(const AValue: Integer);
     procedure SetSInt64(const AValue: Int64);
@@ -58,6 +60,8 @@ type
     
     property SInt8: SmallInt read GetSInt8 write SetSInt8;
     property UInt8: Byte read GetUInt8 write SetUInt8;
+    
+    property DbgPtr: TDbgPtr read GetDbgPtr write SetDbgPtr;
   
     property Name: String read GetName;
   end;
@@ -136,6 +140,11 @@ begin
   GetValue(Result, 8);
 end;
 
+function TDbgData.GetDbgPtr: TDbgPtr;
+begin
+  GetValue(Result, SizeOf(DbgPtr)*8);
+end;
+
 function TDbgData.GetSInt16: ShortInt;
 begin
   GetValue(Result, 16);
@@ -164,6 +173,11 @@ end;
 function TDbgData.GetUInt64: QWord;
 begin
   GetValue(Result, 64);
+end;
+
+procedure TDbgData.SetDbgPtr(const AValue: TDbgPtr);
+begin
+  SetValue(AValue, Sizeof(TDbgPtr)*8);
 end;
 
 procedure TDbgData.SetSInt16(const AValue: ShortInt);

@@ -14,7 +14,7 @@ type
   public  
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); virtual; abstract;
     procedure PrintHelp; virtual; 
-    function Description: String; virtual;
+    function ShortHelp: String; virtual;
     function ResetParamsCache: Boolean; virtual;
   end;
   
@@ -33,8 +33,7 @@ type
   THelpCommand = class(TCommand)
   public
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
-    procedure PrintHelp; override;
-    function Description: String; override;
+    function ShortHelp: String; override;
   end;
   
   { TExitCommand }
@@ -42,7 +41,7 @@ type
   TExitCommand = class(TCommand)
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
     procedure PrintHelp; override;
-    function Description: String; override;
+    function ShortHelp: String; override;
   end;
 
 { TExitCommand }
@@ -54,10 +53,10 @@ end;
 
 procedure TExitCommand.PrintHelp;  
 begin
-  writeln(Description);
+  writeln(ShortHelp);
 end;
 
-function TExitCommand.Description: String;  
+function TExitCommand.ShortHelp: String;  
 begin
   Result := 'quits debugger';
 end;
@@ -89,15 +88,11 @@ begin
   end else 
     for i := 0 to cmdlist.Count - 1 do begin
       cmd := TCommand(cmdlist[i]);
-      writeln(GetCommandKeys(cmd):15,' - ' + cmd.Description);
+      writeln(GetCommandKeys(cmd):15,' - ' + cmd.ShortHelp);
     end
 end;
 
-procedure THelpCommand.PrintHelp;  
-begin
-end;
-
-function THelpCommand.Description: String;  
+function THelpCommand.ShortHelp: String;  
 begin
   Result:='Prints help';          
 end;  
@@ -109,7 +104,7 @@ begin
 
 end;
 
-function TCommand.Description: String; 
+function TCommand.ShortHelp: String; 
 begin
   Result := '';
 end;

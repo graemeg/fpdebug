@@ -10,15 +10,18 @@ program dubyline;
 uses
   dbgTypes,
   dbgInfoTypes,
-  cmdloop,
+
   commands,
-  memviewer,
+  cmdloop,    // main loop and run commands
+  memviewer,  // view commands
+  cmddbg,     // debug-info commands
+  
   PESource,
   dbgInfoDwarf,
   dbgInfoStabs
   {$ifdef darwin},macDbgType, macDbgProc {$endif}
   {$ifdef mswindows},winDbgTypes{$endif}
-  ,cmddbg, dwarfproc, machoDbgSource, machofile;
+  , machoDbgSource, machofile;
 
  
 procedure RunDebugger;

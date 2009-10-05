@@ -5,7 +5,7 @@ unit cmdloop;
 interface
 
 uses
-  Classes, SysUtils, dbgTypes, commands; 
+  Classes, SysUtils, dbgTypes, dbgUtils, dbgConsts, commands; 
 
 procedure RunLoop(Process: TDbgProcess);
   
@@ -24,23 +24,86 @@ const
   HexSize   = sizeof(TDbgPtr) * 2;
 
 type
-  { TRunComand }
+  { TRunCommand }
 
-  TRunComand = class(TCommand)
+  TRunCommand = class(TCommand)
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    function ShortHelp: String; override;
+  end;
+  
+  { TRunToCommand }
+
+  TRunToCommand = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    function ShortHelp: String; override;
   end;
   
   { TStepCommand }
 
   TStepCommand = class(TCommand)
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    function ShortHelp: String; override;
   end;
 
   { TContinueCommand }
 
   TContinueCommand = class(TCommand)
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    function ShortHelp: String; override;
   end;
+
+{ TRunToCommand }
+
+procedure TRunToCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+var
+  reg : TDbgDataBytesList;
+  addr : TDbgPtr;
+  err  : integer;
+begin 
+  if CmdParams.Count > 1 then Val(CmdParams[1], addr, err);
+  //todo: replace with break-point usage!
+  if (CmdParams.Count <= 1) or (err <> 0) then begin
+    writeln('please specify valid address');
+    Exit;
+  end;
+  
+  writeln('run-to = ', IntToHex(Addr, Sizeof(TDbgPtr)*2 ));
+  
+  reg := TDbgDataBytesList.Create;
+  try
+    if not Process.GetThreadRegs(Process.MainThreadID, reg) then begin
+      writeln('unable to read thread regs');
+      Exit;
+    end;
+    if reg.Reg[_Eip].DbgPtr = addr then begin
+      writeln('addr achieved: ', addr);
+      Exit;
+    end;
+    
+    Process.SetSingleStep(Process.MainThreadID);
+    while Process.WaitNextEvent(DbgEvent) do begin
+      if not Process.GetThreadRegs(Process.MainThreadID, reg) then begin
+        writeln('unable to read thread regs');
+      end;
+      
+      //writeln('eip = ', IntToHex(reg.Reg[_Eip].DbgPtr, Sizeof(TDbgPtr)*2 ));
+      //writeln('eax = ', IntToHex(reg.Reg[_Eax].UInt32, Sizeof(LongWord)*2 ));
+      if reg.Reg[_Eip].DbgPtr = addr then begin
+        writeln('addr achieved: ', addr);
+        Break;        
+      end;
+      Process.SetSingleStep(Process.MainThreadID);
+    end;
+    
+  finally
+    reg.Free;
+  end;
+end;
+
+function TRunToCommand.ShortHelp: String;  
+begin
+  Result:='IT''S SLOW!!! runs to a specific address';
+end;
 
 { TStepCommand }
 
@@ -53,6 +116,11 @@ begin
   WaitForNext := true;
 end;
 
+function TStepCommand.ShortHelp: String;  
+begin
+  Result:='makes a single step in (the mainthead) process';
+end;
+
 { TContinueCommand }
 
 procedure TContinueCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);
@@ -63,9 +131,14 @@ begin
     WaitForNext := true;
 end;
 
+function TContinueCommand.ShortHelp: String;  
+begin
+  Result:='continues process execution';
+end;
+
 { TRunComand }
 
-procedure TRunComand.Execute(CmdParams: TStrings; Process: TDbgProcess);
+procedure TRunCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);
 begin
   if not Running then begin
     running := true;
@@ -73,6 +146,11 @@ begin
     WaitForNext := true;
   end else
     writelN('process already started');
+end;
+
+function TRunCommand.ShortHelp: String;  
+begin
+  Result:='runs the process';
 end;
 
 function GetNextWord(const s: AnsiString; var index: Integer): String;
@@ -208,7 +286,8 @@ end;
 
 procedure RegisterLoopCommands;
 begin
-  RegisterCommand(['run','r'], TRunComand.Create);
+  RegisterCommand(['run','r'], TRunCommand.Create);
+  RegisterCommand(['runto','rt'], TRunToCommand.Create);
   RegisterCommand(['c'], TContinueCommand.Create);
   RegisterCommand(['step','s'], TStepCommand.Create);
 end;

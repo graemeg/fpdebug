@@ -15,10 +15,14 @@ type
   TViewMemCommand = class(TCommand)
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
     function ResetParamsCache: Boolean; override;
+    function ShortHelp: String; override;
   end;
+
+  { TRegistersView }
 
   TRegistersView = class(TCommand)
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    function ShortHelp: String; override;
   end;
 
 implementation
@@ -108,6 +112,11 @@ begin
   Result := true;
 end;
 
+function TViewMemCommand.ShortHelp: String;  
+begin
+  Result:='prints process memory at the give address';
+end;
+
 { TRegistersView }
 
 procedure PrintAllRegs(list: TDbgDataList);
@@ -156,6 +165,11 @@ begin
   PrintI386Regs(regs);
 
   regs.Free;
+end;
+
+function TRegistersView.ShortHelp: String;  
+begin
+  Result:='prints main thread''s registers';
 end;
 
 initialization

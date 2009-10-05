@@ -122,7 +122,34 @@ type
     n_value : bfd_vma;   { value of symbol }
   end;
 
+procedure StabFuncStr(const funcstr: String; var name: string);
+
 implementation
+
+const 
+  NameSeparator = ':';
+
+procedure ParseStabStr(const str: string; var name: string);
+var
+  i, j : integer;
+begin
+  j := -1;
+  for i := 1 to length(str) do
+    if str[i] = NameSeparator then begin
+      name := Copy(str, 1, i - 1);    
+      j := i + 1;
+      break;
+    end;
+  if j < 0 then begin
+    name := str;
+    Exit;
+  end;
+end;
+
+procedure StabFuncStr(const funcstr: String; var name: string);
+begin
+  ParseStabStr(funcstr, name);
+end;
 
 end.
 

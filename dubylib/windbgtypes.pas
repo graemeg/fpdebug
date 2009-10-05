@@ -163,7 +163,7 @@ begin
   Result := false;
   if fWaited and (fLastEvent.dwDebugEventCode = EXCEPTION_DEBUG_EVENT) then begin
     case fLastEvent.Exception.ExceptionRecord.ExceptionCode of
-      EXCEPTION_BREAKPOINT,
+      EXCEPTION_BREAKPOINT, 
       EXCEPTION_SINGLE_STEP: ContStatus := DBG_CONTINUE
     else 
       ContStatus := HandledStatus[fEHandled]

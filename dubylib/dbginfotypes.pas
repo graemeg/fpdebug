@@ -33,6 +33,7 @@ type
     constructor Create(ASource: TDbgDataSource); virtual; 
     function GetDebugData(const DataName: string; DataAddr: TDbgPtr; OutData: TDbgDataList): Boolean; virtual; abstract;
     function GetAddrByName(const SymbolName: String; var Addr: TDbgPtr): Boolean; virtual; abstract;
+    function GetLineByAddr(const Addr: TDbgPtr; var FileName: WideString; var LineNumber: LongWord): Boolean; virtual; abstract;
     procedure GetNames(strings: TStrings); virtual; abstract;
   end;
   TDbgInfoClass = class of TDbgInfo;
@@ -51,16 +52,32 @@ const
 
 function GetDataSource(const FileName: string): TDbgDataSource; overload;
 function GetDataSource(ASource: TStream; OwnSource: Boolean): TDbgDataSource; overload;
-
 procedure RegisterDataSource(DataSource: TDbgDataSourceClass); 
-procedure RegisterDebugInfo(DebugInfo: TDbgInfoClass );
+
+procedure GetDebugInfos(Source: TDbgDataSource; List: TFPList);
+procedure RegisterDebugInfo(DebugInfo: TDbgInfoClass);
 
 implementation
 
 var
-  sources  : TFPList;
-  readers  : TFPObjectList;
+  srcclasses  : TFPList;
+  infoclasses : TFPList;
   
+procedure GetDebugInfos(Source: TDbgDataSource; List: TFPList);
+var
+  i         : Integer;
+  infoclass : TDbgInfoClass;
+  info      : TDbgInfo;
+begin
+  //writeln('[GetDebugInfos] dbgInfo classes = ', infoclasses.Count);
+  for i := 0 to infoclasses.Count - 1 do begin
+    infoclass := TDbgInfoClass(infoclasses[i]);
+    if infoclass.isPresent(Source) then begin
+      info := infoclass.Create(Source);  
+      List.Add(info);
+    end;
+  end;
+end;
   
 function GetDataSource(const FileName: string): TDbgDataSource;
 var
@@ -84,21 +101,16 @@ begin
   if not Assigned(ASource) then Exit;
   
   p := ASource.Position;
-  //writeln('-- sources count ', sources.Count);
-  for i := 0 to sources.Count - 1 do begin
-    cls :=  TDbgDataSourceClass(sources[i]);
+  for i := 0 to srcclasses.Count - 1 do begin
+    cls :=  TDbgDataSourceClass(srcclasses[i]);
     try
       ASource.Position := P;
       if cls.isValid(ASource) then begin 
-        //writelN('-- is valid source!');
         ASource.Position := p;
-        //writelN('-- creating! cls = ', cls.ClassName);
         Result := cls.Create(ASource, OwnSource);
-        //writeln('result = ', PtrUInt(Result));
         Exit;
       end else
         ;
-        //writeln('-- failed to detect for ', cls.ClassName);
         
     except
       on e: exception do begin
@@ -111,27 +123,25 @@ end;
 
 procedure RegisterDataSource( DataSource: TDbgDataSourceClass); 
 begin
-  if Assigned(DataSource) and (sources.IndexOf(DataSource) < 0) then  begin
-    //writeln('-- added new data source ', DataSource.ClassName);
-    sources.Add(DataSource)
-  end;
+  if Assigned(DataSource) and (srcclasses.IndexOf(DataSource) < 0) then  
+    srcclasses.Add(DataSource)
 end;
 
 procedure RegisterDebugInfo(DebugInfo: TDbgInfoClass); 
 begin
-
+  infoclasses.Add(DebugInfo);
 end;
 
 procedure InitDebugInfoLists;
 begin
-  sources := TFPList.Create;
-  readers := TFPObjectList.Create(true);
+  srcclasses := TFPList.Create;
+  infoclasses := TFPList.Create;
 end;
 
 procedure ReleaseDebugInfoLists;
 begin 
-  sources.Free;
-  readers.Free;
+  srcclasses.Free;
+  infoclasses.Free;
 end;
 
 { TDbgDataSource }

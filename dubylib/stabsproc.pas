@@ -13,6 +13,7 @@ type
   
   TStabProcParams = record
     Name    : String;    
+    SrcLine : LongWord;
   end;
   
   TStabsCallback = class(TObject)
@@ -21,14 +22,20 @@ type
     procedure StartFile(const FileName: AnsiString; FirstAddr: LongWord); virtual; abstract;
     procedure DeclareLocalVar(const Name: AnsiString; Addr: LongWord); virtual; abstract;
     
-    procedure CodeLine(LineNum: Integer; Addr: LongWord); virtual; abstract;
+    procedure CodeLine(LineNum, Addr: LongWord); virtual; abstract;
     
     procedure StartProc(const Name: AnsiString; const StabParams : array of TStabProcParams; ParamsCount: Integer; LineNum: Integer; Addr: LongWord); virtual; abstract;
     procedure EndProc(const Name: AnsiString); virtual; abstract;
     
     procedure AsmSymbol(const SymName: AnsiString; Addr: LongWord); virtual; abstract;
   end;
+
+procedure ReadStabs(const StabsBuf : array of Byte; StabsLen: Integer; 
+  const StabStrBuf: array of byte; StabStrLen: Integer; Callback: TStabsCallback);
   
+implementation
+
+type
   { TStabsReader }
 
   TStabsReader = class(TObject)
@@ -42,7 +49,8 @@ type
     fProcStack  : TStringList;
     
     function CurrentProcName: AnsiString;
-    procedure PushProc(const Name: AnsiString);
+    function CurrentProcAddr: Integer;
+    procedure PushProc(const Name: AnsiString; Addr: Integer);
     procedure PopProc;
 
     function StabStr(strx: integer): AnsiString;
@@ -55,15 +63,28 @@ type
     procedure HandleAsmSym(var index: Integer);
     
   public
+    AbsoluteLineNumbesAddress  : Boolean;
+    
     constructor Create;
     destructor Destroy; override;
     
     procedure ReadStabs(const StabsBuf : array of Byte; StabsLen: Integer; 
       const StabStrBuf: array of byte; StabStrLen: Integer; Callback: TStabsCallback);
   end;
-  
 
-implementation
+procedure ReadStabs(const StabsBuf : array of Byte; StabsLen: Integer; 
+  const StabStrBuf: array of byte; StabStrLen: Integer; Callback: TStabsCallback);
+var
+  reader: TStabsReader;
+begin
+  if StabsLen = 0 then Exit;
+  reader:=TStabsReader.Create;
+  try
+    reader.ReadStabs(StabsBuf, StabsLen, StabStrBuf, StabStrLen, Callback);
+  finally
+    reader.Free;
+  end;
+end;
 
 { TStabsReader }
 
@@ -73,9 +94,15 @@ begin
   else Result := '';
 end;
 
-procedure TStabsReader.PushProc(const Name: AnsiString); 
+function TStabsReader.CurrentProcAddr: Integer;
 begin
-  fProcStack.Add(Name);
+  if fProcStack.Count > 0 then Result := Integer(fProcStack.Objects[fProcStack.Count-1])
+  else Result := 0;
+end;
+
+procedure TStabsReader.PushProc(const Name: AnsiString; Addr: Integer); 
+begin
+  fProcStack.AddObject(Name, TObject(Addr));
 end;
 
 procedure TStabsReader.PopProc; 
@@ -94,7 +121,7 @@ var
   i     : Integer;
 begin
   i := 0;  
-  while i < StabsCnt do 
+  while i < StabsCnt do  begin
     case Stabs^[i].n_type of
       N_SO:   
         HandleSourceFile(i);
@@ -102,11 +129,14 @@ begin
         HandleLSym(i);
       N_FUN:  
         HandleFunc(i);
+      N_SLINE:
+        HandleLine(i);
       N_EXT, N_TYPE, N_TYPE or N_EXT, N_PEXT or N_TYPE: 
         HandleAsmSym(i);
     else
       inc(i);    
     end;
+  end;
 end;
 
 procedure TStabsReader.HandleSourceFile(var index: Integer); 
@@ -140,7 +170,8 @@ var
 begin
   SetLength(Params, 0);
   funsym := Stabs^[index];
-  funnm := StabStr(funsym.n_strx);
+  StabFuncStr( StabStr(Stabs^[index].n_strx), funnm);
+
   inc(index);
   
   if funnm = '' then begin
@@ -157,21 +188,26 @@ begin
         if j = 0 then SetLength(Params, 4)
         else SetLength(Params, j * 4);
       end;
-      Params[j].Name := StabStr(Stabs^[index].n_strx);
+      StabFuncStr( StabStr(Stabs^[index].n_strx), Params[j].Name);
       inc(j);
     end else
       Break;
   end;
 
-  PushProc(funnm);
+  PushProc(funnm, Stabs^[i].n_value );
   if Assigned(fCallback) then 
     fCallback.StartProc(funnm, Params, j, funsym.n_desc, funsym.n_value );
 end;
 
 procedure TStabsReader.HandleLine(var index: Integer); 
+var
+  v : Integer;
 begin
-  if Assigned(fCallback) then 
-    fCallback.CodeLine( Stabs^[index].n_desc, Stabs^[index].n_value );
+  if Assigned(fCallback) then begin
+    v := Stabs^[index].n_value;
+    if not AbsoluteLineNumbesAddress then v := CurrentProcAddr + v;
+    fCallback.CodeLine( Stabs^[index].n_desc, v);
+  end;
   inc(index);
 end;
 

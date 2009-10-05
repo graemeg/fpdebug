@@ -12,13 +12,14 @@ uses
 type
   { TDbgDwarf3Info }
 
-  TDbgDwarf3Info = class(TDbgInfo)
+  TDbgDwarf3Info = class(TDbgInfoReader)
   private
     fSource : TDbgDataSource;
   public
     class function isPresent(ASource: TDbgDataSource): Boolean; override;
     constructor Create(ASource: TDbgDataSource); override;
-    function GetDebugData(const DataName: string; DataAddr: TDbgPtr; OutData: TDbgDataList): Boolean; override;
+
+    function ReadDebugInfo(ASource: TDbgDataSource; Info: TDbgInfo): Boolean; override;
 
     procedure dump_debug_abbrev;
     procedure dump_debug_info;
@@ -41,10 +42,11 @@ begin
   inherited Create(ASource);
 end;
 
-function TDbgDwarf3Info.GetDebugData(const DataName: string; DataAddr: TDbgPtr; OutData: TDbgDataList): Boolean;
+function TDbgDwarf3Info.ReadDebugInfo(ASource: TDbgDataSource; Info: TDbgInfo): Boolean;
 begin
-  Result := false;
+  Result:=false;
 end;
+
 
 procedure TDbgDwarf3Info.dump_debug_abbrev;
 begin

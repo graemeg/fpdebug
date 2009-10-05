@@ -5,40 +5,13 @@ unit dbgInfoStabs;
 interface
 
 uses
-  Classes, SysUtils, contnrs, dbgTypes, dbgInfoTypes, stabs, stabsProc, 
-  AVL_Tree;
+  Classes, SysUtils, contnrs, dbgTypes, dbgInfoTypes, stabs, stabsProc, AVL_Tree;
 
 type
-  
-  { TDbgSourceFile }
 
-  TDbgSourceFile = class(TObject)
-  public
-    FileName  : WideString;
-    Lines     : TAVLTree;
-    constructor Create;
-    destructor Destroy; override;
-    procedure AddLineInfo(Addr, LineNumber: LongWord);
-    function GetLineinfo(Addr: LongWord; var LineNumber: LongWord): boolean;    
-  end;
-  
-  TDbgStabSymbol = class(TObject)
-    Name        : AnsiString;
-    Addr        : LongWord;
-    FileName    : TDbgSourceFile;
-    LineNumber  : integer;
-  end;
-  
-  TDbgStabType = class(TDbgStabSymbol);
-  TDbgStabProc = class(TDbgStabSymbol)
-  public
-    Params      : array of TStabProcParams;
-    ParamsCount : Integer;
-  end;
-  
   { TDbgStabsInfo }
 
-  TDbgStabsInfo = class(TDbgInfo)
+  TDbgStabsInfo = class(TDbgInfoReader)
   private
     fSource     : TDbgDataSource;
     StabsRead   : Boolean;
@@ -47,21 +20,16 @@ type
     SymList     : TFPObjectList;
     SrcFiles    : TFPObjectHashTable;
     FilesList   : TFPObjectList;
+
+    fInfo       : TDbgInfo;
   protected
     procedure ReadSymbols(debugdump: Boolean = false);
-    
-    procedure AddSymbol(DbgSymbol: TDbgStabSymbol);
-    function AddFile(const AFileName: WideString): TDbgSourceFile;
   public
     constructor Create(ASource: TDbgDataSource); override;
     destructor Destroy; override;
 
     class function isPresent(ASource: TDbgDataSource): Boolean; override;
-    
-    function GetDebugData(const DataName: AnsiString; DataAddr: TDbgPtr; OutData: TDbgDataList): Boolean; override;
-    function GetAddrByName(const SymbolName: AnsiString; var Addr: TDbgPtr): Boolean; override;
-    function GetLineByAddr(const Addr: TDbgPtr; var FileName: WideString; var LineNumber: LongWord): Boolean; override;
-    procedure GetNames(Names: TStrings); override;
+    function ReadDebugInfo(ASource: TDbgDataSource; AInfo: TDbgInfo): Boolean; override;
     procedure dump_symbols;
   end;
   
@@ -76,14 +44,17 @@ type
   TDbgInfoCallback = class(TStabsCallback)
   private 
     fOwner        : TDbgStabsInfo;
-    fCurrentFile  : WideString;
+    fFileSym      : TDbgFileInfo;
+    fDebugInfo    : TDbgInfo;
+    fCurrentFunc  : TDbgSymbolFunc;
   public
-    constructor Create(AOwner: TDbgStabsInfo);
+    constructor Create(AOwner: TDbgStabsInfo; ADebugInfo: TDbgInfo);
     
     procedure DeclareType(const TypeName: AnsiString); override;
     procedure StartFile(const FileName: AnsiString; FirstAddr: LongWord); override;
-    procedure DeclareLocalVar(const Name: AnsiString; Addr: LongWord); override;
-    
+    procedure DeclareLocalVar(const Name: AnsiString; Location: TVarLocation; Addr: LongWord); override;
+    procedure DeclareGlobalVar(const Name: AnsiString; Addr: LongWord); override;
+
     procedure CodeLine(LineNum, Addr: LongWord); override;
     
     procedure StartProc(const Name: AnsiString; const StabParams : array of TStabProcParams; ParamsCount: Integer; LineNum: Integer; Addr: LongWord); override;
@@ -94,10 +65,11 @@ type
 
 { TDbgInfoCallback }
 
-constructor TDbgInfoCallback.Create(AOwner: TDbgStabsInfo); 
+constructor TDbgInfoCallback.Create(AOwner: TDbgStabsInfo; ADebugInfo: TDbgInfo);
 begin
   inherited Create;
   fOwner := AOwner;
+  fDebugInfo := ADebugInfo;
 end;
 
 procedure TDbgInfoCallback.DeclareType(const TypeName: AnsiString);  
@@ -106,52 +78,43 @@ end;
 
 procedure TDbgInfoCallback.StartFile(const FileName: AnsiString; FirstAddr: LongWord);  
 begin
-  fOwner.AddFile(FileName);
-  fCurrentFile:=FileName;
+  fFileSym := fDebugInfo.AddFile(FileName);
 end;
 
-procedure TDbgInfoCallback.DeclareLocalVar(const Name: AnsiString; Addr: LongWord);  
+procedure TDbgInfoCallback.DeclareLocalVar(const Name: AnsiString; Location: TVarLocation; Addr: LongWord);
 begin
+end;
+
+procedure TDbgInfoCallback.DeclareGlobalVar(const Name: AnsiString; Addr: LongWord);
+begin
+
 end;
 
 procedure TDbgInfoCallback.CodeLine(LineNum, Addr: LongWord);  
-var
-  src : TDbgSourceFile;
 begin
-  if fCurrentFile = '' then Exit;
-  src := fOwner.AddFile(fCurrentFile);
-  src.AddLineInfo(Addr, LineNum)
+  if Assigned(fFileSym) then
+    fFileSym.AddLineInfo(Addr, LineNum);
 end;
 
 procedure TDbgInfoCallback.StartProc(const Name: AnsiString;  
   const StabParams: array of TStabProcParams; ParamsCount: Integer;  
   LineNum: Integer; Addr: LongWord);  
 var
-  proc  : TDbgStabProc;
-  i     : Integer;
+  proc  : TDbgSymbolFunc;
 begin
-  proc := TDbgStabProc.Create;
-  proc.Name := Name;
-  proc.Addr := Addr;
-  proc.LineNumber := LineNum;
-  SetLength(proc.Params, ParamsCount);
-  for i := 0 to ParamsCount - 1 do proc.Params[i]:=StabParams[i];
-  fOwner.AddSymbol(proc);
+  proc := TDbgSymbolFunc(fOwner.fInfo.AddSymbol(Name, fFileSym, TDbgSymbolFunc));
+  if not Assigned(proc) then Exit;
+  proc.EntryPoint := Addr;
+  fCurrentFunc:=proc;
 end;
 
 procedure TDbgInfoCallback.EndProc(const Name: AnsiString);  
 begin
-  
+  fCurrentFunc:=nil;
 end;
 
 procedure TDbgInfoCallback.AsmSymbol(const SymName: AnsiString; Addr: LongWord);  
-var
-  sym : TDbgStabSymbol;
 begin
-  sym := TDbgStabSymbol.Create;
-  sym.Name := SymName;
-  sym.Addr := Addr;
-  fOwner.AddSymbol(sym);
 end;
 
 
@@ -204,32 +167,10 @@ begin
     end;
     writeln('Total symbols = ', SymCount);
   end else begin
-    callback := TDbgInfoCallback.Create(Self);
+    callback := TDbgInfoCallback.Create(Self, fInfo);
     stabsProc.ReadStabs(buf, sz, strbuf, strsz, callback);
     callback.Free;
   end;
-end;
-
-procedure TDbgStabsInfo.AddSymbol(DbgSymbol: TDbgStabSymbol); 
-begin
-  SymTable.Add(DbgSymbol.Name, DbgSymbol);
-  SymList.Add(DbgSymbol);
-end;
-
-function TDbgStabsInfo.AddFile(const AFileName: WideString): TDbgSourceFile; 
-var
-  src : TDbgSourceFile;
-  anm : AnsiString;
-begin
-  anm := AFileName;
-  src := TDbgSourceFile(SrcFiles[anm]);
-  if not Assigned(src) then begin
-    src := TDbgSourceFile.Create;
-    src.FileName:=AFileName;
-    SrcFiles[anm] := src;
-    FilesList.Add(src);
-  end;
-  Result := src;
 end;
 
 class function TDbgStabsInfo.isPresent(ASource: TDbgDataSource): Boolean;
@@ -237,6 +178,17 @@ var
   sz : Int64;
 begin
   Result := ASource.GetSectionInfo(_stab, sz);
+end;
+
+function TDbgStabsInfo.ReadDebugInfo(ASource: TDbgDataSource; AInfo: TDbgInfo): Boolean;
+begin
+  try
+    fInfo := AInfo;
+    ReadSymbols;
+    Result := true;
+  except
+    Result := false;
+  end;
 end;
 
 constructor TDbgStabsInfo.Create(ASource: TDbgDataSource);
@@ -247,7 +199,6 @@ begin
   SrcFiles := TFPObjectHashTable.Create(true);
   SymList := TFPObjectList.Create(false);  
   FilesList := TFPObjectList.Create(false);
-  ReadSymbols;
 end;
 
 destructor TDbgStabsInfo.Destroy;
@@ -257,46 +208,6 @@ begin
   SymTable.Free;
   SymList.Free;
   inherited Destroy;
-end;
-
-function TDbgStabsInfo.GetDebugData(const DataName: AnsiString; DataAddr: TDbgPtr; OutData: TDbgDataList): Boolean;
-begin
-  Result := false;
-end;
-
-function TDbgStabsInfo.GetAddrByName(const SymbolName: AnsiString; var Addr: TDbgPtr): Boolean;
-var 
-  stab  : TDbgStabSymbol;
-begin
-  stab := TDbgStabSymbol(SymTable.Items[SymbolName]);
-  Result := Assigned(stab);
-  if not Result then Exit;
-  Addr := stab.Addr;
-end;
-
-function TDbgStabsInfo.GetLineByAddr(const Addr: TDbgPtr; var FileName: WideString; 
-  var LineNumber: LongWord): Boolean;  
-var
-  i     : Integer;
-  sfile : TDbgSourceFile;
-begin
-  for i := 0 to FilesList.Count - 1 do begin
-    sfile := TDbgSourceFile(FilesList[i]);
-    Result := sfile.GetLineinfo(Addr, LineNumber);
-    if Result then begin
-      FileName := sFile.FileName;
-      Exit;
-    end;
-  end;
-  Result := false;
-end;
-
-procedure TDbgStabsInfo.GetNames(Names: TStrings);
-var
-  i : integer;
-begin
-  for i := 0 to SymList.Count - 1 do
-    Names.Add(TDbgStabSymbol(SymList[i]).Name);
 end;
 
 procedure TDbgStabsInfo.dump_symbols;
@@ -357,56 +268,6 @@ begin
   end;
 end;
 
-
-{ TDbgSourceFile }
-
-type
-  TDbgLineInfo = class(TObject)
-    LineNumber  : LongWord;
-    Addr        : LongWord;
-  end;
-
-function OnLinesCompare(Item1, Item2: Pointer): Integer;  
-begin
-  if TDbgLineInfo(Item1).Addr < TDbgLineInfo(Item2).Addr then Result := -1
-  else if TDbgLineInfo(Item1).Addr = TDbgLineInfo(Item2).Addr then Result := 0
-  else Result := 1;
-end;
-
-constructor TDbgSourceFile.Create; 
-begin
-  inherited Create;
-  Lines := TAVLTree.Create(@OnLinesCompare);
-end;
-
-destructor TDbgSourceFile.Destroy;  
-begin
-  Lines.Free;
-  inherited Destroy;  
-end;
-
-procedure TDbgSourceFile.AddLineInfo(Addr, LineNumber: LongWord); 
-var
-  info  : TDbgLineInfo;
-begin
-  info := TDbgLineInfo.Create;
-  info.Addr:=Addr;
-  info.LineNumber:=LineNumber;
-  Lines.Add(info);
-end;
-
-function TDbgSourceFile.GetLineinfo(Addr: LongWord; var LineNumber: LongWord): boolean;
-var
-  key   : TDbgLineInfo;
-  node  : TAVLTreeNode;
-begin
-  key := TDbgLineInfo.Create;
-  key.Addr := Addr;
-  node := Lines.Find(key);
-  key.Free;
-  Result := Assigned(node);
-  if Result then LineNumber := TDbgLineInfo(node.Data).LineNumber;
-end;
 
 initialization
   RegisterDebugInfo(TDbgStabsInfo);

@@ -13,7 +13,7 @@ uses
 procedure LoadDebugInfo(const FileName: string);
 procedure LoadExeDebugInfo(const cmdLine: string);
 
-function GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: LongWord): Boolean;
+function GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: Integer): Boolean;
 
 implementation
 
@@ -50,18 +50,21 @@ type
 { TListSymbols }
 
 procedure TListSymbols.Execute(CmdParams: TStrings; Process: TDbgProcess);  
-var
+{var
   st  : TStringList;
   i   : Integer;
   s   : string;
   addr  : TDbgPtr;
-  maxlen  : integer;
+  maxlen  : integer;}
 begin
   if not Assigned(CommonInfo) then begin
     WriteLn('no debug info');
     Exit;    
   end;
-  
+
+  writeln('not implemnted, sorry!');
+
+  {
   st := TStringList.Create;
   try
     maxlen := 0;
@@ -77,7 +80,8 @@ begin
     end;
   finally
     st.Free;
-  end;  
+  end;
+  }
 end;
 
 function TListSymbols.ShortHelp: String;  
@@ -90,7 +94,7 @@ end;
 procedure TAddrOf.Execute(CmdParams: TStrings; Process: TDbgProcess);  
 var
   name  : String;
-  addr  : TDbgPtr;
+  sym   : TDbgSymbol;
 begin
   if not Assigned(CommonInfo) then begin
     WriteLn('no debug info');
@@ -103,8 +107,9 @@ begin
   end;
   
   name := CmdParams[1];
-  if CommonInfo.GetAddrByName(name, addr) then
-    writeln('addr = ', addr)
+  sym := CommonInfo.FindSymbol(name, nil);
+  if Assigned(sym) then
+    writeln('symbol found: ', sym.ClassName)
   else
     writeln('symbol not found');
 end;
@@ -114,7 +119,7 @@ begin
   Result:='returns address of a symbol by it''s name';
 end;
   
-function GetFileString(const Name: WideString; LineNum: LongWord): String;
+function GetFileString(const Name: WideString; LineNum: Integer): String;
 var
   st  : TStringList;
 begin 
@@ -134,7 +139,7 @@ procedure TWhereCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);
 var
   regs : TDbgDataList;
   fn   : WideString;
-  num  : LongWord;
+  num  : Integer;
   addr : TDbgPtr;
 begin
   if CmdParams.Count <= 1 then begin
@@ -200,17 +205,12 @@ begin
   LoadDebugInfo(binName);
 end;
 
-function GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: LongWord): Boolean;
-//var
-  //i : Integer;
-  //d : TDbgInfo;
+function GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: Integer): Boolean;
+var
+  f   : TDbgFileInfo;
 begin
-  Result := CommonInfo.GetLineByAddr(Addr, FileName, LineNum);
-  {for i := 0 to DbgInfos.Count-1 do begin  
-    d := TDbgInfo(DbgInfos[i]);
-    Result := d.GetLineByAddr(Addr, FileName, LineNum);
-    if Result then Exit;
-  end;}
+  f := CommonInfo.FindFile(FileName);
+  Result := Assigned(f) and f.FindLineByAddr(Addr, LineNum);
 end;
 
 initialization

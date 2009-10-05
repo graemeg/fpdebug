@@ -5,7 +5,7 @@ unit stabsProc;
 interface
 
 uses
-  Classes, SysUtils, stabs; 
+  Classes, SysUtils, stabs;
   
 type
   TStabSymArray = array [Word] of TStabSym;
@@ -15,13 +15,19 @@ type
     Name    : String;    
     SrcLine : LongWord;
   end;
+
+  TVarLocation = (vl_OnStack, vl_Register);
+
+  TStabTypeDescr = record
+  end;
   
   TStabsCallback = class(TObject)
   public
     procedure DeclareType(const TypeName: AnsiString); virtual; abstract;
     procedure StartFile(const FileName: AnsiString; FirstAddr: LongWord); virtual; abstract;
-    procedure DeclareLocalVar(const Name: AnsiString; Addr: LongWord); virtual; abstract;
-    
+    procedure DeclareLocalVar(const Name: AnsiString; Location: TVarLocation; Addr: LongWord); virtual; abstract;
+    procedure DeclareGlobalVar(const Name: AnsiString; Addr: LongWord); virtual; abstract;
+
     procedure CodeLine(LineNum, Addr: LongWord); virtual; abstract;
     
     procedure StartProc(const Name: AnsiString; const StabParams : array of TStabProcParams; ParamsCount: Integer; LineNum: Integer; Addr: LongWord); virtual; abstract;
@@ -44,9 +50,11 @@ type
     StabsCnt  : Integer;
     StrSyms   : PByteArray;
     StrLen    : Integer;
-    fCallback : TStabsCallback;
+    fCallback   : TStabsCallback;
     
     fProcStack  : TStringList;
+
+    fUnnamed  : TStringList;
     
     function CurrentProcName: AnsiString;
     function CurrentProcAddr: Integer;
@@ -61,6 +69,7 @@ type
     procedure HandleFunc(var index: Integer);
     procedure HandleLine(var index: Integer);
     procedure HandleAsmSym(var index: Integer);
+    procedure HandleVariable(var index: Integer);
     
   public
     AbsoluteLineNumbesAddress  : Boolean;
@@ -131,7 +140,9 @@ begin
         HandleFunc(i);
       N_SLINE:
         HandleLine(i);
-      N_EXT, N_TYPE, N_TYPE or N_EXT, N_PEXT or N_TYPE: 
+      {N_LCSYM:
+        HandleVariable(i);}
+      N_EXT, N_TYPE, N_EXTTYPE, N_PEXTTYPE:
         HandleAsmSym(i);
     else
       inc(i);    
@@ -154,11 +165,25 @@ begin
   if Assigned(fCallback) then fCallback.StartFile(filename, fileaddr);
 end;
 
-procedure TStabsReader.HandleLSym(var index: Integer); 
+
+procedure TStabsReader.HandleLSym(var index: Integer);
+var
+  name, desc, v : string;
+  num   : Integer;
 begin
-  if Assigned(fCallback) then 
-    fCallback.DeclareType(StabStr(Stabs^[Index].n_strx));
+  if not Assigned(fCallback) then begin
+    inc(index);
+    Exit;
+  end;
+  ParseStabStr( StabStr(Stabs^[Index].n_strx), name, desc, num, v );
   inc(index);
+  if desc = '' then Exit;
+
+  case desc[1] of
+    Sym_TypeName, Sym_StructType:
+      fCallback.DeclareType(name);
+  end;
+
 end;
 
 procedure TStabsReader.HandleFunc(var index: Integer); 
@@ -215,6 +240,26 @@ procedure TStabsReader.HandleAsmSym(var index: Integer);
 begin
   if Assigned(fCallback) then
     fCallBack.AsmSymbol(StabStr( Stabs^[index].n_strx ), Stabs^[index].n_value );
+  inc(index);
+end;
+
+procedure TStabsReader.HandleVariable(var index: Integer);
+var
+  global  :  Boolean;
+  varname, vartype: String;
+begin
+  if not Assigned(fCallback) then begin
+    inc(index);
+    exit;
+  end;
+
+  global := Stabs^[index].n_type = N_LCSYM;
+  StabVarStr(StabStr( Stabs^[index].n_strx), varname, vartype );
+
+  if global then
+    fCallback.DeclareGlobalVar(varname, Stabs^[index].n_value )
+  else
+    fCallback.DeclareLocalVar(varname, vl_Register, Stabs^[index].n_value );
   inc(index);
 end;
 

@@ -28,6 +28,8 @@ var
   addr  : Integer;
   nm    : WideString;
   i     : LongWord;
+
+  names : TStringList;
 begin
   if not TDbgStabsInfo.isPresent(source) then begin
     writeln('stabs debug data is not present');
@@ -48,7 +50,13 @@ begin
     
     ReadLn(addr);
   end;}
-  
+
+{  names := TStringList.Create;
+  stabs.GetNames(names, '');
+  for i := 0 to names.Count - 1 do  writeln(names[i]);
+  names.Free;
+}
+
   stabs.dump_symbols;
 
   stabs.Free;
@@ -56,7 +64,38 @@ end;
 
 var
   dbgInfoSrc : TDbgDataSource;
+var
+  ststr : string;
+  name  : string;
+  mdstr : string;
+  mdnum : Integer;
+  value : string;
+  typeval : string;
+
+  structSize : Integer;
+  elemIndex  : Integer;
+
+  bitofs    : Integer;
+  bitsize   : Integer;
 begin
+  ststr := 'SHORTSTRING:Tt6=s256length:1,0,8;st:ar1;1;255;8,8,2040;;';
+  ParseStabStr(ststr, name, mdstr, mdnum, value);
+  writeln('str      = "', ststr,'"');
+  writeln('name     = "', name,'"');
+  writeln('modifier = "', mdstr,'"');
+  writeln('mod num  = "', mdnum,'"');
+  writeln('value    = "', value,'"');
+
+  if isStructType(value, StructSize, elemIndex) then begin
+    writeln('struct size = ', structSize);
+    writeln('first index = ', elemIndex);
+    writeln('length(value) = ', length(value));
+    while GetStructElem(value, elemIndex, name, typeval, bitofs, bitsize, elemIndex) do
+      writeln('  ', name, ' type = "', typeval, '"; ofs = ', bitofs, ' size = ', bitsize);
+  end else
+    writeln('not struct!');
+  exit;
+{
   if Paramcount < 1 then begin
     writeln('please specify stabs debug-info file name');
     Exit;
@@ -70,6 +109,6 @@ begin
 
   ReadStabsData(dbgInfoSrc);
 
-  dbgInfoSrc.Free;
+  dbgInfoSrc.Free;}
 end.
 

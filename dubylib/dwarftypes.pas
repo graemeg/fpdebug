@@ -1579,6 +1579,7 @@ end;
 
 function TDwarfCompilationUnit.GetDefinition(AAbbrev: Cardinal; out ADefinition: TDwarfAbbrev): Boolean;
 begin
+  Result := false;
   LoadAbbrevs(AAbbrev);
   //Result := FMap.GetData(AAbbrev, ADefinition);
 end;

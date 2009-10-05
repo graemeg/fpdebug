@@ -110,6 +110,8 @@ const
 	N_STAB = $e0;  { if any of these bits set, a symbolic debugging entry }
 	N_PEXT = $10;  { private external symbol bit }
 	N_TYPE = $0e;  { mask for the type bits }
+  N_EXTTYPE  = N_TYPE or N_EXT;
+  N_PEXTTYPE = N_TYPE or N_PEXT;
 	//N_EXT	 = $01;  { external symbol bit, set for external symbols }
   
 type
@@ -122,33 +124,408 @@ type
     n_value : bfd_vma;   { value of symbol }
   end;
 
+// from: http://www.cygwin.com/stabs.html
+
+// The overall format of the string field for most stab types is:
+//  "name:symbol-descriptor type-information"
+
+// "name" is the name of the symbol represented by the stab; it can contain
+// a pair of colons (see section Defining a Symbol Within Another Type). name
+// can be omitted, which means the stab represents an unnamed object.
+//   For example, `:t10=*2' defines type 10 as a pointer to type 2, but does
+// not give the type a name. GCC sometimes uses a single space as the name
+// instead of omitting the name altogether.
+
+// The "symbol-descriptor" following the `:' is an alphabetic character that
+// tells more specifically what kind of symbol the stab represents. If the symbol-descriptor
+// is omitted, but type information follows, then the stab represents a local variable.
+// For a list of symbol descriptors, see section Table of Symbol Descriptors. The `c' symbol
+// descriptor is an exception in that it is not followed by type information. See section Constants.
+
+// type-information is either a type-number, or `type-number='. A type-number alone is a type reference,
+// referring directly to a type that has already been defined.
+
+// The `type-number=' form is a type definition, where the number represents a new type which
+// is about to be defined. The type definition may refer to other types by number, and those
+// type numbers may be followed by `=' and nested definitions. Also, the Lucid compiler will
+// repeat `type-number=' more than once if it wants to define several type numbers at once.
+
+procedure ParseStabStr(const str: string; var name, desc: string; var typeNum: Integer; var value: string);
+procedure StabVarStr(const varstr: String; var name, vartype: string);
 procedure StabFuncStr(const funcstr: String; var name: string);
+
+
+// The symbol descriptor is the character which follows the colon in many stabs,
+// and which tells what kind of stab it is. See section The String Field, for more information about their use.
+
+const
+  Sym_ParamByRefInReg = 'a'; // Parameter passed by reference in register; see section Passing Parameters by Reference.
+  Sym_BasedVar        = 'b'; // Cased variable; see section Fortran Based Variables.
+  Sym_Constant        = 'c'; // Constant; see section Constants.
+  Sym_ArrayBound      = 'C'; // Conformant array bound (Pascal, maybe other languages); section Passing Conformant Array Parameters. Name of a caught exception (GNU C++). These can be distinguished because the latter uses N_CATCH and the former uses another symbol type.
+  Sym_FloatPointVar   = 'd'; // Floating point register variable; see section Register Variables.
+  Sym_FloatPointReg   = 'D'; // Parameter in floating point register; see section Passing Parameters in Registers.
+  Sym_FileScopeFunc   = 'f'; // File scope function; see section Procedures.
+  Sym_GlobalFunc      = 'F'; // Global function; see section Procedures.
+  Sym_GlobalVar       = 'G'; // Global variable; see section Global Variables.
+  // 'i' See section Passing Parameters in Registers.
+  Sym_NestedProc    = 'I'; // Internal (nested) procedure; see section Nested Procedures.
+  Sym_NesterFunc    = 'J'; // Internal (nested) function; see section Nested Procedures.
+  Sym_Label_AIX     = 'L'; // Label name (documented by AIX, no further information known).
+  Sym_Module        = 'm'; // Module; see section Procedures.
+  Sym_Parameter     = 'p'; //Argument list parameter; see section Parameters.
+  // pP See section Parameters.
+  Sym_FuncParam     = 'pF'; // Fortran Function parameter; see section Parameters.
+
+  Sym_GlobalProc_AIX = 'p'; // Unfortunately, three separate meanings have been independently invented for this symbol
+  Sym_RegParam_GNU   = 'p'; // descriptor. At least the GNU and Sun uses can be distinguished by the symbol type.
+  Sym_ProtoType_SUN  = 'p'; // Global Procedure (AIX) (symbol type used unknown); see section Procedures.
+                            // Register parameter (GNU) (symbol type N_PSYM); see section Parameters.
+                            // Prototype of function referenced by this file (Sun acc) (symbol type N_FUN).
+
+  Sym_StaticProc    = 'Q';  // Static Procedure; see section Procedures.
+  Sym_ParamInReg    = 'R';  // Register parameter; see section Passing Parameters in Registers.
+  Sym_VarInReg      = 'r';  // Register variable; see section Register Variables.
+  Sym_FileScopeVar  = 'S';  // File scope variable; see section Static Variables.
+  Sym_LocalVar_OS9K = 's';  // Local variable (OS9000).
+  Sym_TypeName      = 't';  // Type name; see section Giving a Type a Name.
+  Sym_StructType    = 'T';  // Enumeration, structure, or union tag; see section Giving a Type a Name.
+  Sym_ParamByRef    = 'v';  // Parameter passed by reference; see section Passing Parameters by Reference.
+  Sym_StaticVar     = 'V';  // Procedure scope static variable; see section Static Variables.
+  Sym_ConformArray  = 'x';  // Conformant array; see section Passing Conformant Array Parameters.
+  Sym_ReturnVar     = 'X';  // Function return variable; see section Parameters.
+
+
+// The type descriptor is the character which follows the type number and an equals sign.
+// It specifies what kind of type is being defined. See section The String Field, for
+// more information about their use.
+
+const
+  SymType_BuiltInType = '-'; //Reference to builtin type; see section Negative Type Numbers.
+  SymType_CppMethod   = '#'; // Method (C++); see section The `#' Type Descriptor.
+  SymType_Pointer     = '*'; // Pointer; see section Miscellaneous Types.
+  SymType_CppRef      = '&'; // Reference (C++).
+
+  SymType_Attribute_AIX = '@'; // Type Attributes (AIX); see section The String Field.
+  SymType_Mebmer_GNU    = '@'; // Member (class and variable) type (GNU C++); see section The `@' Type Descriptor.
+
+  SymType_Array       = 'a'; // Array; see section Array Types.
+  SymType_OpenArray   = 'A'; // Open array; see section Array Types.
+
+  SymType_PasSpace_AIX  = 'b'; // Pascal space type (AIX); see section Miscellaneous Types.
+  SymType_Integer_SUN   = 'b'; // Builtin integer type (Sun); see section Defining Builtin Types Using Builtin Type Descriptors.
+  SYmType_Volatile_OS9k = 'b'; //Const and volatile qualfied type (OS9000).
+
+  SymType_Volatile    = 'B'; // Volatile-qualified type; see section Miscellaneous Types.
+
+  SymType_Complex_AIX = 'c'; // Complex builtin type (AIX); see section Defining Builtin Types Using Builtin Type Descriptors.
+  SymType_Const_OS9k  = 'c'; // Const-qualified type (OS9000).
+
+  SymType_File        = 'd'; // File type; see section Miscellaneous Types.
+  SymType_DimArray    = 'D'; // N-dimensional dynamic array; see section Array Types.
+  SymType_Enum        = 'e'; // Enumeration type; see section Enumerations.
+  SymType_DimSubArray = 'E'; // N-dimensional subarray; see section Array Types.
+  SymType_Func        = 'f'; // Function type; see section Function Types.
+  SymType_PasFunc     = 'F'; // Pascal function parameter; see section Function Types
+  SymType_Float       = 'g'; // Builtin floating point type; see section Defining Builtin Types Using Builtin Type Descriptors.
+
+  SymType_Imported_AIX   = 'i'; // Imported type (AIX); see section Cross-References to Other Types.
+  SymType_Volatile2_OS9k = 'i'; // Volatile-qualified type (OS9000).
+
+  SymType_ConstQual   = 'k'; // Const-qualified type; see section Miscellaneous Types.
+
+  SymType_CobolPict   = 'C'; // COBOL Picture type. See AIX documentation for details.
+  SymType_CobolGroup  = 'G'; // COBOL Group. See AIX documentation for details.
+  SymType_CobolFile   = 'K'; // COBOL File Descriptor. See AIX documentation for details.
+
+  SymType_Multiple    = 'M'; // Multiple instance type; see section Miscellaneous Types.
+  SymType_String      = 'n'; // String type; see section Strings.
+  SymType_StringPtr   = 'N'; // Stringptr; see section Strings.
+  SymType_Opaque      = 'o'; // Opaque type; see section Giving a Type a Name.
+  SymType_Procedure   = 'p'; // Procedure; see section Function Types.
+  SymType_PackedArray = 'P'; // Packed array; see section Array Types.
+  SymType_Range       = 'r'; // Range type; see section Subrange Types.
+
+  SymType_Float2_Sun    = 'R'; // Builtin floating type; see section Defining Builtin Types Using Builtin Type Descriptors (Sun).
+  SymType_PascalSub_AIX = 'R'; // Pascal subroutine parameter; see section Function Types (AIX).
+                               // Detecting this conflict is possible with careful parsing
+                               // (hint: a Pascal subroutine parameter type will always contain a comma,
+                               // and a builtin type descriptor never will).
+
+  SymType_Struct     = 's'; // Structure type; see section Structures.
+  SymType_Set        = 'S'; // Set type; see section Miscellaneous Types.
+  SymType_Union      = 'u'; // Union; see section Unions.
+  SymType_Variant    = 'v'; // Variant record. This is a Pascal and Modula-2 feature which is like
+                            // a union within a struct in C. See AIX documentation for details.
+
+  SymType_Widechar   = 'w'; // Wide character; see section Defining Builtin Types Using Builtin Type Descriptors.
+  SymType_CrossRef   = 'x'; // Cross-reference; see section Cross-References to Other Types.
+  SymType_Struct_IBM = 'Y'; // Used by IBM's xlC C++ compiler (for structures, I think).
+  SymType_gstring    = 'z'; // gstring; see section Strings.
+
+const
+  bitype_SInt32int  = -1;  // int, 32 bit signed integral type.
+  bitype_SInt8char  = -2;  // char, 8 bit type holding a character. Both GDB and dbx on AIX treat this as signed.
+                           // GCC uses this type whether char is signed or not, which seems like a bad idea.
+                           // The AIX compiler (xlc) seems to avoid this type; it uses -5 instead for char.
+  bitype_SInt16     = -3;  // short, 16 bit signed integral type.
+  bitype_SInt32long = -4;  // long, 32 bit signed integral type.
+  bitype_UInt8      = -5;  // unsigned char, 8 bit unsigned integral type.
+  bitype_SInt8      = -6;  // signed char, 8 bit signed integral type.
+  bitype_UInt16     = -7;  // unsigned short, 16 bit unsigned integral type.
+  bitype_UInt32int  = -8;  // unsigned int, 32 bit unsigned integral type.
+  bitype_UInt32     = -9;  // unsigned, 32 bit unsigned integral type.
+  bitype_UInt32long = -10; // unsigned long, 32 bit unsigned integral type.
+  bitype_Void       = -11; // void, type indicating the lack of a value.
+  bitype_Single     = -12; // float, IEEE single precision.
+  bitype_Double     = -13; // double, IEEE double precision.
+  bitype_Extended   = -14; // long double, IEEE double precision. The compiler claims the size will
+                           // increase in a future release, and for binary compatibility you have to avoid using
+                           // long double. I hope when they increase it they use a new negative type number.
+  bitype_SInt32integer = -15; // integer. 32 bit signed integral type.
+  bitype_Boolean32     = -16; // boolean. 32 bit type. GDB and GCC assume that zero is false, one is true, and other values have unspecified meaning. I hope this agrees with how the IBM tools use the type.
+  bitype_ShortReal     = -17; // short real. IEEE single precision.
+  bitype_Real          = -18; // real. IEEE double precision.
+  bitype_StringPtr     = -19; // stringptr. See section Strings.
+  bitype_Charcter      = -20; // character, 8 bit unsigned character type.
+{-21; // logical*1, 8 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
+-22; // logical*2, 16 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
+-23; // logical*4, 32 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
+-24; // logical, 32 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
+}
+  bitype_2Singles   = -25; // complex. A complex type consisting of two IEEE single-precision floating point values.
+  bitype_2Doubles   = -26; // complex. A complex type consisting of two IEEE double-precision floating point values.
+  bitype_SInt8int1  = -27; // integer*1, 8 bit signed integral type.
+  bitype_SInt16int2 = -28; // integer*2, 16 bit signed integral type.
+  bitype_SInt32int4 = -29; // integer*4, 32 bit signed integral type.
+  bitype_wchar      = -30; // wchar. Wide character, 16 bits wide, unsigned (what format? Unicode?).
+  bitype_SInt64     = -31; // long long, 64 bit signed integral type.
+  bitype_UInt64     = -32; // unsigned long long, 64 bit unsigned integral type.
+  bitype_UInt64log8 = -33; // logical*8, 64 bit unsigned integral type.
+  bitype_SInt64log8 = -34; // integer*8, 64 bit signed integral type.
+
+
+type
+  TStabType = packed record
+    _typestr  : string;
+    _typenum  : Integer;
+  end;
+
+function isArrayType(const value: string; index: integer): Boolean;
+
+function isStructType(const value: string; var StructSize: Integer; var firstElemIndex: Integer): Boolean;
+function GetStructElem(const s: string; index: Integer; var Name, TypeStr: string; var BitsOffset, BitsSize: Integer; var nextElemIndex: Integer): Boolean;
 
 implementation
 
 const 
   NameSeparator = ':';
 
-procedure ParseStabStr(const str: string; var name: string);
+  Numbers       = ['0'..'9'];
+  NumbersAndNeg = ['-'] + Numbers;
+
+function GetSubStr(const s: string; Index: Integer; Sep: AnsiChar): string;
 var
-  i, j : integer;
+  i : integer;
 begin
-  j := -1;
-  for i := 1 to length(str) do
-    if str[i] = NameSeparator then begin
-      name := Copy(str, 1, i - 1);    
-      j := i + 1;
-      break;
+  for i := Index to length(s) do
+    if s[i] = Sep then begin
+      Result := Copy(s, Index, i - Index);
+      Exit;
     end;
-  if j < 0 then begin
-    name := str;
-    Exit;
+  Result := Copy(s, Index, length(s) - Index+1);
+end;
+
+function GetNextName(const s: string; index: Integer): string; inline;
+begin
+  Result := GetSubStr(s, index, NameSeparator);
+end;
+
+function GetNextNumber(const s: string; index: Integer; var Number: Int64; var NumLen: Integer): Boolean; overload;
+var
+  num : string;
+  i   : Integer;
+  err : Integer;
+  numstop : Boolean;
+begin
+  numlen := 0;
+  Number := 0;
+  Result := (s<>'') and (index>=1) and (index<=length(s)) and (s[index] in NumbersAndNeg);
+  if not Result then Exit;
+
+  if s[index] = '-' then begin
+    num := '-';
+    inc(index);
+  end else
+    num := '';
+
+  numstop := false;
+  for i := index to length(s) do
+    if not (s[i] in Numbers) then begin
+      numstop := true;
+      numlen := i - index;
+      num := num + Copy(s, index, numlen);
+      Break;
+    end;
+
+  if not numstop then begin
+    numlen := length(s) - index+1;
+    num := num + Copy(s, index, numlen);
+  end;
+
+  Val(num, Number, err);
+  Result := err <> 0;
+end;
+
+function GetNextNumber(const s: string; index: Integer; var Number: Integer; var NumLen: Integer): Boolean; overload;
+var
+  n   : Int64;
+begin
+  Result := GetNextNumber(s, index, n, NumLen);
+  Number := n;
+end;
+
+function GetTypeString(const s: String; index: Integer): String; forward;
+
+function GetArrayTypeString(const s: string; index: Integer): String;
+var
+  i, j  : integer;
+  semi  : Integer;
+begin
+  Result := '';
+  if not isArrayType(s, index) then Exit;
+  i := index+1;
+  if (s[i] = SymType_PackedArray) or (s[i] = SymType_Range) then begin
+    semi := 3;
+    inc(i);
+  end;
+
+  for i := i to length(s) do
+    if s[i] = ';' then begin
+      dec(semi);
+      j := i+1;
+      Result := Copy(s, index, j - index);
+      if semi = 0 then Break;
+    end;
+  if semi > 0 then
+    Result := Copy(s, index, length(s)-index+1)
+  else begin
+    Result := Result + GetTypeString(s, j);
   end;
 end;
 
-procedure StabFuncStr(const funcstr: String; var name: string);
+function GetStructElem(const s: string; index: Integer; var Name, TypeStr: string; var BitsOffset, BitsSize: Integer; var nextElemIndex: Integer): Boolean;
+var
+  len : integer;
 begin
-  ParseStabStr(funcstr, name);
+  Name := GetNextName(s, index);
+  if Name = ';' then Name := '';
+  Result := Name <> '';
+  if not Result then Exit;
+
+  index := index + length(name)+1;
+
+  TypeStr := GetTypeString(s, index);
+  inc(index, length(TypeStr)+1);
+
+  GetNextNumber(s, index, BitsOffset, len);
+  inc(index,len+1);
+
+  GetNextNumber(s, index, BitsSize, len);
+
+  inc(index,len+1);
+  nextElemIndex := index;
+  Result := true;
+end;
+
+function GetTypeString(const s: String; index: Integer): String;
+begin
+  if s[index] in NumbersAndNeg then begin
+    Result  := GetSubStr(s, index, ',');
+  end else if isArrayType( s, index ) then begin
+    Result := GetArrayTypeString(s, index);
+  end;
+  //todo: ANY OTHER TYPES?
+end;
+
+function isArrayType(const value: string; index: integer): Boolean;
+begin
+  Result := (value<>'') and (index>=1) and (index<=length(value)) and (value[index] = SymType_Array);
+end;
+
+function isStructType(const value: string; var StructSize: Integer; var firstElemIndex: Integer): Boolean;
+var
+  len : Integer;
+  n   : Int64;
+begin
+  Result := (value <> '') and (value[1] = SymType_Struct);
+  if not Result then Exit;
+
+  GetNextNumber(value, 2, n, len);
+  StructSize := n;
+  firstElemIndex := 2+len;
+end;
+
+
+procedure ParseDescr(const descStr: String; var desc: string; var descNum: Integer);
+var
+  i   : integer;
+  err : integer;
+begin
+  for i := 1 to length(descStr) do
+    if descStr[i] in ['-','0'..'9'] then begin
+      Val( Copy(descStr, i, length(descStr)-i+1), descNum, err);
+      desc := Copy(descStr, 1, i-1);
+      Exit;
+    end;
+  descNum := 0;
+  desc:=descStr;
+end;
+
+procedure ParseStabStr(const str: string; var name, desc: string; var typeNum: Integer; var value: string);
+var
+  i, j : integer;
+  k    : integer;
+  m    : string;
+begin
+  desc := '';
+  typeNum := 0;
+  value := '';
+
+  name := GetNextName(str, 1);
+  j := length(name)+1;
+  if j > length(str) then Exit;
+
+  k:=-1;
+  for i := j to length(str) do
+    if str[i] = '=' then begin
+      m := Copy(str, j, i - j);
+      k :=i+1;
+      Break
+    end;
+  if k < 0 then
+    m := Copy(str, j, length(str) - j+1)
+  else
+    value := Copy(str, k, length(str)-k+1);
+
+  ParseDescr(m, desc, typeNum);
+end;
+
+procedure StabVarStr(const varstr: String; var name, vartype: string);
+var
+  md, value : string;
+  nmd       : Integer;
+begin
+  ParseStabStr(varstr, name, md, nmd, value);
+  vartype := ''; //todo:
+end;
+
+procedure StabFuncStr(const funcstr: String; var name: string);
+var
+  md, value : string;
+  nmd       : Integer;
+begin
+  ParseStabStr(funcstr, name, md, nmd, value);
 end;
 
 end.

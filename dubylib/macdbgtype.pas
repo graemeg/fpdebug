@@ -264,7 +264,6 @@ begin
   writeln('exc type   = ', msg^.exception);
   writeln('exc codeCnt= ', msg^.codeCnt);
   writeln('exc flavor = ', msg^.flavor);
-  
     
   debugout_kret(ret, 'mach_msg');
   writelN('message recieved!');

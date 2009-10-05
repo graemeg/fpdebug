@@ -4,23 +4,45 @@
 
 program p1;
 
+type
+  MyType = record
+   a, b : integer;
+  end;
 var
   bb : byte;
 
 procedure ProcCdecl(a: Integer; var b: byte; p: Pointer; s: single; const k: string); cdecl;
-begin
+var
+  bb : Integer;
+  cc : Integer;
+  buf : array [0..4095] of Integer;
+begin	
+  buf[0] := 1000000;
+  buf[4095] := 1000001;
+  cc := a - 2;
+  bb := b * cc;
   writeln('hello cdecl ', a, ' ', Integer(p), ' ',s, ' ', k);
-  inc(b);
+  inc(b, bb+buf[0]+buf[4095]);
 end;
 
 procedure ProcFastcall(a: Integer; var b: byte; p: Pointer; s: single; const k: string); 
-begin
+var
+  bb : Integer;
+  cc : Integer;
+begin	
+  cc := a - 2;
+  bb := b * cc;
   writeln('hello fastcall ', a, ' ', Integer(p), ' ',s, ' ', k);
   inc(b);
 end;
 
 procedure ProcStdcall(a: Integer; var b: byte; p: Pointer; s: single; const k: string); stdcall;
-begin
+var
+  bb : Integer;
+  cc : Integer;
+begin	
+  cc := a - 2;
+  bb := b * cc;
   writeln('hello stdcall ', a, ' ', Integer(p), ' ',s, ' ', k);
   inc(b);
 end;
@@ -36,6 +58,8 @@ asm
   int 3;
 end;
 
+var
+  my : MyType;
 
 begin
   bb := 1;	
@@ -47,4 +71,6 @@ begin
   ProcFastCall(2, bb, nil, 0, 'test');
   ProcStdCall(3, bb, nil, 0, 'test');
   ProcCdecl2(8, bb, nil, 0, 'test');
+  my.a := bb;
+  writeln(my.a);
 end.

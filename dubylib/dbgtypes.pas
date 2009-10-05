@@ -14,6 +14,7 @@ type
 
 type
   TDbgPtr      = PtrUInt;
+  PDbgPtr      = ^TDbgPtr;
   TDbgThreadID = TThreadID;
   
   

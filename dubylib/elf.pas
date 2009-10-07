@@ -36,10 +36,10 @@ type
   end;
 
 const  
-  EI_MAG0       = 0;
-  EI_MAG1       = 1;
-  EI_MAG2       = 2;
-  EI_MAG3       = 3;
+  EI_MAG0       = 0; // $7F
+  EI_MAG1       = 1; // E
+  EI_MAG2       = 2; // L
+  EI_MAG3       = 3; // F
   EI_CLASS      = 4;
   EI_DATA       = 1;
   EI_VERSION    = 1;
@@ -67,25 +67,25 @@ const
 type  
   //note: it doesn't include Ident block
   Elf32_EHdr = packed record
-    e_ident       : elf_ident;
-    e_type        : Elf32_Half; 
-    e_machine     : Elf32_Half; 
-    e_version     : Elf32_Word;
-    e_entry       : Elf32_addr;
-    e_phoff       : Elf32_Off;
-    e_shoff       : Elf32_Off;
-    e_flags       : Elf32_Word;
-    e_ehsize      : Elf32_Half;
-    e_phentsize   : Elf32_Half;
-    e_phnum       : Elf32_Half;
-    e_shetsize    : Elf32_Half;
-    e_shnum       : Elf32_Half;
-    e_shstrndx    : Elf32_Half;
+    e_ident       : elf_ident;    { ELF identification }
+    e_type        : Elf32_Half;   { Object file type }
+    e_machine     : Elf32_Half;   { Machine type }
+    e_version     : Elf32_Word;   { Object file version }
+    e_entry       : Elf32_addr;   { Entry point address }
+    e_phoff       : Elf32_Off;    { Program header offset }
+    e_shoff       : Elf32_Off;    { Section header offset }
+    e_flags       : Elf32_Word;   { Processor-specific flags }
+    e_ehsize      : Elf32_Half;   { ELF header size }
+    e_phentsize   : Elf32_Half;   { Size of program header entry }
+    e_phnum       : Elf32_Half;   { Number of program header entries }
+    e_shetsize    : Elf32_Half;   { Size of section header entry }
+    e_shnum       : Elf32_Half;   { Number of section header entries }
+    e_shstrndx    : Elf32_Half;   { Section name string table index }
   end;
   PElf32_EHdr = ^Elf32_EHdr;
   
   Elf64_EHdr = packed record
-    e_ident       : elf_ident;{ ELF identification }
+    e_ident       : elf_ident;    { ELF identification }
     e_type        : Elf64_Half;   { Object file type } 
     e_machine     : Elf64_Half;   { Machine type } 
     e_version     : Elf64_Word;   { Object file version } 
@@ -115,10 +115,10 @@ const
   ET_HIPROC    = $ffff;
   
   // machine type     {Elf32_Hdr.e_machine}
-  EM_NONE        =  0;
-  EM_SPARC       =  2;
-  EM_386         =  3;
-  EM_68K         =  4;
+  EM_NONE        = 0;
+  EM_SPARC       = 2;
+  EM_386         = 3;
+  EM_68K         = 4;
   EM_PPC         = 20;
   EM_PPC64       = 21;
   EM_ARM         = 40;

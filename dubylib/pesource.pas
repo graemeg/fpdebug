@@ -101,7 +101,7 @@ type
     destructor Destroy; override;
 
     function GetSectionInfo(const SectionName: AnsiString; var Size: int64): Boolean; override;
-    function GetSectionData(const SectionName: AnsiString; Offset, Size: Int64; var Buf: array of byte): Integer; override;
+    function GetSectionData(const SectionName: AnsiString; Offset, Size: Int64; var Buf: array of byte): Int64; override;
   end;
 
 implementation
@@ -150,7 +150,7 @@ begin
 end;
 
 function TPEFileSource.GetSectionData(const SectionName: AnsiString; Offset,  
-  Size: Int64; var Buf: array of byte): Integer;  
+  Size: Int64; var Buf: array of byte): Int64;
 var
   section : PDbgImageSection;
   data    : PByteArray;

@@ -35,7 +35,7 @@ type
     function GetSectionData(index: Integer; outStream: TStream): Boolean;}
 
     function GetSectionInfo(const SectionName: AnsiString; var Size: int64): Boolean; override;
-    function GetSectionData(const SectionName: AnsiString; Offset, Size: Int64; var Buf: array of byte): Integer; override;
+    function GetSectionData(const SectionName: AnsiString; Offset, Size: Int64; var Buf: array of byte): Int64; override;
   end;
 
 implementation
@@ -234,7 +234,7 @@ begin
   end;
 end;
 
-function TDbgMachoDataSource.GetSectionData(const SectionName: AnsiString; Offset, Size: Int64; var Buf: array of byte): Integer;
+function TDbgMachoDataSource.GetSectionData(const SectionName: AnsiString; Offset, Size: Int64; var Buf: array of byte): Int64;
 var
   idx     : Integer;
   sofs    : int64;

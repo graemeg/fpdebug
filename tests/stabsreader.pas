@@ -7,6 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Classes, dbgInfoTypes, dbgInfoStabs, stabs,
+  elfDbgSource,
   machoDbgSource, PESource, stabsproc;
 
 function GetFileString(const Name: WideString; LineNum: Integer): String;
@@ -62,21 +63,20 @@ begin
   stabs.Free;
 end;
 
+procedure StabsParsing;
 var
-  dbgInfoSrc : TDbgDataSource;
-var
-  ststr : string;
-  name  : string;
-  mdstr : string;
-  mdnum : Integer;
-  value : string;
+  ststr   : string;
+  name    : string;
+  mdstr   : string;
+  mdnum   : Integer;
+  value   : string;
   typeval : string;
 
   structSize : Integer;
   elemIndex  : Integer;
 
-  bitofs    : Integer;
-  bitsize   : Integer;
+  bitofs     : Integer;
+  bitsize    : Integer;
 begin
   ststr := 'SHORTSTRING:Tt6=s256length:1,0,8;st:ar1;1;255;8,8,2040;;';
   ParseStabStr(ststr, name, mdstr, mdnum, value);
@@ -94,8 +94,14 @@ begin
       writeln('  ', name, ' type = "', typeval, '"; ofs = ', bitofs, ' size = ', bitsize);
   end else
     writeln('not struct!');
-  exit;
-{
+  Halt(0);
+end;
+
+var
+  dbgInfoSrc : TDbgDataSource;
+begin
+  //StabsParsing;
+
   if Paramcount < 1 then begin
     writeln('please specify stabs debug-info file name');
     Exit;
@@ -109,6 +115,6 @@ begin
 
   ReadStabsData(dbgInfoSrc);
 
-  dbgInfoSrc.Free;}
+  dbgInfoSrc.Free;
 end.
 

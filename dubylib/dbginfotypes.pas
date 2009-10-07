@@ -17,7 +17,7 @@ type
     constructor Create(ASource: TStream; OwnSource: Boolean); virtual; 
 
     function GetSectionInfo(const SectionName: AnsiString; var Size: int64): Boolean; virtual; abstract;
-    function GetSectionData(const SectionName: AnsiString; Offset, Size: Int64; var Buf: array of byte): Integer; virtual; abstract;
+    function GetSectionData(const SectionName: AnsiString; Offset, Size: Int64; var Buf: array of byte): Int64; virtual; abstract;
   end;
   TDbgDataSourceClass = class of TDbgDataSource;
 

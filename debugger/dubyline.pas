@@ -21,7 +21,7 @@ uses
   dbgInfoStabs
   {$ifdef darwin},macDbgType, macDbgProc {$endif}
   {$ifdef mswindows},winDbgTypes{$endif}
-  , machoDbgSource, machofile;
+  , machoDbgSource, elfdbgsource, elf;
 
  
 procedure RunDebugger;

@@ -116,6 +116,8 @@ type
 
     function FindSymbol(const SymbolName: AnsiString; Parent: TDbgSymbol; SearchInFiles: Boolean = true): TDbgSymbol;
     function FindInFile(const SymbolName: AnsiString; const FileName: WideString): TDbgSymbol;
+    
+    procedure EnumFiles(str: TStrings); //todo: remove!
   end;
 
 function GetDataSource(const FileName: string): TDbgDataSource; overload;
@@ -269,7 +271,7 @@ function TDbgInfo.FindFile(const FileName: WideString): TDbgFileInfo;
 var
   res     : TDbgSymbol;
 begin
-  res := FindInGlobal(FileName);
+  res := FindInGlobal( GetFileSymbolName(FileName));
   if Assigned(res) and (res is TDbgFileInfo) then
     Result := TDbgFileInfo(res)
   else
@@ -279,8 +281,6 @@ end;
 function TDbgInfo.AddSymbol(const SymbolName: AnsiString;
   ParentSymbol: TDbgSymbol; SymbolClass: TDbgSymbolClass): TDbgSymbol;
 begin
-  if Assigned(PArentSymbol) then writeln(' ', ParentSymbol.ClassName) else writeln;
-
   if SymbolClass.InheritsFrom(TDbgFileInfo) then begin
     Result := nil;
     Exit;
@@ -336,6 +336,15 @@ begin
     Result := nil
   else
     Result := FindSymbol(SymbolName, parent);
+end;
+
+procedure TDbgInfo.EnumFiles(str: TStrings); 
+var
+  i : integer;
+begin
+  for i := 0 to fGlobalList.Count - 1 do
+    if TDbgSymbol(fGlobalList[i]) is TDbgFileInfo then 
+      str.Add( TDbgFileInfo(fGlobalList[i]).FileName);
 end;
 
 { TDbgSymbol }

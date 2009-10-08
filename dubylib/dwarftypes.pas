@@ -879,8 +879,8 @@ end;
 { TDbgDwarf }
 
 constructor TDbgDwarf.Create(ALoader: TDbgImageLoader);
-var
-  Section: TDwarfSection;
+{var
+  Section: TDwarfSection;}
   //p: PDbgImageSection;
 begin
   //inherited Create(ALoader);
@@ -913,7 +913,7 @@ var
   n: Integer;
   CU: TDwarfCompilationUnit;
   //Iter: TMapIterator;
-  Info: PDwarfAddressInfo;
+  //Info: PDwarfAddressInfo;
   MinMaxSet: boolean;
 begin
   Result := nil;
@@ -1268,12 +1268,14 @@ end;
 { TDwarfCompilationUnit }
 
 procedure TDwarfCompilationUnit.BuildLineInfo(AAddressInfo: PDwarfAddressInfo; ADoAll: Boolean);
+{
 var
-  //Iter: TMapIterator;
+  Iter: TMapIterator;
   Info: PDwarfAddressInfo;
-  //SM: TDwarfLineInfoStateMachine absolute FLineInfo.StateMachine;
+  SM: TDwarfLineInfoStateMachine absolute FLineInfo.StateMachine;
   idx: Integer;
-  //LineMap: TMap;
+  LineMap: TMap;
+}
 begin
 {
   if not ADoAll
@@ -1634,13 +1636,13 @@ procedure TDwarfCompilationUnit.LoadAbbrevs(ANeeded: Cardinal);
     else len := len * 2;
     SetLength(FDefinitions, len);
   end;
-var
+{var
   MaxData: Pointer;
   pb: PByte;
   pw: PWord;
   Def: TDwarfAbbrev;
   abbrev, attrib, form: Cardinal;
-  n: Integer;
+  n: Integer;}
 begin
   {
   pb:=PByte(FLastAbbrevPtr);

@@ -56,8 +56,6 @@ function TElfFile.Load32BitFile(Stream: TStream): Boolean;
 var
   hdr   : Elf32_Ehdr;
   sect  : array of Elf32_shdr;
-  buf   : array of byte;
-  str   : array of byte;
   i, j  : integer;
   nm    : string;
   sz    : LongWord;
@@ -92,7 +90,6 @@ end;
 procedure TElfFile.AddSection(const name: AnsiString; FileOffset, Address,
   Size: Qword);
 begin
-  writeln('new section = ', name);
   if seccount=Length(sections) then begin
     if seccount = 0 then SetLength(sections, 4)
     else SetLength(sections, seccount*2);
@@ -135,8 +132,6 @@ function TElfFile.FindSection(const Name: String): Integer;
 var
   i : Integer;
 begin
-  writeln('Self = ', Integer(Self));
-  writeln('seccount = ', seccount);
   Result := -1;
   for i := 0 to seccount - 1 do
     if sections[i].name = Name then begin
@@ -189,7 +184,6 @@ function TElfDbgSource.GetSectionInfo(const SectionName: AnsiString;
 var
   i : Integer;
 begin
-  writeln('fElfFile = ', Integer(fElfFile));
   i := fElfFile.FindSection(SectionName);
   Result := i >= 0;
   if not Result then Exit;

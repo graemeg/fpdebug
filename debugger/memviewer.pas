@@ -25,6 +25,8 @@ type
     function ShortHelp: String; override;
   end;
 
+procedure PrintI386Regs(list: TDbgDataList);
+  
 implementation
 
 
@@ -148,7 +150,7 @@ begin
     WriteLn(Format('EAX: %s;  GS: %s;     EBP: %s;     ', [ StrHex(_Eax), StrHex(_Gs), StrHex(_Ebp)]));
     WriteLn(Format('EBX: %s;  FS: %s;     EIP: %s;     ', [ StrHex(_Ebx), StrHex(_Fs), StrHex(_Eip)]));
     WriteLn(Format('ECX: %s;  ES: %s;  EFLAGS: %s;     ', [ StrHex(_Ecx), StrHex(_Es), StrHex(_EFlags)]));
-    WriteLn(Format('EDX: %s;  DS: %s;     ESI: %s;     ', [ StrHex(_Edx), StrHex(_Ds), StrHex(_Esi)]));
+    WriteLn(Format('EDX: %s;  DS: %s;     ESP: %s;     ', [ StrHex(_Edx), StrHex(_Ds), StrHex(_Esp)]));
     WriteLn(Format('EDI: %s;  CS: %s;                  ', [ StrHex(_Edi), StrHex(_Cs)]));
     WriteLn(Format('ESI: %s;  SS: %s;                  ', [ StrHex(_Esi), StrHex(_Ss)]));
   end;

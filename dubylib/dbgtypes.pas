@@ -104,6 +104,7 @@ type
     function GetThreadsCount: Integer; virtual; abstract;
     function GetThreadID(AIndex: Integer): TDbgThreadID; virtual; abstract;
     function GetThreadRegs(ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; virtual; abstract;
+    function SetThreadRegs(ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; virtual; abstract;
 
     function SetSingleStep(ThreadID: TDbgThreadID): Boolean; virtual; abstract;
     

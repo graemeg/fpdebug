@@ -85,20 +85,23 @@ function WriteProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; const d
 procedure WinEventToDbgEvent(ProcessHandle: THandle; const Win: TDebugEvent; var Dbg: TDbgEvent);
 
 function DoReadThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
+function DoWriteThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
 
 function SetThread32SingleStep(ThreadHandle: THandle): Boolean;
 
 implementation
 
+const
+  CONTEXT32_ALL = //todo:  {CONTEXT_FLOATING_POINT or} 
+                CONTEXT_DEBUG_REGISTERS or 
+                CONTEXT_SEGMENTS or CONTEXT_INTEGER or CONTEXT_CONTROL;
+                
 function DoReadThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
 var
   ctx32 : TContext32;
-const
-  CONTEXT_ALL = CONTEXT_DEBUG_REGISTERS or CONTEXT_FLOATING_POINT or CONTEXT_FLOATING_POINT or
-                CONTEXT_SEGMENTS or CONTEXT_INTEGER or CONTEXT_CONTROL;
 begin
   FillChar(ctx32, sizeof(ctx32), 0);
-  ctx32.ContextFlags := CONTEXT_ALL;
+  ctx32.ContextFlags := CONTEXT32_ALL;
 
   Result := GetThreadContext(ThreadHandle, PContext(@ctx32)^);
   if not Result then Exit;
@@ -130,6 +133,47 @@ begin
     Regs.Reg[_Dr6].UInt32 := Dr6;
     Regs.Reg[_Dr7].UInt32 := Dr7;
   end;
+end;
+
+
+function DoWriteThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
+var
+  ctx32 : TContext32;
+begin
+  FillChar(ctx32, sizeof(ctx32), 0);
+  ctx32.ContextFlags := CONTEXT32_ALL;
+  
+  with ctx32 do begin
+    Edi := Regs.Reg[_Edi].UInt32;
+    Esi := Regs.Reg[_Esi].UInt32;
+    Ebx := Regs.Reg[_Ebx].UInt32;
+    Edx := Regs.Reg[_Edx].UInt32;
+    Ecx := Regs.Reg[_Ecx].UInt32;
+    Eax := Regs.Reg[_Eax].UInt32;
+
+    SegGs := Regs.Reg[_Gs].UInt32;
+    SegFs := Regs.Reg[_Fs].UInt32;
+    SegEs := Regs.Reg[_Es].UInt32;
+    SegDs := Regs.Reg[_Ds].UInt32;
+    SegSs := Regs.Reg[_Ss].UInt32;
+    SegCs := Regs.Reg[_Cs].UInt32;
+
+    Ebp := Regs.Reg[_Ebp].UInt32;
+    Eip := Regs.Reg[_Eip].UInt32;
+    EFlags := Regs.Reg[_EFlags].UInt32;
+    Esp := Regs.Reg[_Esp].UInt32;
+
+    Dr0 := Regs.Reg[_Dr0].UInt32;
+    Dr1 := Regs.Reg[_Dr1].UInt32;
+    Dr2 := Regs.Reg[_Dr2].UInt32;
+    Dr3 := Regs.Reg[_Dr3].UInt32;
+    Dr6 := Regs.Reg[_Dr6].UInt32;
+    Dr7 := Regs.Reg[_Dr7].UInt32;
+  end;
+
+  Result := SetThreadContext(ThreadHandle, PContext(@ctx32)^);
+  if not Result then 
+    WriteLn('SetThreadContext = ', GetLastError);
 end;
 
 function SetThread32SingleStep(ThreadHandle: THandle): Boolean;
@@ -229,10 +273,17 @@ function WriteProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; const d
 var
   res : LongWord;
 begin
+  writeln('WriteMem: ');
+  writeln('dwProc = ', dwProc);
+  writeln('Offset = ', Offset, ' ', IntToHex(Offset, 8));
+  writeln('data   = ', Integer(@data[0]));
+  writeln('count  = ', Count);
   if not WriteProcessMemory(dwProc, Pointer(Offset), @data[0], Count, res) then
     Result := -1
   else
     Result := res;
+  if Result < 0 then 
+    writeln('memory writing: ', GetLastError);
 end;
 
 

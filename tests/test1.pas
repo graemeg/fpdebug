@@ -63,10 +63,7 @@ var
 
 begin
   bb := 1;	
-  {try
-    BreakPoint;
-  except
-  end;}
+  {BreakPoint;}
   ProcCdecl(1, bb, nil, 0, 'test');
   ProcFastCall(2, bb, nil, 0, 'test');
   ProcStdCall(3, bb, nil, 0, 'test');

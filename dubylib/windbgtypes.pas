@@ -48,6 +48,7 @@ type
     function GetThreadsCount: Integer; override;
     function GetThreadID(AIndex: Integer): TDbgThreadID; override;
     function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
+    function SetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
     function SetSingleStep(ThreadID: TDbgThreadID): Boolean; override;
 
     function GetProcessState: TDbgState; override;
@@ -96,6 +97,7 @@ end;
 function TWinDbgProcess.WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;  
 begin
   Result := WriteProcMem(fProcInfo.hProcess, Offset, Count, Data);
+  FlushInstructionCache(fProcInfo.hProcess, @Offset, Count);
 end;
 
 procedure TWinDbgProcess.AddThread(ThreadID: TThreadID; ThreadHandle: THandle); 
@@ -197,15 +199,22 @@ begin
   if Result then begin
     WinEventToDbgEvent(fProcInfo.hProcess, fLastEvent, Event);
     case fLastEvent.dwDebugEventCode of
-      CREATE_PROCESS_DEBUG_EVENT:
-        AddThread(fLastEvent.dwThreadId, fLastEvent.CreateProcessInfo.hThread);
+      CREATE_PROCESS_DEBUG_EVENT: 
+      begin
+        writeln('Win Process Started: ', fLastEvent.dwProcessId);
+        AddThread(fLastEvent.dwThreadId, fLastEvent.CreateProcessInfo.hThread); 
+      end;
       CREATE_THREAD_DEBUG_EVENT:
         AddThread(fLastEvent.dwThreadId, fLastEvent.CreateThread.hThread);
-      EXIT_PROCESS_DEBUG_EVENT, EXIT_THREAD_DEBUG_EVENT:
+      EXIT_PROCESS_DEBUG_EVENT, EXIT_THREAD_DEBUG_EVENT: 
+      begin
+        if fLastEvent.dwDebugEventCode =  EXIT_PROCESS_DEBUG_EVENT then
+          writeln('Win Process Terminated: ', fLastEvent.dwProcessId);
         RemoveThread(fLastEvent.dwThreadId);
+      end;
     end;
   
-    fTerminated := (Event.Kind = dek_ProcessTerminated);
+    fTerminated := (Event.Kind = dek_ProcessTerminated) and (fLastEvent.dwProcessId = fProcInfo.dwProcessId);
     Event.Debug := '*'+Event.Debug + ' ' + IntToStr(fLastEvent.dwDebugEventCode);
   end else
     event.Debug := 'GetLastError = ' + IntToStr(GetLastError);
@@ -240,6 +249,26 @@ begin
   if fis32proc then begin
     Result:=DoReadThreadRegs32(hnd, Regs);
   end else
+    Result := false;
+end;
+
+function TWinDbgProcess.SetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;  
+var
+  idx   : Integer;
+  hnd   : THandle;
+begin
+  Result := false;
+  if fWaiting then Exit;
+
+  idx := GetThreadIndex(ThreadID);
+  Result := idx >= 0;
+  if not Result then Exit;
+  
+  hnd := fThreads[idx].Handle;
+  
+  if fis32proc then 
+    Result:=DoWriteThreadRegs32(hnd, Regs)
+  else
     Result := false;
 end;
 

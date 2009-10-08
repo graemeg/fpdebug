@@ -9,19 +9,30 @@ program dubyline;
 
 uses
   dbgTypes,
-  dbgInfoTypes,
 
+  dbgInfoTypes,
+  dbgInfoDwarf,  // dwarf debug information
+  dbgInfoStabs,  // stabs debug information
+  
+  dbgBreakPoints,  // break points manager
+  
+  PESource,        // Win (PE), Linux (elf), MacOSX (macho) executable files
+  elfdbgsource,    // the implementation is cross-platform, so there's no need
+  machoDbgSource,  // to cover them in {$ifdefs}
+  
+  // command line debugger
   commands,
   cmdloop,    // main loop and run commands
   memviewer,  // view commands
-  cmddbg,     // debug-info commands
+  cmddbg      // debug-info commands
   
-  PESource,
-  dbgInfoDwarf,
-  dbgInfoStabs
-  {$ifdef darwin},macDbgType, macDbgProc {$endif}
-  {$ifdef mswindows},winDbgTypes{$endif}
-  , machoDbgSource, elfdbgsource, elf;
+  {$ifdef mswindows},winDbgTypes{$endif}          // windows debug API
+  {$ifdef darwin},macDbgType, macDbgProc {$endif} // macosx debug API
+  
+  {$ifdef CPUI386},dbgi386{$else} // i386 CPU routines
+  {$error Target platform is not supported for debugging}
+  {$endif}
+  ;
 
  
 procedure RunDebugger;

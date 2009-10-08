@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, dbgInfoTypes,
   dbgTypes,
-  dwarfTypes, dwarfConst;
+  dwarfTypes{, dwarfConst};
 
 type
   { TDbgDwarf3Info }

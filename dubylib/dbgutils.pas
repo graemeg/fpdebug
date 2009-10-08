@@ -47,7 +47,14 @@ function Min(a,b: Integer): Integer;
 function GetProcessRegisters(Process: TDbgProcess; data: TDbgDataList): Boolean; overload;
 function GetProcessRegisters(Process: TDbgProcess): TDbgDataList; overload;
 
+function HexAddr(const addr: TDbgPtr): AnsiString; inline;
+
 implementation
+
+function HexAddr(const addr: TDbgPtr): AnsiString; inline;
+begin
+  Result := IntToHex(addr, sizeof(TDbgPtr)*2);
+end;
 
 function Max(a,b: Integer): Integer;
 begin

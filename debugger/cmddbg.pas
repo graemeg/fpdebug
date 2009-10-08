@@ -7,8 +7,8 @@ interface
 uses
   Classes, SysUtils, contnrs, 
   dbgTypes, dbgUtils, dbgConsts,
-  dbgInfoTypes, cmdlineutils,
-  commands; 
+  dbgInfoTypes, cmdlineutils, dbgBreakPoints, dbgCPU,
+  commands, cmdloop; 
 
 procedure LoadDebugInfo(const FileName: string);
 procedure LoadExeDebugInfo(const cmdLine: string);
@@ -46,7 +46,78 @@ type
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
     function ShortHelp: String; override;
   end;
+  
+  { TSetBreak }
 
+  TSetBreak = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    function ShortHelp: String; override;
+  end;
+  
+  { TRemoveBreak }
+
+  TRemoveBreak = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    function ShortHelp: String; override;
+  end;
+
+function GetAddr(CmdParams: TStrings; var Addr: TDbgPtr): Boolean;
+var
+  err : Integer;
+begin
+  Result := CmdParams.Count > 1;
+  if not Result then Exit;
+  Val( CmdPArams[1], Addr, err);
+  Result:=err=0;
+end;
+  
+{ TRemoveBreak }
+
+procedure TRemoveBreak.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+var
+  addr  : TDbgPtr;
+  bp    : TBreakPoint;
+begin
+  if not GetAddr(CmdParams, Addr) then begin
+    writeln('please specify valid adress to set breakpoint');
+    Exit;
+  end;
+  bp := FindBreakpoint(addr);
+  if not Assigned(bp) then
+    writeln('no breakpoint at the given address')
+  else begin
+    RemoveBreakPoint(bp);
+    writeln('breakpoint removed');
+  end;
+end;
+
+function TRemoveBreak.ShortHelp: String;  
+begin
+  Result := 'removes breakpoint from address';
+end;
+
+{ TSetBreak }
+
+procedure TSetBreak.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+var
+  addr  : TDbgPtr;
+begin
+  if not GetAddr(CmdParams, Addr) then begin
+    writeln('please specify valid adress to set breakpoint');
+    Exit;
+  end;
+  if Assigned(AddEnabledBreakPoint(addr, Process)) then 
+    writeln('breakpoint added at: ', HexAddr(addr))
+  else
+    writeln('failed to set breakpoint');
+end;
+
+function TSetBreak.ShortHelp: String;  
+begin
+  Result := 'sets a breakpoint at address';
+end;
+  
+  
 { TListSymbols }
 
 procedure TListSymbols.Execute(CmdParams: TStrings; Process: TDbgProcess);  
@@ -63,7 +134,7 @@ begin
   end;
 
   writeln('not implemnted, sorry!');
-
+  
   {
   st := TStringList.Create;
   try
@@ -89,12 +160,66 @@ begin
   Result:='prints names lists of all known symbols';
 end;
 
+
+function GetLineNumber(const Str: String; var FileName: String; var LineNum: Integer): Boolean;
+var
+  i   : integer;
+  ln  : string;
+  err : Integer;
+begin
+  i := length(str);
+  while (i > 0) and (str[i] <> ':') do dec(i);
+  Result := i > 1;
+  if not Result then Exit;
+  
+  ln := Copy(Str, i+1, length(Str)-i);
+  Val(ln, LineNum,err);
+  Result := err = 0;
+  
+  if Result then 
+    FileName := Copy( Str, 1, i-1);
+end;
+
+function GetFullFileName(info: TDbgInfo; const ShortName: AnsiString): AnsiString;
+var
+  st  : TStringList;
+  i   : Integer;
+  l   : AnsiString;
+begin
+  Result := '';
+  l := AnsiLowerCase(ShortName);
+  st := TStringList.Create;
+  try
+    info.EnumFiles(st);
+    for i := 0 to st.Count - 1 do begin
+      if AnsiLowerCase( ExtractFileName( st[i] ) ) = l then begin
+        Result := st[i];
+        Exit;
+      end;
+    end;
+  finally
+    st.Free;
+  end;
+end;
+
+function GetFileSymbol(info: TDbgInfo; const ShortName: AnsiString): TDbgFileInfo;
+var
+  nm  : AnsiString;
+begin
+  nm := GetFullFileName(info, ShortName);
+  Result := info.FindFile(nm);
+end;
+
 { TAddrOf }
 
 procedure TAddrOf.Execute(CmdParams: TStrings; Process: TDbgProcess);  
 var
-  name  : String;
-  sym   : TDbgSymbol;
+  name      : String;
+  sym       : TDbgSymbol;
+  fsym      : TDbgFileInfo;
+  FileName  : string;
+  addr      : TDbgPtr;
+  LineNum   : Integer;
 begin
   if not Assigned(CommonInfo) then begin
     WriteLn('no debug info');
@@ -102,7 +227,7 @@ begin
   end;
   
   if CmdParams.Count <= 1 then begin
-    writeln('please specify name of symbol to find');
+    writeln('please specify name of symbol to find, or filename:linenumber');
     Exit;
   end;
   
@@ -110,7 +235,16 @@ begin
   sym := CommonInfo.FindSymbol(name, nil);
   if Assigned(sym) then
     writeln('symbol found: ', sym.ClassName)
-  else
+  else if GetLineNumber(CmdParams[1], FileName, LineNum) then begin
+    fsym := GetFileSymbol(CommonInfo, FileName);
+    if Assigned(fsym) then begin
+      if fsym.FindAddrByLine(LineNum, addr) then
+        writeln('line addr = ', IntToHex(addr, sizeof(TDbgPtr)*2))
+      else
+        writeln('not line information for line: ', LineNum, ', file ', FileName);
+    end else
+      writeln('file not found: ', FileName);
+  end else
     writeln('symbol not found');
 end;
 
@@ -150,8 +284,6 @@ begin
     end;
     addr := regs[_Eip].DbgPtr;
   end;
-  
-  WriteLn('addr = ', addr);
   if GetLineInfo( addr, fn, num) then Writeln( GetFileString(fn, num));
 end;
 
@@ -173,6 +305,45 @@ procedure ReleaseDebugCommands;
 begin
   DbgSources.Free;
 end;
+
+type
+  TBreakHandler = class(TObject)
+    procedure BreakHandle(Process: TDbgProcess; Event : TDbgEvent);
+  end;
+
+procedure TBreakHandler.BreakHandle(Process: TDbgProcess; Event : TDbgEvent);
+var
+  bp    : TBreakPoint;  
+begin
+  if Event.Kind = dek_BreakPoint then begin
+    bp := FindBreakpoint(Event.Addr);
+
+    if Assigned(bp) then begin
+      writeln('not found break point. Is it native?');
+      Exit;
+    end;
+
+    if HandleBreakpoint(bp, Event.Thread, Process ) then     
+      WriteLn('breakpoint handled and disabled at ', bp.Addr );
+  end;
+end;  
+  
+var
+  bh: TBreakHandler = nil;
+ 
+procedure InitBreakCommands;
+begin
+  bh := TBreakHandler.Create;
+  InstallHandler(@bh.BreakHandle);
+  RegisterCommand(['break', 'b'], TSetBreak.Create);
+  RegisterCommand(['rmbreak', 'rb'], TRemoveBreak.Create);
+end;
+
+procedure ReleaseBreakCommands;
+begin
+  bh.Free;
+end;
+
   
 procedure LoadDebugInfo(const FileName: string);
 var
@@ -215,9 +386,11 @@ end;
 
 initialization
   InitDebugCommands;
+  InitBreakCommands;
 
 finalization
   ReleaseDebugCommands;
+  ReleaseBreakCommands;
 
 end.
 

@@ -8,6 +8,13 @@ uses
   Classes, SysUtils, dbgTypes, dbgUtils, dbgConsts, commands; 
 
 procedure RunLoop(Process: TDbgProcess);
+
+type
+  TEventHandler = procedure (Process: TDbgProcess; Event : TDbgEvent) of object;
+
+procedure InstallHandler(AHandler: TEventHandler);
+procedure RemoveHandler(AHandler: TEventHandler);
+procedure HandleEvent(Process: TDbgProcess; Event : TDbgEvent);
   
 implementation
 
@@ -18,6 +25,8 @@ var
   Running       : Boolean = False;
   WaitForNext   : Boolean = False;
   StopOnSysCall : Boolean = False;
+  
+  EventHandlers : TFPList;  
 
 const
   CmdPrefix = 'duby> ';
@@ -259,6 +268,9 @@ begin
       if not Process.WaitNextEvent(DbgEvent) then
         writeln('process terminated?')
       else begin
+        
+        HandleEvent( Process, DbgEvent);
+        
         writeln('event: ', DbgEvent.Debug);
         case DbgEvent.Kind of
           dek_SysExc:
@@ -284,6 +296,60 @@ begin
   end;
 end;
 
+type
+  TProcHandler = class(TObject)
+    Handler: TEventHandler;
+  end;
+
+// Hanlder routines
+
+procedure InstallHandler(AHandler: TEventHandler);
+var
+  p : TProcHandler;
+begin
+  p := TProcHandler.Create;
+  p.Handler := AHandler;
+  EventHandlers.Add( p );
+end;
+
+procedure RemoveHandler(AHandler: TEventHandler);
+var
+  i : Integer;
+begin
+  for i := 0 to EventHandlers.Count - 1 do
+    if @TProcHandler(EventHandlers[i]).Handler = @AHandler then begin
+      TProcHandler(EventHandlers[i]).Free;
+      EventHandlers.Delete(i);
+      Exit;
+    end;
+end;
+
+procedure HandleEvent(Process: TDbgProcess; Event: TDbgEvent);
+var
+  i : Integer;
+begin
+  for i := 0 to EventHandlers.Count - 1 do
+    try
+      writelN('handling !!!');
+      TProcHandler(EventHandlers[i]).Handler(Process, Event);
+    except
+    end;
+end;
+
+procedure InitHandlers;
+begin
+  EventHandlers := TFPList.Create;  
+end;
+
+procedure ReleaseHandlers;
+var
+  i : Integer;
+begin
+  for i := 0 to EventHandlers.Count - 1 do TProcHandler(EventHandlers[i]).free;
+  EventHandlers.Free;
+end;
+
+// Registering commands
 procedure RegisterLoopCommands;
 begin
   RegisterCommand(['run','r'], TRunCommand.Create);
@@ -294,6 +360,12 @@ end;
 
 initialization
   RegisterLoopCommands;
+  InitHandlers;
+ 
+finalization
+  ReleaseHandlers;
+    
+  
 
 end.
 

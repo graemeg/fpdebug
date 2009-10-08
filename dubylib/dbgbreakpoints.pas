@@ -44,7 +44,8 @@ type
     procedure Clear;
   end;
   
-function AddBreakPoint(const addr: TDbgPtr): TBreakPoint; 
+function AddBreakPoint(const addr: TDbgPtr): TBreakPoint;
+// function fails, if break point already exists, cannot be enabled or matches hard-coded breakpoint
 function AddEnabledBreakPoint(const addr: TDbgPtr; AProcess: TDbgProcess): TBreakPoint; 
 function FindBreakpoint(const addr: TDbgPtr): TBreakPoint;
 procedure RemoveBreakPoint(var Bp: TBreakPoint);
@@ -65,9 +66,17 @@ end;
 
 function AddEnabledBreakPoint(const addr: TDbgPtr; AProcess: TDbgProcess): TBreakPoint; 
 begin
+  Result := FindBreakpoint(addr);
+  if Assigned(Result) then begin
+    Result := nil;
+    Exit;
+  end;
   Result := AddBreakPoint(addr);
-  if not Assigned(Result) then Exit;
-  if not Result.Enabled then Result.Enable(AProcess);
+  Result.Enable(AProcess);
+  if not Result.Enabled then begin
+    Result.Free;
+    Result := nil;
+  end;
 end;
 
 function FindBreakpoint(const addr: TDbgPtr): TBreakPoint;
@@ -97,7 +106,7 @@ begin
   try
     Result := Process.GetThreadRegs(ThreadID, list);
     PrintI386Regs(list);
-    
+
     list[CPUCode.ExecuteRegisterName].DbgPtr := bp.Addr;
     Result := Result and Process.SetThreadRegs(ThreadID, list);
   finally  
@@ -205,7 +214,7 @@ begin
   Result := (AProcess.ReadMem(addr, CodeSize, Code) = CodeSize) and not CPUCode.IsBreakPoint(Code, 0); 
   
   if not Result then begin
-    //writeln('bp: cannot read proces mem');
+    writeln('bp: cannot read proces mem');
     Exit;
   end;
   

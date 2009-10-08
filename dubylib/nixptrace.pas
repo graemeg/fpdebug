@@ -23,11 +23,9 @@ unit nixPtrace;
 
 interface
 
+//todo: use syscall, instead of libc's ptrace function
 uses
-  SysUtils, //todo: remove SysUtils
-  BaseUnix{, syscall};
-
-// 08048000
+  BaseUnix;
 
 {$linklib libc}
 
@@ -62,7 +60,6 @@ uses
    The minimum core file size is 3 pages, or 12288 bytes.
 }
 
-{$ifdef CPU64}
   { 8*16 bytes for each FP-reg = 128 bytes  }
   { 16*16 bytes for each XMM-reg = 256 bytes  }
 type
@@ -71,127 +68,134 @@ type
   uint64_t = qword;
 
 type
-  user_fpregs_struct = packed record
-    cwd   : uint16_t;
-    swd   : uint16_t;
-    ftw   : uint16_t;
-    fop   : uint16_t;
-    rip   : uint64_t;
-    rdp   : uint64_t;
-    mxcsr : uint32_t;
+  user_fpregs_struct_64 = packed record
+    cwd       : uint16_t;
+    swd       : uint16_t;
+    ftw       : uint16_t;
+    fop       : uint16_t;
+    rip       : uint64_t;
+    rdp       : uint64_t;
+    mxcsr     : uint32_t;
     mxcr_mask : uint32_t;
     st_space  : array[0..31] of uint32_t;
     xmm_space : array[0..63] of uint32_t;
     padding   : array[0..23] of uint32_t;
   end;
+  puser_fpregs_struct_64 = ^user_fpregs_struct_64;
 
-  user_regs_struct = packed record
-    r15, r14, r13, r12 : dword;
-    rbp, rbx           : dword;
-    r11, r10, r9, r8   : dword;
-    rax, rcx, rdx      : dword;
-    rsi, rdi           : dword;
-    orig_rax           : dword;
-    rip     : dword;
-    cs      : dword;
-    eflags  : dword;
-    rsp     : dword;
-    ss      : dword;
-    fs_base : dword;
-    gs_base : dword;
-    ds, es, fs, gs : dword;
+  user_regs_struct_64 = packed record
+    r15, r14, r13, r12 : uint64_t;
+    rbp, rbx           : uint64_t;
+    r11, r10, r9, r8   : uint64_t;
+    rax, rcx, rdx      : uint64_t;
+    rsi, rdi           : uint64_t;
+    orig_rax       : uint64_t;
+    rip            : uint64_t;
+    cs             : uint64_t;
+    eflags         : uint64_t;
+    rsp            : uint64_t;
+    ss             : uint64_t;
+    fs_base        : uint64_t;
+    gs_base        : uint64_t;
+    ds, es, fs, gs : uint64_t;
   end;
+  puser_regs_struct_64 = ^user_regs_struct_64;
 
   { When the kernel dumps core, it starts by dumping the user struct -
    this will be used by gdb to figure out where the data and stack segments
    are within the file, and what virtual addresses to use. }
 
-  Tuser = packed record
-    regs        : user_regs_struct;   { We start with the registers, to mimic the way that }
-                                      { "memory" is returned from the ptrace(3,...) function.  }
-    u_fpvalid   : longint;            { True if math co-processor being used. }
-                                      { for this mess. Not yet used. }
-    i387        : user_fpregs_struct; { Math Co-processor registers. }
+  user_64 = packed record
+    regs        : user_regs_struct_64;   { We start with the registers, to mimic the way that }
+                                         { "memory" is returned from the ptrace(3,...) function.  }
+
+    u_fpvalid   : longint;               { True if math co-processor being used. }
+                                         { for this mess. Not yet used. }
+    i387        : user_fpregs_struct_64; { Math Co-processor registers. }
 
     { The rest of this junk is to help gdb figure out what goes where }
-    u_tsize     : dword;   { Text segment size (pages).  }
-    u_dsize     : dword;   { Data segment size (pages).  }
-    u_ssize     : dword;   { Stack segment size (pages). }
-    start_code  : dword;   { Starting virtual address of text. }
-    start_stack : dword;   { Starting virtual address of stack area. }
-                  				 { This is actually the bottom of the stack, }
-                				   { the top of the stack is always found in the esp register. }
-    signal      : longint; { Signal that caused the core dump. }
-    reserved    : longint;   { No longer used}
-    u_ar0       : ^user_regs_struct;    { Used by gdb to help find the values for the registers }
-    u_fpstate   : ^user_fpregs_struct;  { Math Co-processor pointer. }
-    magic       : dword;                { To uniquely identify a core file }
-    u_comm      : array[0..31] of char; { User command that was responsible }
-    u_debugreg  : array[0..7] of dword; { x86 debug registers? }
-  end;
+    u_tsize     : uint64_t;   { Text segment size (pages).  }
+    u_dsize     : uint64_t;   { Data segment size (pages).  }
+    u_ssize     : uint64_t;   { Stack segment size (pages). }
+    start_code  : uint64_t;   { Starting virtual address of text. }
+    start_stack : uint64_t;   { Starting virtual address of stack area. }
+                  				    { This is actually the bottom of the stack, }
+                				      { the top of the stack is always found in the esp register. }
 
-{$else}
-  { These are the 32-bit x86 structures.   }
+    signal      : uint64_t;   { Signal that caused the core dump. }
+    reserved    : uint64_t;   { No longer used}
+
+    u_ar0       : puser_regs_struct_64;    { Used by gdb to help find the values for the registers }
+    u_fpstate   : puser_fpregs_struct_64;  { Math Co-processor pointer. }
+    magic       : uint64_t;                { To uniquely identify a core file }
+    u_comm      : array[0..31] of char;    { User command that was responsible }
+    u_debugreg  : array[0..7] of dword;    { x86 debug registers? }
+  end;
+  puser_64 = ^user_64;
+
+{ These are the 32-bit x86 structures.   }
 
 type
-  user_fpregs_struct = packed record
+  user_fpregs_struct_32 = packed record
     cwd, swd, twd : longint;
     fip, fcs, foo : longint;
     fos           : longint;
     st_space      : array[0..19] of longint;
   end;
+  puser_fpregs_struct_32 = ^user_fpregs_struct_32;
 
   { 8*16 bytes for each FP-reg = 128 bytes  }
   { 8*16 bytes for each XMM-reg = 128 bytes  }
-  user_fpxregs_struct = packed record
-    cwd : word;
-    swd : word;
-    twd : word;
-    fop : word;
-    fip : longint;
-    fcs : longint;
-    foo : longint;
-    fos : longint;
+  user_fpxregs_struct_32 = packed record
+    cwd       : word;
+    swd       : word;
+    twd       : word;
+    fop       : word;
+    fip       : longint;
+    fcs       : longint;
+    foo       : longint;
+    fos       : longint;
     mxcsr     : longint;
     reserved  : longint;
     st_space  : array[0..31] of longint;
     xmm_space : array[0..31] of longint;
     padding   : array[0..55] of longint;
   end;
+  puser_fpxregs_struct_32 = ^user_fpxregs_struct_32;
 
-  user_regs_struct = packed record
-    ebx, ecx, edx      : longint;
-    esi, edi           : longint;
-    ebp                : longint;
-    eax                : longint;
-    xds, xes, xfs, xgs : longint;
-    orig_eax  : longint;
-    eip       : longint;
-    xcs       : longint;
-    eflags    : longint;
-    esp       : longint;
-    xss       : longint;
+  user_regs_struct_32 = packed record
+    ebx, ecx, edx      : uint32_t;
+    esi, edi           : uint32_t;
+    ebp                : uint32_t;
+    eax                : uint32_t;
+    xds, xes, xfs, xgs : uint32_t;
+    orig_eax           : uint32_t;
+    eip                : uint32_t;
+    xcs                : uint32_t;
+    eflags             : uint32_t;
+    esp                : uint32_t;
+    xss                : uint32_t;
   end;
+  puser_regs_struct_32 = ^user_regs_struct_32;
 
-  Tuser = packed record
-    regs        : user_regs_struct;
+  user_32 = packed record
+    regs        : user_regs_struct_32;
     u_fpvalid   : longint;
-    i387        : user_fpregs_struct;
-    u_tsize     : dword;
-    u_dsize     : dword;
-    u_ssize     : dword;
-    start_code  : dword;
-    start_stack : dword;
+    i387        : user_fpregs_struct_32;
+    u_tsize     : uint32_t;
+    u_dsize     : uint32_t;
+    u_ssize     : uint32_t;
+    start_code  : uint32_t;
+    start_stack : uint32_t;
     signal      : longint;
     reserved    : longint;
-    u_ar0       : ^user_regs_struct;
-    u_fpstate   : ^user_fpregs_struct;
+    u_ar0       : puser_regs_struct_32;
+    u_fpstate   : puser_fpregs_struct_32;
     magic       : dword;
     u_comm      : array[0..31] of char;
     u_debugreg  : array[0..7] of longint;
   end;
 
-{$endif}
 
 type
   Tptrace_request = Integer;
@@ -349,7 +353,9 @@ function ptraceCont(pid: TPid; Signal: Integer): TPtraceWord;
 function ptraceGetSigInfo(pid: TPid; var siginfo: tsiginfo): TPtraceWord;
 function ptracePeekData(pid: TPid; offset: QWord; var w: TPtraceWord): Boolean;
 function ptracePeekUser(pid: TPid; offset: QWord; var w: TPtraceWord): Boolean;
-function ptracePeekSysUser(pid: TPid; var userdata: Tuser): Boolean;
+function ptracePokeData(pid: TPid; offset: QWord; const w: TPtraceWord): Boolean;
+function ptracePokeUser(pid: TPid; offset: QWord; const w: TPtraceWord): Boolean;
+//function ptracePeekSysUser(pid: TPid; var userdata: user): Boolean;
 
 implementation
 
@@ -388,7 +394,7 @@ end;
 
 function ptracePeekUser(pid: TPid; offset: QWord; var w: TPtraceWord): Boolean;
 var
-  p : PtrInt;
+  p   : PtrInt;
   err : Integer;
 begin
   p := offset;
@@ -399,7 +405,35 @@ begin
     writeln('errno = ', err);
 end;
 
-function ptracePeekSysUser(pid: TPid; var userdata: Tuser): Boolean;
+function ptracePokeData(pid: TPid; offset: QWord; const w: TPtraceWord): Boolean;
+var
+  p   : PtrInt;
+  err : Integer;
+  res : Integer;
+begin
+  p := offset;
+  res := ptrace(PTRACE_POKEDATA, pid, Pointer(p), Pointer(w));
+  err := fpgeterrno;
+  Result := err = 0;
+  if not Result then
+    writeln('errno = ', err);
+end;
+
+function ptracePokeUser(pid: TPid; offset: QWord; const w: TPtraceWord): Boolean;
+var
+  p   : PtrInt;
+  err : Integer;
+  res : integer;
+begin
+  p := offset;
+  res := ptrace(PTRACE_POKEUSER, pid, Pointer(p), Pointer(w));
+  err := fpgeterrno;
+  Result := err = 0;
+  if not Result then
+    writeln('errno = ', err);
+end;
+
+{function ptracePeekSysUser(pid: TPid; var userdata: Tuser): Boolean;
 type
   TByteArray = array [word] of byte;
   PByteArray = ^TByteArray;
@@ -417,7 +451,7 @@ begin
     if not Result then Break;
   end;
   writeln;
-end;
+end;}
 
 end.
 

@@ -28,6 +28,8 @@ const
   _Dr1 = 'DR1';
   _Dr2 = 'DR2';
   _Dr3 = 'DR3';
+  _Dr4 = 'DR4';
+  _Dr5 = 'DR5';
   _Dr6 = 'DR6';
   _Dr7 = 'DR7';
 

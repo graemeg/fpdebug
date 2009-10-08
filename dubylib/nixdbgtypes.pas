@@ -1,25 +1,31 @@
 unit nixDbgTypes;
 
+{ Linux base debugging type }
+
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  SysUtils,
-  BaseUnix, Unix, dbgTypes, nixPtrace, linuxDbgProc;
+  SysUtils, BaseUnix, Unix,
+  nixPtrace, linuxDbgProc,
+  dbgTypes, dbgCPU, dbgUtils;
 
 type
+  TCpuType = (cpi386, cpx64);
 
   { TLinuxProcess }
 
   TLinuxProcess = class(TDbgProcess)
   private
-    fState  : TDbgState;
-    fChild  : TPid;
+    fState      : TDbgState;
+    fChild      : TPid;
     fContSig    : Integer;
     fTerminated : Boolean;
     fWaited     : Boolean;
+    fcputype    : TCpuType;
   public
+    constructor Create;
     function StartProcess(const ACmdLine: String): Boolean;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
     procedure Terminate; override;
@@ -27,7 +33,12 @@ type
 
     function GetThreadsCount: Integer; override;
     function GetThreadID(AIndex: Integer): TDbgThreadID; override;
-    function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters): Boolean; override;
+    function GetThreadRegs(ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; override;
+    function SetThreadRegs(ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; override;
+
+    function SetSingleStep(ThreadID: TDbgThreadID): Boolean; override;
+
+    function MainThreadID: TDbgThreadID; override;
 
     function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
     function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
@@ -52,7 +63,6 @@ begin
     Result := dbg;
 end;
 
-
 { TLinuxProcess }
 
 function TLinuxProcess.GetProcessState: TDbgState;
@@ -70,9 +80,25 @@ begin
   Result := 0;
 end;
 
-function TLinuxProcess.GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters): Boolean;
+function TLinuxProcess.GetThreadRegs(ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean;
 begin
-  Result := false;
+  case fcputype of
+    cpi386:
+      Result := ReadRegsi386(fChild, Registers);
+  else
+    Result := false;
+  end;
+end;
+
+function TLinuxProcess.SetThreadRegs(ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean;
+begin
+  case fcputype of
+    cpi386: begin
+      Result := WriteRegsi386(fChild, Registers);
+    end;
+  else
+    Result := false;
+  end;
 end;
 
 function TLinuxProcess.ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
@@ -82,7 +108,22 @@ end;
 
 function TLinuxProcess.WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
 begin
+  Result := WriteProcMem(fChild, Offset, Count, Data);
+end;
+
+function TLinuxProcess.SetSingleStep(ThreadID: TDbgThreadID): Boolean;
+begin
+  Result := false;
+end;
+
+function TLinuxProcess.MainThreadID: TDbgThreadID;
+begin
   Result := 0;
+end;
+
+constructor TLinuxProcess.Create;
+begin
+  {$ifdef cpui386}fcputype:=cpi386;{$endif}
 end;
 
 function TLinuxProcess.StartProcess(const ACmdLine: String): Boolean;
@@ -97,12 +138,23 @@ begin
   FpKill(fChild, SIGKILL);
 end;
 
+procedure SetBreakPointAddr(Process: TDbgProcess; var Event: TDbgEvent);
+{todo: get breakpoint addr!!!
+  currently, i'm decreasing current execution address, by size of breakpoint }
+
+var
+  list  : TDbgDataBytesList;
+begin
+  list := TDbgDataBytesList.Create;
+  Process.GetThreadRegs(Event.Thread, list);
+  Event.Addr := list[ CPUCode.ExecuteRegisterName ].DbgPtr - CPUCode.BreakPointSize;
+  list.Free;
+end;
+
 function TLinuxProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;
 var
   Status : Integer;
   fch    : TPid;
-
-  u   : tuser;
 begin
   if fChild = 0 then begin
     Result := false;
@@ -132,8 +184,11 @@ begin
     end;
   end;
 
-
   Result := WaitStatusToDbgEvent(fChild, Status, Event);
+
+  if Event.Kind = dek_BreakPoint then //todo: fix it!
+    SetBreakPointAddr(Self, Event);
+
   fWaited := Result;
   fTerminated := Event.Kind = dek_ProcessTerminated;
 

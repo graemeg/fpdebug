@@ -1,11 +1,14 @@
 unit linuxDbgProc;
 
+{ Linux base debugging utility function(s) }
+
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  BaseUnix, Unix, nixPtrace, dbgTypes;
+  BaseUnix, Unix, nixPtrace,
+  dbgTypes, dbgConsts;
 
 function ForkAndDebugProcess(const ACmdLine: String; var childid: TPid): Boolean;
 function WaitStatusToDbgEvent(ChildID: TPid; Status: Integer; var event: TDbgEvent): Boolean;
@@ -15,36 +18,140 @@ function isStopped(Status: Integer; var StopSignal: Integer): Boolean;
 function isExited(Status: Integer; var ExitStatus: Integer): Boolean;
 
 function ReadProcMem(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
+function WriteProcMem(pid: Integer; Offset: TDbgPtr; Size: Integer; const Data: array of Byte): Integer;
 function ReadProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
+function WriteProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
+
+function ReadRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
+function WriteRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
 
 implementation
 
+type
+  TByteArray = array [word] of byte;
+  PByteArray = ^TByteArray;
+
+function ReadRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
+var
+  user    : user_32;
+begin
+  Result := ReadProcMemUser(pid, 0, sizeof(user), PByteArray(@user)^) = sizeof(user);
+  if Result then begin
+    with user.regs do begin
+      regs[_Edi].UInt32 := edi;
+      regs[_Esi].UInt32 := esi;
+      regs[_Ebx].UInt32 := ebx;
+      regs[_Edx].UInt32 := edx;
+      regs[_Ecx].UInt32 := ecx;
+      regs[_Eax].UInt32 := eax;
+      regs[_Ebp].UInt32 := ebp;
+      regs[_Eip].UInt32 := eip;
+      regs[_EFlags].UInt32 := eflags;
+      regs[_Esp].UInt32 := esp;
+    end;
+
+    regs[_Dr0].UInt32 := user.u_debugreg[0];
+    regs[_Dr1].UInt32 := user.u_debugreg[1];
+    regs[_Dr2].UInt32 := user.u_debugreg[2];
+    regs[_Dr3].UInt32 := user.u_debugreg[3];
+    regs[_Dr4].UInt32 := user.u_debugreg[4];
+    regs[_Dr4].UInt32 := user.u_debugreg[5];
+    regs[_Dr6].UInt32 := user.u_debugreg[6];
+    regs[_Dr7].UInt32 := user.u_debugreg[7];
+  end;
+end;
+
+function WriteRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
+var
+  regs32  : user_regs_struct_32;
+  res     : Integer;
+begin
+  Result := ReadProcMemUser(pid, 0, sizeof(regs32), PByteArray(@regs32)^) = sizeof(regs32);
+  if not Result then Exit;
+
+  with regs32 do begin
+    edi := regs[_Edi].UInt32;
+    esi := regs[_Esi].UInt32;
+    ebx := regs[_Ebx].UInt32;
+    edx := regs[_Edx].UInt32;
+    ecx := regs[_Ecx].UInt32;
+    eax := regs[_Eax].UInt32;
+    ebp := regs[_Ebp].UInt32;
+    eip := regs[_Eip].UInt32;
+    eflags := regs[_EFlags].UInt32;
+    esp := regs[_Esp].UInt32;
+  end;
+
+  res := WriteProcMemUser(pid, 0, sizeof(regs32), PByteArray(@regs32)^);
+  Result := res = sizeof(regs32);
+end;
+
 function ReadProcMem(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
 var
-  i   : TDbgPtr;
+  i   : LongWord;
+  j   : Integer;
   cnt : integer;
-  ofs : Integer;
+  d   : TPtraceWord;
 begin
   cnt := Size div sizeof(TPtraceWord);
   i := 0;
-  while i < Size do begin
+  for j := 0 to cnt - 1 do begin
     ptracePeekData(pid, Offset+i, PPtraceWord(@Data[i])^);
     inc(i, sizeof(TPtraceWord));
   end;
-  Result := i;
+  Result := cnt;
+
+  cnt := Size mod sizeof(TPtraceWord);
+  if cnt > 0 then begin
+    ptracePeekData(pid, Offset+i, d);
+    Move(d, Data[i], cnt);
+    inc(Result, cnt);
+  end;
+end;
+
+function WriteProcMem(pid: Integer; Offset: TDbgPtr; Size: Integer; const Data: array of Byte): Integer;
+var
+  i   : Integer;
+  j   : LongWord;
+  wd  : TPtraceWord;
+begin
+  j := 0;
+  for i := 0 to Size div sizeof(TPtraceWord) - 1 do begin
+    ptracePokeData(pid, Offset, PPTraceWord(@Data[j])^);
+    inc(j, sizeof(TPtraceWord));
+    inc(Offset, sizeof(TPtraceWord));
+  end;
+
+  if Size mod sizeof(TPtraceWord) > 0 then begin
+    ptracePeekData(pid, Offset, wd);
+    System.move(Data[j], wd, Size mod sizeof(TPtraceWord));
+    ptracePokeData(pid, Offset, wd);
+  end;
+  Result := Size;
 end;
 
 function ReadProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
 var
-  i   : integer;
-  cnt : integer;
-  ofs : Integer;
+  i   : Integer;
 begin
-  cnt := Size div sizeof(TPtraceWord);
   i := 0;
   while i < Size do begin
-    ptracePeekUser(pid, Offset+i, PPtraceWord(@Data[i])^);
+    ptracePeekUser(pid, Offset, PPtraceWord(@Data[i])^);
     inc(i, sizeof(TPtraceWord));
+    inc(Offset, sizeof(TPtraceWord));
+  end;
+  Result := i;
+end;
+
+function WriteProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
+var
+  i   : Integer;
+begin
+  i := 0;
+  while i < Size do begin
+    ptracePokeUser(pid, Offset, PPtraceWord(@Data[i])^);
+    inc(i, sizeof(TPtraceWord));
+    inc(Offset, sizeof(TPtraceWord));
   end;
   Result := i;
 end;
@@ -63,9 +170,7 @@ begin
     Result := false;
   end else if childid = 0 then begin
     res := ptraceMe;
-    writeln('ptrace_traceme res = ', res);
     if res < 0 then Exit; // process cannot be traced
-    writeln('ACmdLine = ', ACmdLine);
     FpExecVE(ACmdLine, nil, nil);
   end else
     Result := true;
@@ -157,7 +262,6 @@ var
   exitSig : Integer;
   stopSig : Integer;
   isTerm  : Boolean;
-  isExit  : Boolean;
   siginfo : tsiginfo;
   res     : TPtraceWord;
 begin
@@ -168,15 +272,15 @@ begin
     event.Kind := StopSigToEventKind(stopSig);
 
     res := ptraceGetSigInfo(ChildID, siginfo);
-    if res = 0 then begin
-      SigInfoToEvent(siginfo, event);
-    end else
+    if res = 0 then
+      SigInfoToEvent(siginfo, event)
+    else
       event.Debug:=event.Debug + ' can''t get siginfo';
 
   end else begin
     isTerm := isTerminated(Status, termSig);
     if not isTerm then begin
-      isExit := isExited(Status, exitSig);
+      {isExit := }isExited(Status, exitSig);
       event.Debug := 'term, sig = ' + IntToStr(exitSig);
       event.Kind := dek_ProcessTerminated;
     end else begin

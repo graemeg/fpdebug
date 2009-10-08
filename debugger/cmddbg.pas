@@ -109,7 +109,7 @@ begin
   if Assigned(AddEnabledBreakPoint(addr, Process)) then 
     writeln('breakpoint added at: ', HexAddr(addr))
   else
-    writeln('failed to set breakpoint');
+    writeln('failed to set breakpoint at: ', HexAddr(addr));
 end;
 
 function TSetBreak.ShortHelp: String;  
@@ -316,15 +316,23 @@ var
   bp    : TBreakPoint;  
 begin
   if Event.Kind = dek_BreakPoint then begin
+    writelN('Break?');
+    if Event.addr = 0 then begin
+      // no address. do nothing.
+      writelN('break point event, but no address is given');
+      Exit;
+    end;
     bp := FindBreakpoint(Event.Addr);
 
-    if Assigned(bp) then begin
-      writeln('not found break point. Is it native?');
+    if not Assigned(bp) then begin
+      writeln('not found break point at '+ HexAddr(Event.Addr) +'. Is it hardcoded?');
       Exit;
     end;
 
     if HandleBreakpoint(bp, Event.Thread, Process ) then     
-      WriteLn('breakpoint handled and disabled at ', bp.Addr );
+      WriteLn('breakpoint handled and disabled at ', HexAddr(bp.Addr) )
+    else
+      WriteLn('failed to handle break point at ', HexAddr(bp.Addr) );
   end;
 end;  
   

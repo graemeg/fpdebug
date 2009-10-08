@@ -28,6 +28,7 @@ uses
   
   {$ifdef mswindows},winDbgTypes{$endif}          // windows debug API
   {$ifdef darwin},macDbgType, macDbgProc {$endif} // macosx debug API
+  {$ifdef linux},nixDbgTypes{$endif}
   
   {$ifdef CPUI386},dbgi386{$else} // i386 CPU routines
   {$error Target platform is not supported for debugging}

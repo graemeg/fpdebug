@@ -40,6 +40,13 @@ type
     function ShortHelp: String; override;
   end;
   
+  { TIntValue }
+
+  TIntValue = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    function ShortHelp: String; override;
+  end;
+  
   { TListSymbols }
 
   TListSymbols = class(TCommand)
@@ -60,6 +67,49 @@ type
     procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
     function ShortHelp: String; override;
   end;
+
+{ TIntValue }
+
+procedure TIntValue.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+var
+  name  : string;
+  err   : Integer;
+  addr  : TDbgPtr;
+  res   : Integer;
+  vl    : Integer;
+  sym   : TDbgSymbol;
+begin
+  if not Assigned(CommonInfo) then begin
+    WriteLn('no debug info');
+    Exit;    
+  end;
+  
+  if CmdParams.Count <= 1 then begin
+    writeln('please specify name of symbol to find, or address');
+    Exit;
+  end;
+  
+  name := CmdParams[1];
+  val(name, addr, err);
+  if err > 0 then begin
+    sym := CommonInfo.FindSymbol(name, nil);
+    if Assigned(sym) and (sym is TDbgVariable) then
+      addr := TDbgVariable(sym).addr
+    else  begin
+      writeln('symbol not found or cannot be read');
+      Exit;
+    end;
+  end;
+    
+  res := Process.ReadMem(addr, sizeof(vl), PByteArray(@vl)^);
+  if res = sizeof(vl) then writeln(vl)
+  else writeln('value cannot be read');
+end;
+
+function TIntValue.ShortHelp: String;  
+begin
+  Result:='prints integer value of a variable by given address o name';
+end;
 
 function GetAddr(CmdParams: TStrings; var Addr: TDbgPtr): Boolean;
 var
@@ -233,9 +283,12 @@ begin
   
   name := CmdParams[1];
   sym := CommonInfo.FindSymbol(name, nil);
-  if Assigned(sym) then
-    writeln('symbol found: ', sym.ClassName)
-  else if GetLineNumber(CmdParams[1], FileName, LineNum) then begin
+  if Assigned(sym) then begin
+    if sym is TDbgVariable then
+      writeln('variable ', name, ' addr: $', HexAddr(TDbgVariable(sym).addr) )
+    else 
+      writeln('symbol found: ', sym.ClassName)
+  end else if GetLineNumber(CmdParams[1], FileName, LineNum) then begin
     fsym := GetFileSymbol(CommonInfo, FileName);
     if Assigned(fsym) then begin
       if fsym.FindAddrByLine(LineNum, addr) then
@@ -296,9 +349,10 @@ procedure InitDebugCommands;
 begin
   DbgSources := TFPObjectList.Create(true);
   
-  RegisterCommand(['where',  'w'], TWhereCommand.Create);
+  //RegisterCommand(['where',  'w'], TWhereCommand.Create);
   RegisterCommand(['addrof', 'a'], TAddrOf.Create);
-  RegisterCommand(['listsym'], TListSymbols.Create);
+  RegisterCommand(['value', 'l'], TIntValue.Create);
+  //RegisterCommand(['listsym'], TListSymbols.Create);
 end;
 
 procedure ReleaseDebugCommands;

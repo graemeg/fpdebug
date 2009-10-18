@@ -247,6 +247,10 @@ procedure DoRunLoop(Process: TDbgProcess);
 var
   ProcTerm     : Boolean;
   StopForUser  : Boolean;
+const
+  dekStr: array [TDbgEventKind] of string = (
+    'Other', 'SysExc', 'Single step', 'Breakpoint', 
+    'Process Start', 'Process Terminated', 'SysCall');
 begin
   if not Assigned(Process) then begin
     writeln('no process to debug (internal error?)');
@@ -271,16 +275,22 @@ begin
         
         HandleEvent( Process, DbgEvent);
         
-        writeln('event: ', DbgEvent.Debug);
+        //writeln('event: ', DbgEvent.Debug);
         case DbgEvent.Kind of
-          dek_SysExc:
-            writeln('system exception at ', IntToHex(DbgEvent.Addr, HexSize));
+          dek_SysExc:;
+            //writeln('system exception at ', IntToHex(DbgEvent.Addr, HexSize));
+          dek_SingleStep:;
+            //writeln('single step');
+          dek_BreakPoint:;
+            //writeln('breakpoint');
           dek_SysCall:
           begin
-            writeln('system call: ', DbgEvent.Debug);
+            //writeln('system call: ', DbgEvent.Debug);
             StopForUser := StopOnSysCall;
           end;
         end;
+        writeln('even: ', dekStr[DbgEvent.Kind]);
+        writeln('addr: $', HexAddr(DbgEvent.Addr), ' / ', DbgEvent.Addr);
       end;
       if DbgEvent.Kind = dek_ProcessTerminated then
         writeln('process has been terminated');
@@ -330,7 +340,6 @@ var
 begin
   for i := 0 to EventHandlers.Count - 1 do
     try
-      writelN('handling !!!');
       TProcHandler(EventHandlers[i]).Handler(Process, Event);
     except
     end;
@@ -353,7 +362,7 @@ end;
 procedure RegisterLoopCommands;
 begin
   RegisterCommand(['run','r'], TRunCommand.Create);
-  RegisterCommand(['runto','rt'], TRunToCommand.Create);
+  //RegisterCommand(['runto','rt'], TRunToCommand.Create);
   RegisterCommand(['c'], TContinueCommand.Create);
   RegisterCommand(['step','s'], TStepCommand.Create);
 end;

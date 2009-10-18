@@ -24,6 +24,7 @@ type
     fTerminated : Boolean;
     fWaited     : Boolean;
     fcputype    : TCpuType;
+
   public
     constructor Create;
     function StartProcess(const ACmdLine: String): Boolean;
@@ -113,12 +114,12 @@ end;
 
 function TLinuxProcess.SetSingleStep(ThreadID: TDbgThreadID): Boolean;
 begin
-  Result := false;
+  Result := ptraceSingleStep(ThreadID);
 end;
 
 function TLinuxProcess.MainThreadID: TDbgThreadID;
 begin
-  Result := 0;
+  Result := fChild;
 end;
 
 constructor TLinuxProcess.Create;
@@ -136,19 +137,6 @@ procedure TLinuxProcess.Terminate;
 begin
   // Terminate
   FpKill(fChild, SIGKILL);
-end;
-
-procedure SetBreakPointAddr(Process: TDbgProcess; var Event: TDbgEvent);
-{todo: get breakpoint addr!!!
-  currently, i'm decreasing current execution address, by size of breakpoint }
-
-var
-  list  : TDbgDataBytesList;
-begin
-  list := TDbgDataBytesList.Create;
-  Process.GetThreadRegs(Event.Thread, list);
-  Event.Addr := list[ CPUCode.ExecuteRegisterName ].DbgPtr - CPUCode.BreakPointSize;
-  list.Free;
 end;
 
 function TLinuxProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;
@@ -185,9 +173,6 @@ begin
   end;
 
   Result := WaitStatusToDbgEvent(fChild, Status, Event);
-
-  if Event.Kind = dek_BreakPoint then //todo: fix it!
-    SetBreakPointAddr(Self, Event);
 
   fWaited := Result;
   fTerminated := Event.Kind = dek_ProcessTerminated;

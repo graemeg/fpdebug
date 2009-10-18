@@ -253,7 +253,34 @@ begin
       event.Kind := dek_SysExc;
       event.Addr := TDbgPtr(siginfo._sifields._sigfault._addr);
     end;
+
+    SIGTRAP: begin
+      //writeln('siginfo.si_code = ', siginfo.si_code);
+
+      if (siginfo.si_code = TRAP_TRACE)
+        then event.Kind := dek_SingleStep
+        else event.Kind := dek_BreakPoint;
+    end;
   end;
+end;
+
+
+function GetBreakAddri386(pid: TPid; var CurrentAddr, PrevDelta: TDbgPtr): Boolean; inline;
+var
+  user  : user_32;
+begin
+  Result := ReadProcMemUser(pid, 0, sizeof(user), PByteArray(@user)^) = sizeof(user);
+  if Result then CurrentAddr:=user.regs.eip;
+  PrevDelta:=1;
+end;
+
+function GetBreakAddr(pid: TPid; var CurrentAddr, PrevDelta: TDbgPtr): Boolean;
+begin
+  {$ifdef cpui386}
+  Result := GetBreakAddri386(pid, CurrentAddr, PrevDelta);
+  {$else}
+  Result := false;
+  {$endif}
 end;
 
 function WaitStatusToDbgEvent(ChildID: TPid; Status: Integer; var event: TDbgEvent): Boolean;
@@ -264,6 +291,9 @@ var
   isTerm  : Boolean;
   siginfo : tsiginfo;
   res     : TPtraceWord;
+
+  trapaddr  : TDbgPtr;
+  trapdelta : TDbgPtr;
 begin
   //writeln('Status = ', Status);
   Result := true;
@@ -272,9 +302,16 @@ begin
     event.Kind := StopSigToEventKind(stopSig);
 
     res := ptraceGetSigInfo(ChildID, siginfo);
-    if res = 0 then
-      SigInfoToEvent(siginfo, event)
-    else
+    if res = 0 then begin
+      SigInfoToEvent(siginfo, event);
+      if stopSIG = SIGTRAP then begin
+        if GetBreakAddr(ChildID, trapaddr, trapdelta) then begin
+          event.Addr := trapaddr - trapdelta;
+        end else
+          event.Addr := 0; //address is unknown. Internal error?!
+      end;
+
+    end else
       event.Debug:=event.Debug + ' can''t get siginfo';
 
   end else begin

@@ -355,7 +355,19 @@ function ptracePeekData(pid: TPid; offset: QWord; var w: TPtraceWord): Boolean;
 function ptracePeekUser(pid: TPid; offset: QWord; var w: TPtraceWord): Boolean;
 function ptracePokeData(pid: TPid; offset: QWord; const w: TPtraceWord): Boolean;
 function ptracePokeUser(pid: TPid; offset: QWord; const w: TPtraceWord): Boolean;
+function ptraceSingleStep(pid: TPid): Boolean;
 //function ptracePeekSysUser(pid: TPid; var userdata: user): Boolean;
+
+
+{* SIGTRAP si_codes}
+
+const
+  TRAP_BRKPT 	= 1;	{* process breakpoint *}
+  TRAP_TRACE	= 2;	{* process trace trap *}
+                    {* flag is set on singlestepping *}
+  TRAP_BRANCH = 3;  {* process taken branch trap *}
+  TRAP_HWBKPT = 4;  {* hardware breakpoint/watchpoint *}
+
 
 implementation
 
@@ -431,6 +443,12 @@ begin
   Result := err = 0;
   if not Result then
     writeln('errno = ', err);
+end;
+
+function ptraceSingleStep(pid: TPid): Boolean;
+begin
+  ptrace(PTRACE_SINGLESTEP, pid, nil, nil);
+  Result := fpgeterrno = 0;
 end;
 
 {function ptracePeekSysUser(pid: TPid; var userdata: Tuser): Boolean;

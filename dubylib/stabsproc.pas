@@ -140,8 +140,8 @@ begin
         HandleFunc(i);
       N_SLINE:
         HandleLine(i);
-      {N_LCSYM:
-        HandleVariable(i);}
+      N_LCSYM:
+        HandleVariable(i);
       N_EXT, N_TYPE, N_EXTTYPE, N_PEXTTYPE:
         HandleAsmSym(i);
     else
@@ -256,6 +256,8 @@ begin
   global := Stabs^[index].n_type = N_LCSYM;
   StabVarStr(StabStr( Stabs^[index].n_strx), varname, vartype );
 
+  //writeln('new var = ', varname, ' global = ', global);
+  
   if global then
     fCallback.DeclareGlobalVar(varname, Stabs^[index].n_value )
   else

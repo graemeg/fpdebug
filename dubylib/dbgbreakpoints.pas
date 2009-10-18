@@ -67,11 +67,11 @@ end;
 function AddEnabledBreakPoint(const addr: TDbgPtr; AProcess: TDbgProcess): TBreakPoint; 
 begin
   Result := FindBreakpoint(addr);
-  if Assigned(Result) then begin
+  if Assigned(Result) and Result.Enabled then begin
     Result := nil;
     Exit;
   end;
-  Result := AddBreakPoint(addr);
+  if not Assigned(Result) then Result := AddBreakPoint(addr);
   Result.Enable(AProcess);
   if not Result.Enabled then begin
     Result.Free;

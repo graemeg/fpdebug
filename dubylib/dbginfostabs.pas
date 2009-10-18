@@ -86,8 +86,13 @@ begin
 end;
 
 procedure TDbgInfoCallback.DeclareGlobalVar(const Name: AnsiString; Addr: LongWord);
+var 
+  v : TDbgVariable;
 begin
-
+  if Assigned(fFileSym) then begin
+    v := fDebugInfo.AddSymbol(Name, fFileSym, TDbgVariable ) as TDbgVariable;
+    v.addr := Addr;
+  end;
 end;
 
 procedure TDbgInfoCallback.CodeLine(LineNum, Addr: LongWord);  

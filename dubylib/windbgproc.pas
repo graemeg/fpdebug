@@ -410,10 +410,15 @@ begin
     EXCEPTION_DEBUG_EVENT:  
     begin
       case Win.Exception.ExceptionRecord.ExceptionCode  of
-        EXCEPTION_BREAKPOINT: WinBreakPointToDbg(Win, Dbg);
+        EXCEPTION_BREAKPOINT: 
+          WinBreakPointToDbg(Win, Dbg);
+        EXCEPTION_SINGLE_STEP: 
+          dbg.Kind := dek_SingleStep;
       else
         Dbg.Kind := dek_Other;
       end;
+      Dbg.Addr := TDbgPtr(Win.Exception.ExceptionRecord.ExceptionAddress);
+      Dbg.Thread := Win.dwThreadId;
     end;
   else
     Dbg.Kind := dek_SysCall;

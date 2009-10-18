@@ -88,6 +88,7 @@ type
   TDbgVariable = class(TDbgSymbol)
   public
     vartype : TVariableType;
+    addr    : TDbgPtr;
   end;
 
   { TDbgInfo }

@@ -306,18 +306,26 @@ begin
   Result:='returns address of a symbol by it''s name';
 end;
   
-function GetFileString(const Name: WideString; LineNum: Integer): String;
+procedure PrintFileString(const Name: WideString; LineNum: Integer);
 var
-  st  : TStringList;
+  st    : TStringList;
+  first : integer;
+  i     : integer;
 begin 
   st := TStringList.Create;
   try
     st.LoadFromFile(Name);
     dec(LineNum);
-    if (LineNum >= 0) and (LineNum < st.Count) then
-      Result := st[LineNum];
+
+    first := LineNum - 5;
+    if first < 0 then first := 0;
+    
+    for i := first to Min(st.Count-1, LineNum + 5) do begin
+      if i = LineNum 
+        then writeln('>>>',i+1, ': ', st[i])
+        else writeln('   ',i+1, ': ', st[i]);
+    end;
   except
-    Result := Format('error file opening file: %s', [Name]);
   end;
   st.Free;
 end;  
@@ -328,6 +336,7 @@ var
   fn   : WideString;
   num  : Integer;
   addr : TDbgPtr;
+  err  : Integer;
 begin
   if CmdParams.Count <= 1 then begin
     regs := GetProcessRegisters(Process);
@@ -336,8 +345,14 @@ begin
       Exit;
     end;
     addr := regs[_Eip].DbgPtr;
-  end;
-  if GetLineInfo( addr, fn, num) then Writeln( GetFileString(fn, num));
+  end else
+    Val(CmdParams[1], addr, err);
+  if GetLineInfo(addr, fn, num) then begin
+    writeln('found at: ', fn);
+    writelN('line num: ', num);
+    PrintFileString(fn, num);
+  end else
+    writeln('address not found');
 end;
 
 function TWhereCommand.ShortHelp: String;  
@@ -349,7 +364,7 @@ procedure InitDebugCommands;
 begin
   DbgSources := TFPObjectList.Create(true);
   
-  //RegisterCommand(['where',  'w'], TWhereCommand.Create);
+  RegisterCommand(['where',  'w'], TWhereCommand.Create);
   RegisterCommand(['addrof', 'a'], TAddrOf.Create);
   RegisterCommand(['value', 'l'], TIntValue.Create);
   //RegisterCommand(['listsym'], TListSymbols.Create);
@@ -441,9 +456,20 @@ end;
 function GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: Integer): Boolean;
 var
   f   : TDbgFileInfo;
+  i   : integer;
+  st  : TStringList;
 begin
-  f := CommonInfo.FindFile(FileName);
-  Result := Assigned(f) and f.FindLineByAddr(Addr, LineNum);
+  st := TStringList.Create;
+  CommonInfo.EnumFiles(st);
+  for i := 0 to st.Count - 1 do  begin
+    f := CommonInfo.FindFile(st[i]); 
+    Result := Assigned(f) and f.FindLineByAddr(Addr, LineNum);
+    if Result then begin
+      FileName := st[i];
+      Exit;
+    end;
+  end;
+  Result := false;
 end;
 
 initialization

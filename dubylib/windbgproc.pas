@@ -415,7 +415,7 @@ begin
         EXCEPTION_SINGLE_STEP: 
           dbg.Kind := dek_SingleStep;
       else
-        Dbg.Kind := dek_Other;
+        Dbg.Kind := dek_SysExc;
       end;
       Dbg.Addr := TDbgPtr(Win.Exception.ExceptionRecord.ExceptionAddress);
       Dbg.Thread := Win.dwThreadId;

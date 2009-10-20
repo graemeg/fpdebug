@@ -74,7 +74,8 @@ type
     constructor Create(const AName: AnsiString; AParentSym: TDbgSymbol); override;
     destructor Destroy; override;
     procedure AddLineInfo(const Addr: TDbgPtr; const LineNum: Integer);
-    function FindLineByAddr(const Addr: TDbgPtr; var LineNum: Integer): Boolean;
+    //todo: Strict is ugly! REMOVE IT! (replace by nearest line search).
+    function FindLineByAddr(const Addr: TDbgPtr; var LineNum: Integer; Strict: Boolean = false): Boolean;
     function FindAddrByLine(const LineNum: Integer; var Addr: TDbgPtr): Boolean;
   end;
 
@@ -429,13 +430,24 @@ begin
   else Result := 1;
 end;
 
-function TDbgFileInfo.FindLineByAddr(const Addr: TDbgPtr; var LineNum: Integer): Boolean;
+function TDbgFileInfo.FindLineByAddr(const Addr: TDbgPtr; var LineNum: Integer; Strict: Boolean = false): Boolean;
 var
   node  : TAVLTreeNode;
+  cnt   : integer;
+  i     : Integer;
+  a     : TDbgPtr;
 begin
-  node := AddrToLines.FindKey(@Addr, @CompareWithAddr);
-  Result := Assigned(node) and Assigned(node.Data);
-  if Result then Linenum := TDbgLineINfo(node.Data).LineNum;
+  if Strict then cnt := 0 else cnt := 8;
+  for i := 0 to 7 do begin
+    a := Addr - i;
+    node := AddrToLines.FindKey(@a, @CompareWithAddr);
+    Result := Assigned(node) and Assigned(node.Data);
+    if Result then begin
+      Linenum := TDbgLineInfo(node.Data).LineNum;
+      Exit;
+    end;
+  end;
+  Result := false;
 end;
 
 function CompareWithLine(Item1, Item2: Pointer): Integer;

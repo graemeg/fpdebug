@@ -6,7 +6,7 @@ interface
 
 uses
   SysUtils,
-  BaseUnix, Unix, machapi, mach_port, 
+  BaseUnix, Unix, machapi, mach_port, machexc,
   dbgTypes, macPtrace, macDbgProc;
 
 type
@@ -85,8 +85,26 @@ begin
 end;
 
 function TMachDbgProcess.GetThreadsCount: Integer;
+var
+  r             : QWord;
+  portarray     : mach_port_array_t;
+  portcount     : integer;
+  res           : kern_return_t;
+
+  threads       : Pointer;
+  threadscount  : mach_msg_type_number_t;
+
+  pname         : mach_port_name_t;
 begin
-  Result := 0;
+
+  task_for_pid(mach_task_self, fchildpid, pname);
+  res := debugout_kret(task_threads(pname, threads, threadscount), 'task_threads');
+  if res = KERN_SUCCESS then Result := threadScount
+  else Result := 0;
+{
+  res := debugout_kret( mach_ports_lookup(fchildtask, portarray, portcount), 'mach_ports_lookup');
+  if res = KERN_SUCCESS then writeln('ports = ', portcount);
+}
 end;
 
 function TMachDbgProcess.GetThreadID(AIndex: Integer): TDbgThreadID;
@@ -106,26 +124,9 @@ end;
 
 function TMachDbgProcess.ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
 var
-  r             : QWord;
-  portarray     : mach_port_array_t;
-  portcount     : integer;
-  res           : kern_return_t;
-
-  threads       : Pointer;
-  threadscount  : mach_msg_type_number_t;
-
-  pname         : mach_port_name_t;
-
+  r : QWord;
 begin
   writeln('child pid = ', fchildpid);
-  debugout_kret(task_for_pid(mach_task_self, fchildpid, pname), 'task_for_pid');
-  writeln('task = ', pname);
-
-  res := debugout_kret(task_threads(pname, threads, threadscount), 'task_threads');
-  if res = KERN_SUCCESS then writeln('threads count');
-
-  res := debugout_kret( mach_ports_lookup(fchildtask, portarray, portcount), 'mach_ports_lookup');
-  if res = KERN_SUCCESS then writeln('ports = ', portcount);
 
   if ReadTaskMem(fchildtask, Offset, Count, Data, r) <> 0 then
     Result := -1
@@ -141,132 +142,225 @@ end;
 procedure TMachDbgProcess.SetupChildTask(child: task_t);
 var
   res : Integer;
+const
+  HANDLER_COUNT = 64; // Could make this dynamic by looking for a result of MIG_ARRAY_TOO_LARGE
+type
+  TExceptionPorts = record
+    maskCount : mach_msg_type_number_t;
+    masks     : array [0..63] of exception_mask_t;
+    handlers  : array [0..63] of exception_handler_t;
+    behaviors : array [0..63] of exception_behavior_t;
+    flavors   : array [0..63] of thread_state_flavor_t;
+  end;
+var
+  ports : TExceptionPorts;
 begin
-  writeln('setting up child task');
-  
-  writeln('setting procedd exceptions handlers');
+  FillChar(ports, sizeof(ports), 0);
+  ports.maskCount := 64;
+  res := task_get_exception_ports(task_t(mach_task_self), EXC_MASK_ALL,
+    @ports.masks,
+    ports.maskCount, @ports.handlers, @ports.behaviors, @ports.flavors);
+  writeln('ports.maskCount = ', ports.maskCount);
+
+  writeln('[setting process exceptions handlers]');
 
   catchport := MachAllocPortForSelf;
   writelN('catch port = ', catchport);
   
   debugout_kret(
-    mach_port_insert_right(task_t(mach_task_self), catchport, catchport, MACH_MSG_TYPE_MAKE_SEND), 
+    mach_port_insert_right(task_t(mach_task_self), catchport, catchport,
+       MACH_MSG_TYPE_MAKE_SEND),
     'mach_port_insert_right'
     );
   
   writeln('setting exception port');
   res := debugout_kret(
-//    task_set_exception_ports( child, EXC_MASK_ALL, catchport, EXCEPTION_DEFAULT, 0),
+//  task_set_exception_ports( child, EXC_MASK_ALL, catchport, EXCEPTION_DEFAULT, 0),
     task_set_exception_ports( child, EXC_MASK_ALL, catchport, EXCEPTION_DEFAULT, 0),
       'task_set_exception_ports' );
 
+  writeln('[setting process exceptions handlers. done]');
 end;
 
 procedure TMachDbgProcess.Terminate;
 begin
 end;
 
-function GetSigStr(sig: integer): String;
+procedure DebugExptMsg(const msg: __Request__exception_raise_t);
+var
+  i : Integer;
 begin
-  case sig of
-    SIGHUP:  Result := 'SIGHUP';  { hangup  }
-    SIGINT:  Result := 'SIGINT'; { interrupt  }
-    SIGQUIT:  Result := 'SIGQUIT'; { quit  }
-    SIGILL :  Result := 'SIGILL'; { illegal instruction (not reset when caught)  }
-    SIGTRAP:  Result := 'SIGTRAP';  { trace trap (not reset when caught)  }
-    SIGABRT:  Result := 'SIGABRT'; { abort()  }
-    //SIGIOT:   Result := 'SIGIOT'; { compatibility  }
-    SIGEMT:   Result := 'SIGEMT'; { EMT instruction  }
-    SIGFPE:   Result := 'SIGFPE'; { floating point exception  }
-    SIGKILL:  Result := 'SIGKILL'; { kill (cannot be caught or ignored)  }
-    SIGBUS :  Result := 'SIGBUS'; { bus error  }
-    SIGSEGV:  Result := 'SIGSEGV';  { segmentation violation  }
-    SIGSYS :  Result := 'SIGSYS';  { bad argument to system call  }
-    SIGPIPE:  Result := 'SIGPIPE';  { write on a pipe with no one to read it  }
-    SIGALRM:  Result := 'SIGALRM';  { alarm clock  }
-    SIGTERM:  Result := 'SIGTERM'; { software termination signal from kill  }
-    SIGURG:   Result := 'SIGURG'; { urgent condition on IO channel  }
-    SIGSTOP:  Result := 'SIGSTOP';  { sendable stop signal not from tty  }
-    SIGTSTP:  Result := 'SIGTSTP';  { stop signal from tty  }
-    SIGCONT:  Result := 'SIGCONT'; { continue a stopped process  }
-    SIGCHLD:  Result := 'SIGCHLD'; { to parent on child stop or exit  }
-    SIGTTIN:  Result := 'SIGTTIN';  { to readers pgrp upon background tty read  }
-    SIGTTOU:  Result := 'SIGTTOU'; { like TTIN for output if (tp->t_local&LTOSTOP)  }
-    SIGIO:    Result := 'SIGIO';  { input/output possible signal  }
-    SIGXCPU:  Result := 'SIGXCPU';  { exceeded CPU time limit  }
-    SIGXFSZ:  Result := 'SIGXFSZ';  { exceeded file size limit  }
-    SIGVTALRM:  Result := 'SIGVTALRM';  { virtual time alarm  }
-    SIGPROF:    Result := 'SIGPROF'  ;  { profiling time alarm  }
-    SIGWINCH:   Result := 'SIGWINCH' ;  { window size changes  }
-    SIGINFO:  Result := 'SIGINFO';  { information request  }
-    SIGUSR1:  Result := 'SIGUSR1';   { user defined signal 1  }
-    SIGUSR2:  Result := 'SIGUSR2';   { user defined signal 2  }
+  writeln('msg.head.id:    ', msg.head.msgh_id);
+  writeln('msg.body:       ', msg.msgh_body.msgh_descriptor_count);
+  writelN('exception type: ', msg.exception, ' ', ExceptionType(msg.exception));
+  writelN('exception at: ');
+  writeln('  process: ', msg.task.name);
+  writeln('  thread:  ', msg.thread.name);
+  writeln('Code Count = ', msg.codeCnt);
+  for i := 0 to msg.codeCnt - 1 do begin
+    write(msg.code[i],' ');
+    if msg.code[i] >= $10000 then write('uxcode = ', msg.code[i] -$10000);
+    writeln(';');
   end;
+  writeln;
 end;
 
-(* exc_msg {
-    mach_msg_header_t          Head;
-    mach_msg_body_t            msgh_body; // start of kernel-processed data
-    mach_msg_port_descriptor_t thread;    // victim thread
-    mach_msg_port_descriptor_t task;      // end of kernel-processed data
-    NDR_record_t               NDR;       // see osfmk/mach/ndr.h
-    exception_type_t           exception;
-    mach_msg_type_number_t     codeCnt;   // number of elements in code[]
-    exception_data_t           code;      // an array of integer_t
-    char                       pad[512];  // for avoiding MACH_MSG_RCV_TOO_LARGE
-  }
-*)
 
-  
+var
+  hackthread : Integer;
+  hacksig    : Integer;
+
+function catch_exception_raise (exception_port, thread, task : mach_port_t;
+	exception  : exception_type_t;
+	code       : exception_data_t;
+	codeCnt    : mach_msg_type_number_t
+): kern_return_t; cdecl; [public];
+var
+  i  : Integer;
+begin
+  writeln('--- catch_exception_raise called! ---');
+  writeln('exc_port  = ', exception_port);
+  writeln('thread    = ', thread);
+  writeln('exception = ', exception, ' ', ExceptionType(exception));
+  writeln('codeCnt   = ', codeCnt);
+  // for i := 0 to codeCnt - 1 do  writeln('code[',i,'] = ', code[i]);
+  if (exception = EXC_SOFTWARE) and (CodeCnt = 2) and (code[0] = EXC_SOFT_SIGNAL) then begin
+    writeln('unix signal! ', GetSigStr(code[1]));
+    hackthread := thread;
+    hacksig := code[1];
+  end;
+  Result := KERN_SUCCESS;
+end;
+
+function catch_exception_raise_state(
+	exception_port    : mach_port_t;
+	exception         : exception_type_t;
+	const code        : exception_data_t;
+	codeCnt           : mach_msg_type_number_t;
+	flavor            : pinteger;
+	const old_state   : thread_state_t;
+	old_stateCnt      : mach_msg_type_number_t;
+	new_state         : thread_state_t;
+	var new_stateCnt  : mach_msg_type_number_t
+): kern_return_t; cdecl; [public];
+begin
+  writeln('catch state! ');
+  Result := KERN_SUCCESS;
+end;
+
+function catch_exception_raise_state_identity (
+	exception_port    : mach_port_t;
+	thread            : mach_port_t;
+	task              : mach_port_t;
+	exception         : exception_type_t;
+	code              : exception_data_t;
+	codeCnt           : mach_msg_type_number_t;
+	flavor            : pinteger;
+	old_state         : thread_state_t;
+	old_stateCnt      : mach_msg_type_number_t;
+	new_state         : thread_state_t;
+	var new_stateCnt  : mach_msg_type_number_t
+): kern_return_t; cdecl; [public];
+begin
+  writeln('catch identity! ');
+  Result := KERN_SUCCESS;
+end;
+
+
 function TMachDbgProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;
 var
-  buf    : array [0..1024] of byte;
-  header : pmach_msg_header_t;
-  ret    : mach_msg_return_t;
-  msg    : pexception_raise_state_identity_t;
+  buf     : array [0..4095] of byte;
+  reqbuf  : array [0..4095] of byte;
+  ret     : mach_msg_return_t;
+  mreq    : PRequestUnion__exc_subsystem;
+  mrep    : PReplyUnion__exc_subsystem;
   st      : Integer;
   pidres  : pid_t;
+  b       : boolean_t;
+  i       : Integer;
 begin
-  Result := false;
-//mach code
+  Result := True;
+  //if waited then  ptrace_cont(fchildpid, 1, 0);
 
-{  waited := false;
-  writeln('waiting for the next event?');
+ { waited := false;
+  writeln('**** waiting for the next event ***');
   pidres := FpWaitpid(fchildpid, st, 0);
-  writeln('pidres = ', pidres);
-  Result := pidres >= 0;
-  if not Result then begin
-    writeln('waitpid = ', pidres);
+  writeln('pidres   = ', pidres);
+  writeln('childres = ', fchildpid);
+  if pidres < 0 then begin
+    writeln('error ', fpgeterrno);
     Exit;
   end;
   waited := true;}
-  
+
+  //writeln('st = ', st, '; if Stopped = ',WIFSTOPPED(st), '; WSTOPSIG = ', wstopsig(st)) ;
+  //writeln('is Exited   = ', wifexited(st) ) ;
+  //writeln('is Signaled = ', wifsignaled(st), ' WTERMSIG = ', wtermsig(st), ' ', GetSigStr(wtermsig(st)));
+
   //debugout_kret(task_resume(fchildtask),'task_resume');
-  FillChar(buf, sizeof(buf), 0);
-  header := @buf[0];
-  msg := pexception_raise_state_identity_t(header);
-  writeln('mach_msg...');
+
+  FillChar(reqbuf, sizeof(reqbuf), 0);
+  mreq := @reqbuf;
+  mreq^.req_raise.head.msgh_local_port := catchport;
+  mreq^.req_raise.head.msgh_size := sizeof(reqbuf);
+
+  writeln('recieving message from catchport...');
+  // replacment for FPWaitPid
   ret := mach_msg(
-    header, 
+    @reqbuf,
     MACH_RCV_MSG or MACH_RCV_LARGE,
-    0, 
-    sizeof(buf),
+    sizeof(reqbuf),
+    sizeof(reqbuf),
     catchport,
     MACH_MSG_TIMEOUT_NONE,
     MACH_PORT_NULL
-   );    
-    
-  writelN('msg size = ', header^.msgh_size );
-  writelN('msg bits = ', header^.msgh_bits, ' ', IntToHex(header^.msgh_bits, 8) );
-  
-  writeln('exc task   = ', Integer(msg^.task.name));
-  writeln('exc thread = ', Integer(msg^.thread.name));
-  writeln('exc type   = ', msg^.exception);
-  writeln('exc codeCnt= ', msg^.codeCnt);
-  writeln('exc flavor = ', msg^.flavor);
-    
+   );
+
+  //debugout_kret(ret, 'mach_msg');
+
+  writeln('id = ', mreq^.req_raise.Head.msgh_id);
+  if mreq^.req_raise.Head.msgh_id = msgid_exception_raise then begin
+    writeln('exception raise');
+    DebugExptMsg(mreq^.req_raise);
+  end;
+
+  FillChar(buf, sizeof(buf), 0);
+  try
+    mrep := @buf;
+    b := exc_server(@mreq^.req_raise.Head, @buf);
+  except
+    writeln('failure in exc_server');
+    halt;
+  end;
+  writelN('exc_server = ', b);
+  if not b then Exit;
+
+
+  i := ptrace(PT_THUPDATE, fchildpid, hackthread, 0);
+  writeln('ptrace = ', i);
+
+  writeln('sending msg...');
+  writeln('mrep = ', PtrUInt(mrep));
+  writeln('mrep^.rep_raise.Head.msgh_size = ', mrep^.rep_raise.Head.msgh_size);
+  writeln('mrep^.rep_raise.Head.msgh_id   = ', mrep^.rep_raise.Head.msgh_id);
+  writeln('mrep^.rep_raise.RetCode        = ', mrep^.rep_raise.RetCode);
+  ret := mach_msg(@buf,        // message
+                  MACH_SEND_MSG,           // options
+                  mrep^.rep_raise.Head.msgh_size, // send size
+                  0,                       // receive limit (irrelevant here)
+                  MACH_PORT_NULL,          // port for receiving (none)
+                  MACH_MSG_TIMEOUT_NONE,   // no timeout
+                  MACH_PORT_NULL);         // notify port (we don't want one)
   debugout_kret(ret, 'mach_msg');
-  writelN('message recieved!');
+  if ret = KERN_SUCCESS then writeln('message sent');
+
+
+
+  Event.Addr := 0;
+  Event.Debug := '';
+  Event.Kind := dek_Other;
+  Event.Thread := nil;
+  Result := true;
 end;
 
 (*

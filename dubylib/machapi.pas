@@ -824,10 +824,10 @@ type
   mach_msg_header_t = packed record
     msgh_bits        : mach_msg_bits_t;
     msgh_size        : mach_msg_size_t;
-    sgh_remote_port  : mach_port_t;
-    sgh_local_port   : mach_port_t;
-    sgh_reserved     : mach_msg_size_t;
-    sgh_id           : mach_msg_id_t;
+    msgh_remote_port : mach_port_t;
+    msgh_local_port  : mach_port_t;
+    msgh_reserved    : mach_msg_size_t;
+    msgh_id          : mach_msg_id_t;
   end;
   pmach_msg_header_t = ^mach_msg_header_t;
 
@@ -1218,15 +1218,13 @@ function mach_msg_overwrite( msg: pmach_msg_header_t; option: mach_msg_option_t;
  *		operation silently (trap version does not restart).
  *}
 function mach_msg(
-  msg: pmach_msg_header_t;
-  option: mach_msg_option_t;
-  send_size: mach_msg_size_t;
-  rcv_size: mach_msg_size_t;
-  rcv_name: mach_port_name_t;
-	timeout: mach_msg_timeout_t;
-  notify: mach_port_name_t): mach_msg_return_t; cdecl; external;
-
-
+  msg         : pmach_msg_header_t;
+  option      : mach_msg_option_t;
+  send_size   : mach_msg_size_t;
+  rcv_size    : mach_msg_size_t;
+  rcv_name    : mach_port_name_t;
+	timeout     : mach_msg_timeout_t;
+  notify      : mach_port_name_t): mach_msg_return_t; cdecl; external;
 
 // ----- policy.h --------------------------------------------------------------
 
@@ -3272,76 +3270,6 @@ function mach_vm_purgable_control(target_task: vm_map_t;	address: mach_vm_addres
 	control: vm_purgable_t;	state: pinteger): kern_return_t;  cdecl; external;
 
 
-//  mach_exception_types.h
-{
-  Automatically converted by H2Pas 1.0.0 from mach_exception_types.h
-  The following command line parameters were used:
-    mach_exception_types.h
-}
-
-
-const
-  {*	Machine-independent exception definitions. }
-  EXC_BAD_ACCESS = 1;      { Could not access memory  }
-                           { Code contains kern_return_t describing error.  }
-                           { Subcode contains bad memory address.  }
-  EXC_BAD_INSTRUCTION = 2; { Instruction failed  }
-                           { Illegal or undefined instruction or operand  }
-  EXC_ARITHMETIC = 3; { Arithmetic exception  }
-                      { Exact nature of exception is in code field  }
-  EXC_EMULATION = 4;  { Emulation instruction  }
-                      { Emulation support instruction encountered  }
-                      { Details in code and subcode fields	 }
-  EXC_SOFTWARE = 5;   { Software generated exception  }
-                      { Exact exception is in code field.  }
-                      { Codes 0 - 0xFFFF reserved to hardware  }
-                      { Codes 0x10000 - 0x1FFFF reserved for OS emulation (Unix)  }
-  EXC_BREAKPOINT = 6; { Trace, breakpoint, etc.  }
-                      { Details in code field.  }
-  EXC_SYSCALL = 7;    { System calls.  }
-  EXC_MACH_SYSCALL = 8; { Mach system calls.  }
-  EXC_RPC_ALERT = 9;    { RPC alert  }
-  EXC_CRASH = 10;    { Abnormal process exit  }
-
-  {	Machine-independent exception behaviors  }
-
-  EXCEPTION_DEFAULT = 1; {	Send a catch_exception_raise message including the identity. }
-  EXCEPTION_STATE = 2;   {	Send a catch_exception_raise_state message including the	thread state. }
-  EXCEPTION_STATE_IDENTITY = 3; {	Send a catch_exception_raise_state_identity message includingthe thread identity and state. }
-  MACH_EXCEPTION_CODES = $80000000; {	Send 64-bit code and subcode in the exception header  }
-
-
-  {* Masks for exception definitions, above
-   * bit zero is unused, therefore 1 word = 31 exception types  }
-
-  EXC_MASK_BAD_ACCESS = 1 shl EXC_BAD_ACCESS;
-  EXC_MASK_BAD_INSTRUCTION = 1 shl EXC_BAD_INSTRUCTION;
-  EXC_MASK_ARITHMETIC = 1 shl EXC_ARITHMETIC;
-  EXC_MASK_EMULATION = 1 shl EXC_EMULATION;
-  EXC_MASK_SOFTWARE = 1 shl EXC_SOFTWARE;
-  EXC_MASK_BREAKPOINT = 1 shl EXC_BREAKPOINT;
-  EXC_MASK_SYSCALL = 1 shl EXC_SYSCALL;
-  EXC_MASK_MACH_SYSCALL = 1 shl EXC_MACH_SYSCALL;
-  EXC_MASK_RPC_ALERT = 1 shl EXC_RPC_ALERT;
-  EXC_MASK_CRASH = 1 shl EXC_CRASH;
-  EXC_MASK_ALL = EXC_MASK_BAD_ACCESS or
-                 EXC_MASK_BAD_INSTRUCTION or
-                 EXC_MASK_ARITHMETIC or
-                 EXC_MASK_EMULATION or
-                 EXC_MASK_SOFTWARE or
-                 EXC_MASK_BREAKPOINT or
-                 EXC_MASK_SYSCALL or
-                 EXC_MASK_MACH_SYSCALL or
-                 EXC_MASK_RPC_ALERT or
-                 EXC_MASK_CRASH;
-  { ZERO is illegal  }
-  FIRST_EXCEPTION = 1;
-  {* Machine independent codes for EXC_SOFTWARE
-   * Codes 0x10000 - 0x1FFFF reserved for OS emulation (Unix)
-   * 0x10000 - 0x10002 in use for unix signals }
-  { Unix signal exceptions  }
-  EXC_SOFT_SIGNAL = $10003;
-
 // mach/error.h
 
 // macroses
@@ -3357,26 +3285,6 @@ function err_get_code(err: Integer): integer; inline;
 function unix_err(errno: Integer): integer; inline;
 
 
-// mach/exc.h
-
-// exc.h
-type
-  __Request__exception_raise_state_identity_t = record
-		Head      : mach_msg_header_t;
-		{ start of the kernel processed data }
-		msgh_body : mach_msg_body_t;
-		thread    : mach_msg_port_descriptor_t;
-		task      : mach_msg_port_descriptor_t;
-		{ end of the kernel processed data }
-		NDR       : NDR_record_t;
-		exception : exception_type_t;
-		codeCnt   : mach_msg_type_number_t;
-		code      : array [0..1] of integer_t;
-		flavor    : integer;
-		old_stateCnt  : mach_msg_type_number_t;
-		old_state     : array [0..143] of natural_t;
-	end;
-  pexception_raise_state_identity_t = ^__Request__exception_raise_state_identity_t;
 
 implementation
 

@@ -13,7 +13,7 @@
       <TargetFileExt Value=".exe"/>
       <Title Value="dubyline"/>
       <UseXPManifest Value="True"/>
-      <ActiveEditorIndexAtStart Value="1"/>
+      <ActiveEditorIndexAtStart Value="2"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -334,7 +334,7 @@
       <Unit39>
         <Filename Value="..\dubylib\nixdbgtypes.pas"/>
         <UnitName Value="nixDbgTypes"/>
-        <CursorPos X="59" Y="133"/>
+        <CursorPos X="45" Y="132"/>
         <TopLine Value="121"/>
         <EditorIndex Value="1"/>
         <UsageCount Value="16"/>
@@ -343,9 +343,11 @@
       <Unit40>
         <Filename Value="..\dubylib\windbgtypes.pas"/>
         <UnitName Value="winDbgTypes"/>
-        <CursorPos X="70" Y="62"/>
-        <TopLine Value="44"/>
+        <CursorPos X="62" Y="275"/>
+        <TopLine Value="263"/>
+        <EditorIndex Value="2"/>
         <UsageCount Value="17"/>
+        <Loaded Value="True"/>
       </Unit40>
       <Unit41>
         <Filename Value="execview.pas"/>
@@ -510,7 +512,7 @@
         <UsageCount Value="7"/>
       </Unit62>
       <Unit63>
-        <Filename Value="..\..\..\Fpc_Laz\fpc\packages\fcl-res\src\machoreader.pp"/>
+        <Filename Value="..\..\fpc\packages\fcl-res\src\machoreader.pp"/>
         <UnitName Value="machoreader"/>
         <CursorPos X="1" Y="43"/>
         <TopLine Value="31"/>
@@ -718,13 +720,13 @@
         <SyntaxHighlighter Value="C++"/>
       </Unit90>
       <Unit91>
-        <Filename Value="..\..\..\FPC_Laz\fpc\rtl\inc\systemh.inc"/>
+        <Filename Value="..\..\fpc\rtl\inc\systemh.inc"/>
         <CursorPos X="11" Y="751"/>
         <TopLine Value="734"/>
         <UsageCount Value="10"/>
       </Unit91>
       <Unit92>
-        <Filename Value="..\..\..\FPC_Laz\fpc\rtl\linux\signal.inc"/>
+        <Filename Value="..\..\fpc\rtl\linux\signal.inc"/>
         <CursorPos X="2" Y="106"/>
         <TopLine Value="93"/>
         <UsageCount Value="11"/>
@@ -848,7 +850,7 @@
         <UsageCount Value="11"/>
       </Unit107>
     </Units>
-    <JumpHistory Count="2" HistoryIndex="1">
+    <JumpHistory Count="14" HistoryIndex="13">
       <Position1>
         <Filename Value="..\dubylib\nixdbgtypes.pas"/>
         <Caret Line="33" Column="30" TopLine="24"/>
@@ -857,6 +859,54 @@
         <Filename Value="..\dubylib\nixdbgtypes.pas"/>
         <Caret Line="48" Column="46" TopLine="30"/>
       </Position2>
+      <Position3>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="62" Column="70" TopLine="44"/>
+      </Position3>
+      <Position4>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="47" Column="1" TopLine="36"/>
+      </Position4>
+      <Position5>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="87" Column="40" TopLine="75"/>
+      </Position5>
+      <Position6>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="103" Column="36" TopLine="91"/>
+      </Position6>
+      <Position7>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="37" Column="15" TopLine="37"/>
+      </Position7>
+      <Position8>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="103" Column="36" TopLine="103"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="37" Column="25" TopLine="37"/>
+      </Position9>
+      <Position10>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="103" Column="36" TopLine="103"/>
+      </Position10>
+      <Position11>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="223" Column="63" TopLine="211"/>
+      </Position11>
+      <Position12>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="228" Column="60" TopLine="216"/>
+      </Position12>
+      <Position13>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="235" Column="62" TopLine="223"/>
+      </Position13>
+      <Position14>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="255" Column="62" TopLine="243"/>
+      </Position14>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>

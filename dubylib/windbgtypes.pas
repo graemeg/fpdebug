@@ -45,16 +45,16 @@ type
     procedure Terminate; override;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
     
-    function GetThreadsCount: Integer; override;
-    function GetThreadID(AIndex: Integer): TDbgThreadID; override;
-    function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
-    function SetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
-    function SetSingleStep(ThreadID: TDbgThreadID): Boolean; override;
+    function GetThreadsCount(procID: TDbgProcessID): Integer; override;
+    function GetThreadID(procID: TDbgProcessID; AIndex: Integer): TDbgThreadID; override;
+    function GetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
+    function SetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
+    function SetSingleStep(procID: TDbgProcessID; ThreadID: TDbgThreadID): Boolean; override;
 
-    function GetProcessState: TDbgState; override;
+    function GetProcessState(procID: TDbgProcessID): TDbgState; override;
     
-    function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
-    function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
+    function ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
+    function WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
   end;
 
 implementation
@@ -84,23 +84,23 @@ begin
   inherited Destroy;  
 end;
 
-function TWinDbgProcess.GetProcessState: TDbgState;  
+function TWinDbgProcess.GetProcessState(procID: TDbgProcessID): TDbgState;
 begin
   Result := fState;
 end;
 
-function TWinDbgProcess.ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;  
+function TWinDbgProcess.ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
 begin
   Result := ReadProcMem(fProcInfo.hProcess, Offset, Count, Data);
 end;
 
-function TWinDbgProcess.WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;  
+function TWinDbgProcess.WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
 begin
   Result := WriteProcMem(fProcInfo.hProcess, Offset, Count, Data);
   FlushInstructionCache(fProcInfo.hProcess, @Offset, Count);
 end;
 
-procedure TWinDbgProcess.AddThread(ThreadID: TThreadID; ThreadHandle: THandle); 
+procedure TWinDbgProcess.AddThread(ThreadID: TThreadID; ThreadHandle: THandle);
 var
   i : Integer;
 begin
@@ -220,19 +220,19 @@ begin
     event.Debug := 'GetLastError = ' + IntToStr(GetLastError);
 end;
 
-function TWinDbgProcess.GetThreadsCount: Integer;  
+function TWinDbgProcess.GetThreadsCount(procID: TDbgProcessID): Integer;
 begin
   Result := fThreadsCount;  
 end;
 
-function TWinDbgProcess.GetThreadID(AIndex: Integer): TDbgThreadID;  
+function TWinDbgProcess.GetThreadID(procID: TDbgProcessID; AIndex: Integer): TDbgThreadID;
 begin
   if (AIndex < 0) or (AIndex >= fThreadsCount) 
     then Result := 0
     else Result := fThreads[AIndex].id;
 end;
 
-function TWinDbgProcess.GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;  
+function TWinDbgProcess.GetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;
 var
   idx   : Integer;
   hnd   : THandle;
@@ -252,7 +252,7 @@ begin
     Result := false;
 end;
 
-function TWinDbgProcess.SetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;  
+function TWinDbgProcess.SetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;
 var
   idx   : Integer;
   hnd   : THandle;
@@ -272,7 +272,7 @@ begin
     Result := false;
 end;
 
-function TWinDbgProcess.SetSingleStep(ThreadID: TDbgThreadID): Boolean;  
+function TWinDbgProcess.SetSingleStep(procID: TDbgProcessID; ThreadID: TDbgThreadID): Boolean;
 var
   idx : Integer;
 begin

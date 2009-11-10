@@ -16,6 +16,7 @@ type
   TDbgPtr      = PtrUInt;
   PDbgPtr      = ^TDbgPtr;
   TDbgThreadID = TThreadID;
+  TDbgProcessID = Longword;
   
   
   { TDbgData }
@@ -92,34 +93,35 @@ type
   
   TDbgRunMode = (drm_Normal, drm_Suspended, drm_SingleStep);
   
-  { TDbgProcess }
+  { TDbgTarget }
 
-  TDbgProcess = class(TObject)
+  TDbgTarget = class(TObject)
   protected
   public
     procedure Terminate; virtual; abstract;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; virtual; abstract;
-    function GetProcessState: TDbgState; virtual; abstract;
+    function GetProcessState(AProcess: TDbgProcessID): TDbgState; virtual; abstract;
     
-    function GetThreadsCount: Integer; virtual; abstract;
-    function GetThreadID(AIndex: Integer): TDbgThreadID; virtual; abstract;
-    function GetThreadRegs(ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; virtual; abstract;
-    function SetThreadRegs(ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; virtual; abstract;
+    function GetThreadsCount(AProcess: TDbgProcessID): Integer; virtual; abstract;
+    function GetThreadID(AProcess: TDbgProcessID; AIndex: Integer): TDbgThreadID; virtual; abstract;
+    function GetThreadRegs(AProcess: TDbgProcessID; ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; virtual; abstract;
+    function SetThreadRegs(AProcess: TDbgProcessID; ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; virtual; abstract;
 
-    function SetSingleStep(ThreadID: TDbgThreadID): Boolean; virtual; abstract;
+    function SetSingleStep(AProcess: TDbgProcessID; ThreadID: TDbgThreadID): Boolean; virtual; abstract;
+
+    //todo: remove TDbgProcessID=0
+    function MainThreadID(AProcess: TDbgProcessID=0): TDbgThreadID; virtual;
     
-    function MainThreadID: TDbgThreadID; virtual; 
-    
-    function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; virtual; abstract;
-    function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; virtual; abstract;
+    function ReadMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; virtual; abstract;
+    function WriteMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; virtual; abstract;
   end;
 
 var
-  DebugProcessStart: function(const ACmdLine: String): TDbgProcess = nil;
+  DebugProcessStart: function(const ACmdLine: String): TDbgTarget = nil;
 
 implementation
 
-function DummyDebugProcessStart(const ACmdLine: String): TDbgProcess;
+function DummyDebugProcessStart(const ACmdLine: String): TDbgTarget;
 begin
   Result := nil;
 end;
@@ -222,11 +224,11 @@ begin
   SetValue(AValue, 64);
 end;
 
-{ TDbgProcess }
+{ TDbgTarget }
 
-function TDbgProcess.MainThreadID: TDbgThreadID; 
+function TDbgTarget.MainThreadID(aprocess: TDbgProcessID): TDbgThreadID;
 begin
-  Result := GetThreadID(0);
+  Result := GetThreadID(aprocess, 0);
 end;
 
 initialization

@@ -17,7 +17,7 @@ type
     Handle  : THandle;
   end;
 
-  TWinDbgProcess = class(TDbgProcess)
+  TWinDbgProcess = class(TDbgTarget)
   private
     fState    : TDbgState;
     fCmdLine  : String;
@@ -59,7 +59,7 @@ type
 
 implementation
 
-function WinDebugProcessStart(const ACommandLine: String): TDbgProcess;
+function WinDebugProcessStart(const ACommandLine: String): TDbgTarget;
 var
   win : TWinDbgProcess;
 begin

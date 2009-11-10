@@ -12,7 +12,7 @@ uses
 type
   { TInfoExec }
   TInfoExec = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;  
+    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;  
   end;
   
 procedure SetCommandLine(const CmdLine: String);
@@ -33,7 +33,7 @@ end;
 
 { TInfoExec }
 
-procedure TInfoExec.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+procedure TInfoExec.Execute(CmdParams: TStrings; Process: TDbgTarget);  
 begin
   writeln(' Main executable: ', mainexec);
   if Assigned(ExecData) then begin

@@ -11,8 +11,10 @@ type
   { TCommand }
 
   TCommand = class(TObject)
-  public  
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); virtual; abstract;
+  public
+    ProcessID : TDbgProcessID;
+    ThreadID  : TDbgThreadID;
+    procedure Execute(CmdParams: TStrings; Target: TDbgTarget); virtual; abstract;
     procedure PrintHelp; virtual; 
     function ShortHelp: String; virtual;
     function ResetParamsCache: Boolean; virtual;
@@ -20,7 +22,7 @@ type
   
 function RegisterCommand(const Keys: array of String; ACommand: TCommand): Boolean;
 function FindCommand(const Key: String): TCommand;
-function ExecuteCommand(Params: TStrings; Process: TDbgProcess; var ExecutedCommand: TCommand): Boolean;
+function ExecuteCommand(Params: TStrings; Target: TDbgTarget; var ExecutedCommand: TCommand): Boolean;
 
 implementation
 
@@ -32,21 +34,21 @@ type
   { THelpCommand }
   THelpCommand = class(TCommand)
   public
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Target: TDbgTarget); override;
     function ShortHelp: String; override;
   end;
   
   { TExitCommand }
 
   TExitCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Target: TDbgTarget); override;
     procedure PrintHelp; override;
     function ShortHelp: String; override;
   end;
 
 { TExitCommand }
 
-procedure TExitCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+procedure TExitCommand.Execute(CmdParams: TStrings; Target: TDbgTarget);
 begin
   Halt;
 end;
@@ -75,7 +77,7 @@ end;
 
 { THelpCommand }
 
-procedure THelpCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+procedure THelpCommand.Execute(CmdParams: TStrings; Target: TDbgTarget);
 var
   i   : Integer;
   nm  : String;
@@ -157,7 +159,7 @@ begin
   else Result := TCommand(keyslist.Objects[i]);
 end;  
 
-function ExecuteCommand(Params: TStrings; Process: TDbgProcess; var ExecutedCommand: TCommand): Boolean;
+function ExecuteCommand(Params: TStrings; Target: TDbgTarget; var ExecutedCommand: TCommand): Boolean;
 var
   cmd : TCommand;
 begin
@@ -166,7 +168,7 @@ begin
   if not Assigned(Params) then Exit;
   cmd := FindCommand(Params[0]);
   if not Assigned(cmd) then Exit;
-  cmd.Execute(Params, Process);
+  cmd.Execute(Params, Target);
   ExecutedCommand := cmd;
   Result := true;
 end;

@@ -7,14 +7,14 @@ interface
 uses
   Classes, SysUtils, dbgTypes, dbgUtils, dbgConsts, commands; 
 
-procedure RunLoop(Process: TDbgProcess);
+procedure RunLoop(Process: TDbgTarget);
 
 type
-  TEventHandler = procedure (Process: TDbgProcess; Event : TDbgEvent) of object;
+  TEventHandler = procedure (Process: TDbgTarget; Event : TDbgEvent) of object;
 
 procedure InstallHandler(AHandler: TEventHandler);
 procedure RemoveHandler(AHandler: TEventHandler);
-procedure HandleEvent(Process: TDbgProcess; Event : TDbgEvent);
+procedure HandleEvent(Process: TDbgTarget; Event : TDbgEvent);
   
 implementation
 
@@ -36,34 +36,34 @@ type
   { TRunCommand }
 
   TRunCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
     function ShortHelp: String; override;
   end;
   
   { TRunToCommand }
 
   TRunToCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
     function ShortHelp: String; override;
   end;
   
   { TStepCommand }
 
   TStepCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
     function ShortHelp: String; override;
   end;
 
   { TContinueCommand }
 
   TContinueCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
     function ShortHelp: String; override;
   end;
 
 { TRunToCommand }
 
-procedure TRunToCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+procedure TRunToCommand.Execute(CmdParams: TStrings; Process: TDbgTarget);
 var
   reg : TDbgDataBytesList;
   addr : TDbgPtr;
@@ -80,7 +80,7 @@ begin
   
   reg := TDbgDataBytesList.Create;
   try
-    if not Process.GetThreadRegs(Process.MainThreadID, reg) then begin
+    if not Process.GetThreadRegs(0, Process.MainThreadID, reg) then begin
       writeln('unable to read thread regs');
       Exit;
     end;
@@ -89,9 +89,9 @@ begin
       Exit;
     end;
     
-    Process.SetSingleStep(Process.MainThreadID);
+    Process.SetSingleStep(0, Process.MainThreadID);
     while Process.WaitNextEvent(DbgEvent) do begin
-      if not Process.GetThreadRegs(Process.MainThreadID, reg) then begin
+      if not Process.GetThreadRegs(0, Process.MainThreadID, reg) then begin
         writeln('unable to read thread regs');
       end;
       
@@ -101,7 +101,7 @@ begin
         writeln('addr achieved: ', addr);
         Break;        
       end;
-      Process.SetSingleStep(Process.MainThreadID);
+      Process.SetSingleStep(0, Process.MainThreadID);
     end;
     
   finally
@@ -116,11 +116,11 @@ end;
 
 { TStepCommand }
 
-procedure TStepCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+procedure TStepCommand.Execute(CmdParams: TStrings; Process: TDbgTarget);
 begin
   if not Running then WriteLn('not running');
     
-  Process.SetSingleStep( Process.MainThreadID );
+  Process.SetSingleStep(0, Process.MainThreadID );
   
   WaitForNext := true;
 end;
@@ -132,7 +132,7 @@ end;
 
 { TContinueCommand }
 
-procedure TContinueCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);
+procedure TContinueCommand.Execute(CmdParams: TStrings; Process: TDbgTarget);
 begin
   if not Running then
     writeln('not running')
@@ -147,7 +147,7 @@ end;
 
 { TRunComand }
 
-procedure TRunCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);
+procedure TRunCommand.Execute(CmdParams: TStrings; Process: TDbgTarget);
 begin
   if not Running then begin
     running := true;
@@ -216,7 +216,7 @@ begin
 end;
 
   
-procedure ExecuteNextCommand(AProcess: TDbgProcess);
+procedure ExecuteNextCommand(AProcess: TDbgTarget);
 var
   s : string;
   p : TStringList;
@@ -243,7 +243,7 @@ begin
   end;
 end;
 
-procedure DoRunLoop(Process: TDbgProcess);
+procedure DoRunLoop(Process: TDbgTarget);
 var
   ProcTerm     : Boolean;
   StopForUser  : Boolean;
@@ -298,7 +298,7 @@ begin
   end;
 end;
 
-procedure RunLoop(Process: TDbgProcess);
+procedure RunLoop(Process: TDbgTarget);
 begin
   try
     DoRunLoop(Process);
@@ -334,7 +334,7 @@ begin
     end;
 end;
 
-procedure HandleEvent(Process: TDbgProcess; Event: TDbgEvent);
+procedure HandleEvent(Process: TDbgTarget; Event: TDbgEvent);
 var
   i : Integer;
 begin

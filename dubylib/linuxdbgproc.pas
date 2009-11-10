@@ -305,10 +305,12 @@ begin
     if res = 0 then begin
       SigInfoToEvent(siginfo, event);
       if stopSIG = SIGTRAP then begin
-        if GetBreakAddr(ChildID, trapaddr, trapdelta) then begin
+        GetBreakAddr(ChildID, trapaddr, trapdelta);
+        if (event.Kind = dek_BreakPoint) and (siginfo.si_code > 0) then begin
+          // breakpoint, not singlestep call
           event.Addr := trapaddr - trapdelta;
         end else
-          event.Addr := 0; //address is unknown. Internal error?!
+          event.Addr := trapaddr; //address is unknown. Internal error?!
       end;
 
     end else

@@ -36,7 +36,7 @@ uses
  
 procedure RunDebugger;
 var
-  dbg : TDbgProcess;
+  dbg : TDbgTarget;
   cmd : String;
 begin
   cmd := ParamStr(1);

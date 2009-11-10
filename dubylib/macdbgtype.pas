@@ -12,7 +12,7 @@ uses
 type
   { TMachDbgProcess }
 
-  TMachDbgProcess = class(TDbgProcess)
+  TMachDbgProcess = class(TDbgTarget)
   private
     fchildpid   : TPid;
     fchildtask  : mach_port_t;
@@ -429,7 +429,7 @@ begin
   SetupChildTask(fchildtask);
 end;
 
-function MachDebugProcessStart(const ACmdLine: String): TDbgProcess;
+function MachDebugProcessStart(const ACmdLine: String): TDbgTarget;
 var
   machdbg : TMachDbgProcess;
 begin

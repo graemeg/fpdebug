@@ -28,7 +28,7 @@ type
 
   TWhereCommand = class(TCommand)
   public
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
     function ShortHelp: String; override;
   end;  
   
@@ -36,41 +36,41 @@ type
 
   TAddrOf = class(TCommand)
   public
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
     function ShortHelp: String; override;
   end;
   
   { TIntValue }
 
   TIntValue = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
     function ShortHelp: String; override;
   end;
   
   { TListSymbols }
 
   TListSymbols = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
     function ShortHelp: String; override;
   end;
   
   { TSetBreak }
 
   TSetBreak = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
     function ShortHelp: String; override;
   end;
   
   { TRemoveBreak }
 
   TRemoveBreak = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
     function ShortHelp: String; override;
   end;
 
 { TIntValue }
 
-procedure TIntValue.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+procedure TIntValue.Execute(CmdParams: TStrings; Process: TDbgTarget);
 var
   name  : string;
   err   : Integer;
@@ -101,7 +101,7 @@ begin
     end;
   end;
     
-  res := Process.ReadMem(addr, sizeof(vl), PByteArray(@vl)^);
+  res := Process.ReadMem(0, addr, sizeof(vl), PByteArray(@vl)^);
   if res = sizeof(vl) then writeln(vl)
   else writeln('value cannot be read');
 end;
@@ -123,7 +123,7 @@ end;
   
 { TRemoveBreak }
 
-procedure TRemoveBreak.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+procedure TRemoveBreak.Execute(CmdParams: TStrings; Process: TDbgTarget);
 var
   addr  : TDbgPtr;
   bp    : TBreakPoint;
@@ -148,7 +148,7 @@ end;
 
 { TSetBreak }
 
-procedure TSetBreak.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+procedure TSetBreak.Execute(CmdParams: TStrings; Process: TDbgTarget);
 var
   addr  : TDbgPtr;
 begin
@@ -170,7 +170,7 @@ end;
   
 { TListSymbols }
 
-procedure TListSymbols.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+procedure TListSymbols.Execute(CmdParams: TStrings; Process: TDbgTarget);
 {var
   st  : TStringList;
   i   : Integer;
@@ -262,7 +262,7 @@ end;
 
 { TAddrOf }
 
-procedure TAddrOf.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+procedure TAddrOf.Execute(CmdParams: TStrings; Process: TDbgTarget);
 var
   name      : String;
   sym       : TDbgSymbol;
@@ -330,7 +330,7 @@ begin
   st.Free;
 end;  
   
-procedure TWhereCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);
+procedure TWhereCommand.Execute(CmdParams: TStrings; Process: TDbgTarget);
 var
   regs : TDbgDataList;
   fn   : WideString;
@@ -339,7 +339,7 @@ var
   err  : Integer;
 begin
   if CmdParams.Count <= 1 then begin
-    regs := GetProcessRegisters(Process);
+    regs := GetProcessRegisters(Process, 0);
     if not Assigned(regs) then begin
       writeln('Cannot read process state. ');
       Exit;
@@ -377,10 +377,10 @@ end;
 
 type
   TBreakHandler = class(TObject)
-    procedure BreakHandle(Process: TDbgProcess; Event : TDbgEvent);
+    procedure BreakHandle(Process: TDbgTarget; Event : TDbgEvent);
   end;
 
-procedure TBreakHandler.BreakHandle(Process: TDbgProcess; Event : TDbgEvent);
+procedure TBreakHandler.BreakHandle(Process: TDbgTarget; Event : TDbgEvent);
 var
   bp    : TBreakPoint;  
 begin

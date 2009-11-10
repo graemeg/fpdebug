@@ -44,8 +44,8 @@ function Max(a,b: Integer): Integer;
 function Min(a,b: Integer): Integer;
 
 
-function GetProcessRegisters(Process: TDbgProcess; data: TDbgDataList): Boolean; overload;
-function GetProcessRegisters(Process: TDbgProcess): TDbgDataList; overload;
+function GetProcessRegisters(Target: TDbgTarget; procID: TDbgProcessID; data: TDbgDataList): Boolean; overload;
+function GetProcessRegisters(Target: TDbgTarget; procID: TDbgProcessID): TDbgDataList; overload;
 
 function HexAddr(const addr: TDbgPtr): AnsiString; inline;
 
@@ -149,22 +149,22 @@ begin
   Result := TDbgData(fItems.Objects[idx]);
 end;
 
-function GetProcessRegisters(Process: TDbgProcess; data: TDbgDataList): Boolean; 
+function GetProcessRegisters(Target: TDbgTarget; procID: TDbgProcessID; data: TDbgDataList): Boolean;
 begin
   Result := false;
-  if not Assigned(Process) or not Assigned(data) then Exit;
-  Result := Process.GetThreadRegs(Process.MainThreadID, data);
+  if not Assigned(Target) or not Assigned(data) then Exit;
+  Result := Target.GetThreadRegs(0, Target.MainThreadID(0), data);
 end;
 
-function GetProcessRegisters(Process: TDbgProcess): TDbgDataList; overload;
+function GetProcessRegisters(Target: TDbgTarget; procID: TDbgProcessID): TDbgDataList; overload;
 var
   list  : TDbgDataBytesList;
   res   : Boolean;
 begin
   Result := nil;
-  if not Assigned(Process) then Exit;
+  if not Assigned(Target) then Exit;
   list := TDbgDataBytesList.Create;
-  res := GetProcessRegisters(Process, list);
+  res := GetProcessRegisters(Target, procID, list);
   if not res then begin
     list.Free;
     Result := nil;

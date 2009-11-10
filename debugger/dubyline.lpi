@@ -13,7 +13,7 @@
       <TargetFileExt Value=".exe"/>
       <Title Value="dubyline"/>
       <UseXPManifest Value="True"/>
-      <ActiveEditorIndexAtStart Value="6"/>
+      <ActiveEditorIndexAtStart Value="1"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -38,8 +38,8 @@
         <Filename Value="dubyline.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dubyline"/>
-        <CursorPos X="5" Y="27"/>
-        <TopLine Value="13"/>
+        <CursorPos X="19" Y="39"/>
+        <TopLine Value="21"/>
         <EditorIndex Value="0"/>
         <UsageCount Value="130"/>
         <Loaded Value="True"/>
@@ -63,12 +63,10 @@
         <UnitName Value="dbgInfoTypes"/>
         <CursorPos X="3" Y="446"/>
         <TopLine Value="433"/>
-        <EditorIndex Value="7"/>
         <UsageCount Value="17"/>
         <Bookmarks Count="1">
           <Item0 X="55" Y="443" ID="3"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit3>
       <Unit4>
         <Filename Value="E:\FPC_Laz\fpc\packages\fcl-res\src\resource.pp"/>
@@ -105,27 +103,21 @@
         <Filename Value="E:\FPC_Laz\fpc\rtl\win\wininc\struct.inc"/>
         <CursorPos X="11" Y="1779"/>
         <TopLine Value="1766"/>
-        <EditorIndex Value="4"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit8>
       <Unit9>
         <Filename Value="cmdloop.pas"/>
         <UnitName Value="cmdloop"/>
-        <CursorPos X="3" Y="5"/>
-        <TopLine Value="1"/>
-        <EditorIndex Value="1"/>
+        <CursorPos X="48" Y="83"/>
+        <TopLine Value="74"/>
         <UsageCount Value="19"/>
-        <Loaded Value="True"/>
       </Unit9>
       <Unit10>
         <Filename Value="..\dubylib\dbgtypes.pas"/>
         <UnitName Value="dbgTypes"/>
-        <CursorPos X="26" Y="83"/>
-        <TopLine Value="70"/>
-        <EditorIndex Value="5"/>
+        <CursorPos X="35" Y="112"/>
+        <TopLine Value="103"/>
         <UsageCount Value="30"/>
-        <Loaded Value="True"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\dubylib\pesource.pas"/>
@@ -218,12 +210,9 @@
       <Unit23>
         <Filename Value="memviewer.pas"/>
         <UnitName Value="memviewer"/>
-        <CursorPos X="1" Y="125"/>
-        <TopLine Value="110"/>
+        <CursorPos X="50" Y="164"/>
+        <TopLine Value="153"/>
         <UsageCount Value="10"/>
-        <Bookmarks Count="1">
-          <Item0 X="68" Y="151" ID="3"/>
-        </Bookmarks>
       </Unit23>
       <Unit24>
         <Filename Value="macdbgproc.pas"/>
@@ -345,18 +334,18 @@
       <Unit39>
         <Filename Value="..\dubylib\nixdbgtypes.pas"/>
         <UnitName Value="nixDbgTypes"/>
-        <CursorPos X="28" Y="98"/>
-        <TopLine Value="86"/>
+        <CursorPos X="59" Y="133"/>
+        <TopLine Value="121"/>
+        <EditorIndex Value="1"/>
         <UsageCount Value="16"/>
+        <Loaded Value="True"/>
       </Unit39>
       <Unit40>
         <Filename Value="..\dubylib\windbgtypes.pas"/>
         <UnitName Value="winDbgTypes"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
-        <EditorIndex Value="2"/>
+        <CursorPos X="70" Y="62"/>
+        <TopLine Value="44"/>
         <UsageCount Value="17"/>
-        <Loaded Value="True"/>
       </Unit40>
       <Unit41>
         <Filename Value="execview.pas"/>
@@ -368,11 +357,9 @@
       <Unit42>
         <Filename Value="commands.pas"/>
         <UnitName Value="commands"/>
-        <CursorPos X="10" Y="23"/>
-        <TopLine Value="17"/>
-        <EditorIndex Value="9"/>
+        <CursorPos X="27" Y="8"/>
+        <TopLine Value="6"/>
         <UsageCount Value="18"/>
-        <Loaded Value="True"/>
       </Unit42>
       <Unit43>
         <Filename Value="E:\FPC_Laz\fpc\packages\fcl-base\src\contnrs.pp"/>
@@ -413,8 +400,8 @@
       <Unit48>
         <Filename Value="..\dubylib\dbgutils.pas"/>
         <UnitName Value="dbgUtils"/>
-        <CursorPos X="17" Y="50"/>
-        <TopLine Value="38"/>
+        <CursorPos X="71" Y="159"/>
+        <TopLine Value="152"/>
         <UsageCount Value="15"/>
       </Unit48>
       <Unit49>
@@ -429,14 +416,12 @@
         <Filename Value="cmddbg.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="cmddbg"/>
-        <CursorPos X="43" Y="326"/>
-        <TopLine Value="309"/>
-        <EditorIndex Value="6"/>
+        <CursorPos X="43" Y="342"/>
+        <TopLine Value="333"/>
         <UsageCount Value="84"/>
         <Bookmarks Count="1">
           <Item0 X="27" Y="400" ID="2"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit50>
       <Unit51>
         <Filename Value="dbgRegisters.pas"/>
@@ -464,12 +449,10 @@
         <UnitName Value="winDbgProc"/>
         <CursorPos X="72" Y="420"/>
         <TopLine Value="402"/>
-        <EditorIndex Value="3"/>
         <UsageCount Value="15"/>
         <Bookmarks Count="1">
           <Item0 X="17" Y="189" ID="1"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit54>
       <Unit55>
         <Filename Value="E:\FPC_Laz\fpc\rtl\win\wininc\func.inc"/>
@@ -666,8 +649,8 @@
         <Filename Value="..\dubylib\dbgbreakpoints.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgBreakPoints"/>
-        <CursorPos X="49" Y="48"/>
-        <TopLine Value="42"/>
+        <CursorPos X="43" Y="234"/>
+        <TopLine Value="225"/>
         <UsageCount Value="51"/>
       </Unit81>
       <Unit82>
@@ -862,132 +845,18 @@
         <UnitName Value="AVL_Tree"/>
         <CursorPos X="3" Y="87"/>
         <TopLine Value="74"/>
-        <EditorIndex Value="8"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit107>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="2" HistoryIndex="1">
       <Position1>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="441" Column="22" TopLine="441"/>
+        <Filename Value="..\dubylib\nixdbgtypes.pas"/>
+        <Caret Line="33" Column="30" TopLine="24"/>
       </Position1>
       <Position2>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\dubylib\nixdbgtypes.pas"/>
+        <Caret Line="48" Column="46" TopLine="30"/>
       </Position2>
-      <Position3>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="16" Column="22" TopLine="1"/>
-      </Position3>
-      <Position4>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="331" Column="18" TopLine="315"/>
-      </Position4>
-      <Position5>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="347" Column="21" TopLine="321"/>
-      </Position5>
-      <Position6>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="342" Column="7" TopLine="332"/>
-      </Position6>
-      <Position7>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="458" Column="46" TopLine="448"/>
-      </Position7>
-      <Position8>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="77" Column="84" TopLine="64"/>
-      </Position8>
-      <Position9>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="70" Column="26" TopLine="64"/>
-      </Position9>
-      <Position10>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="432" Column="1" TopLine="427"/>
-      </Position10>
-      <Position11>
-        <Filename Value="..\dubylib\windbgproc.pas"/>
-        <Caret Line="420" Column="72" TopLine="402"/>
-      </Position11>
-      <Position12>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="436" Column="54" TopLine="432"/>
-      </Position12>
-      <Position13>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="77" Column="70" TopLine="64"/>
-      </Position13>
-      <Position14>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="437" Column="1" TopLine="418"/>
-      </Position14>
-      <Position15>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="432" Column="23" TopLine="419"/>
-      </Position15>
-      <Position16>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="77" Column="95" TopLine="77"/>
-      </Position16>
-      <Position17>
-        <Filename Value="..\dubylib\dbginfotypes.pas"/>
-        <Caret Line="441" Column="3" TopLine="431"/>
-      </Position17>
-      <Position18>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="15" Column="21" TopLine="3"/>
-      </Position18>
-      <Position19>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="16" Column="21" TopLine="3"/>
-      </Position19>
-      <Position20>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="345" Column="17" TopLine="329"/>
-      </Position20>
-      <Position21>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="309" Column="23" TopLine="296"/>
-      </Position21>
-      <Position22>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position22>
-      <Position23>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="309" Column="23" TopLine="296"/>
-      </Position23>
-      <Position24>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="346" Column="5" TopLine="333"/>
-      </Position24>
-      <Position25>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position25>
-      <Position26>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="322" Column="51" TopLine="303"/>
-      </Position26>
-      <Position27>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="327" Column="1" TopLine="315"/>
-      </Position27>
-      <Position28>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="324" Column="64" TopLine="312"/>
-      </Position28>
-      <Position29>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="326" Column="52" TopLine="313"/>
-      </Position29>
-      <Position30>
-        <Filename Value="cmddbg.pas"/>
-        <Caret Line="332" Column="8" TopLine="318"/>
-      </Position30>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>

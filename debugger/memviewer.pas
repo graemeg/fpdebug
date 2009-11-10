@@ -13,7 +13,7 @@ type
   { TViewMemCommand }
 
   TViewMemCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Target: TDbgTarget); override;
     function ResetParamsCache: Boolean; override;
     function ShortHelp: String; override;
   end;
@@ -21,7 +21,7 @@ type
   { TRegistersView }
 
   TRegistersView = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgProcess); override;
+    procedure Execute(CmdParams: TStrings; Target: TDbgTarget); override;
     function ShortHelp: String; override;
   end;
 
@@ -63,7 +63,7 @@ begin
   end;
 end;
 
-procedure PrintProcessMem(proc: TDbgProcess; Offset: TDbgPtr);
+procedure PrintProcessMem(Target: TDbgTarget; Offset: TDbgPtr);
 var
   buf : array [0..32*16-1]of byte;
   ofs : String; 
@@ -72,7 +72,7 @@ var
   i   : Integer;  
 begin
   FillChar(buf[0], sizeof(buf), 0);
-  if proc.ReadMem(Offset, sizeof(buf), buf) < 0 then begin
+  if Target.ReadMem(0, Offset, sizeof(buf), buf) < 0 then begin
     writeln('cannot read proc mem ');
     Exit;
   end;
@@ -87,7 +87,7 @@ end;
 
 { TViewMemCommand }
 
-procedure TViewMemCommand.Execute(CmdParams: TStrings; Process: TDbgProcess);  
+procedure TViewMemCommand.Execute(CmdParams: TStrings; Target: TDbgTarget);
 var
   ofs : TDbgPtr;
   err : Integer;
@@ -102,7 +102,7 @@ begin
     end;
   end;
   try
-    PrintProcessMem(Process, ofs);
+    PrintProcessMem(Target, ofs);
     LastReadOfs := ofs + 32*16;
   except
     writeln('exception while reading process memory');
@@ -156,12 +156,12 @@ begin
   end;
 end;
 
-procedure TRegistersView.Execute(CmdParams: TStrings; Process: TDbgProcess);
+procedure TRegistersView.Execute(CmdParams: TStrings; Target: TDbgTarget);
 var
   regs  : TDbgDataBytesList;
 begin
   regs := TDbgDataBytesList.Create;
-  Process.GetThreadRegs( Process.MainThreadID, regs );
+  Target.GetThreadRegs( 0, Target.MainThreadID(0), regs );
 
   //PrintAllRegs(regs);
   PrintI386Regs(regs);

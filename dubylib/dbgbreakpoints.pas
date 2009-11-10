@@ -20,8 +20,8 @@ type
     fEnabled  : Boolean;
   public
     Tag       : TObject;
-    function Enable(AProcess: TDbgProcess): Boolean;
-    function Disable(AProcess: TDbgProcess): Boolean;
+    function Enable(AProcess: TDbgTarget): Boolean;
+    function Disable(AProcess: TDbgTarget): Boolean;
     
     property Enabled : Boolean read fEnabled;
     property Addr: TDbgPtr read fAddr;
@@ -46,12 +46,12 @@ type
   
 function AddBreakPoint(const addr: TDbgPtr): TBreakPoint;
 // function fails, if break point already exists, cannot be enabled or matches hard-coded breakpoint
-function AddEnabledBreakPoint(const addr: TDbgPtr; AProcess: TDbgProcess): TBreakPoint; 
+function AddEnabledBreakPoint(const addr: TDbgPtr; AProcess: TDbgTarget): TBreakPoint;
 function FindBreakpoint(const addr: TDbgPtr): TBreakPoint;
 procedure RemoveBreakPoint(var Bp: TBreakPoint);
 
-function HandleBreakpoint(bp: TBreakpoint; ThreadID: TDbgThreadID; Process: TDbgProcess): Boolean; overload;
-function HandleBreakpoint(addr: TDbgPtr; ThreadID: TDbgThreadID; Process: TDbgProcess; RemoveIfHandled: Boolean = false): Boolean; overload;
+function HandleBreakpoint(bp: TBreakpoint; ThreadID: TDbgThreadID; Process: TDbgTarget): Boolean; overload;
+function HandleBreakpoint(addr: TDbgPtr; ThreadID: TDbgThreadID; Process: TDbgTarget; RemoveIfHandled: Boolean = false): Boolean; overload;
 
 
 implementation
@@ -64,7 +64,7 @@ begin
   Result := fBreakPoints.AddBreakPoint(addr);
 end;
 
-function AddEnabledBreakPoint(const addr: TDbgPtr; AProcess: TDbgProcess): TBreakPoint; 
+function AddEnabledBreakPoint(const addr: TDbgPtr; AProcess: TDbgTarget): TBreakPoint;
 begin
   Result := FindBreakpoint(addr);
   if Assigned(Result) and Result.Enabled then begin
@@ -89,7 +89,7 @@ begin
   fBreakPoints.RemoveBreakPoint(bp);
 end;
 
-function HandleBreakpoint( bp: TBreakpoint; ThreadID: TDbgThreadID; Process: TDbgProcess): Boolean;
+function HandleBreakpoint( bp: TBreakpoint; ThreadID: TDbgThreadID; Process: TDbgTarget): Boolean;
 var
   list : TDbgDataBytesList;
 
@@ -104,17 +104,17 @@ begin
   
   list := TDbgDataBytesList.Create;
   try
-    Result := Process.GetThreadRegs(ThreadID, list);
+    Result := Process.GetThreadRegs(0, ThreadID, list);
     PrintI386Regs(list);
 
     list[CPUCode.ExecuteRegisterName].DbgPtr := bp.Addr;
-    Result := Result and Process.SetThreadRegs(ThreadID, list);
+    Result := Result and Process.SetThreadRegs(0, ThreadID, list);
   finally  
     list.Free;
   end;
 end;
 
-function HandleBreakpoint(addr: TDbgPtr; ThreadID: TDbgThreadID; Process: TDbgProcess; RemoveIfHandled: Boolean): Boolean; overload;
+function HandleBreakpoint(addr: TDbgPtr; ThreadID: TDbgThreadID; Process: TDbgTarget; RemoveIfHandled: Boolean): Boolean; overload;
 var
   bp  : TBreakPoint;
 begin
@@ -199,7 +199,7 @@ end;
 
 { TBreakPoint }
 
-function TBreakPoint.Enable(AProcess: TDbgProcess): Boolean; 
+function TBreakPoint.Enable(AProcess: TDbgTarget): Boolean;
 var
   buf : array of byte;
 begin
@@ -211,7 +211,7 @@ begin
   CodeSize := CPUCode.BreakPointSize;
   
   if length(code) < CodeSize then SetLength(code, CodeSize);
-  Result := (AProcess.ReadMem(addr, CodeSize, Code) = CodeSize) and not CPUCode.IsBreakPoint(Code, 0); 
+  Result := (AProcess.ReadMem(0, addr, CodeSize, Code) = CodeSize) and not CPUCode.IsBreakPoint(Code, 0);
   
   if not Result then begin
     writeln('bp: cannot read proces mem');
@@ -220,18 +220,18 @@ begin
   
   SetLength(buf, CodeSize);
   CPUCode.SetBreakPoint(buf, 0);
-  fEnabled := AProcess.WriteMem(addr, CodeSize, buf) = CodeSize;
+  fEnabled := AProcess.WriteMem(0, addr, CodeSize, buf) = CodeSize;
   Result := fEnabled;
 end;
 
-function TBreakPoint.Disable(AProcess: TDbgProcess): Boolean; 
+function TBreakPoint.Disable(AProcess: TDbgTarget): Boolean;
 begin
   if not fEnabled then begin
     Result := True;
     Exit;
   end;
   if CodeSize > 0 then  
-    fEnabled := not (AProcess.WriteMem(addr, CodeSize, Code) = CodeSize);
+    fEnabled := not (AProcess.WriteMem(0, addr, CodeSize, Code) = CodeSize);
     
   Result := not fEnabled;
 end;

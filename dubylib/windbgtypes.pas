@@ -19,7 +19,6 @@ type
 
   TWinDbgProcess = class(TDbgTarget)
   private
-    fState    : TDbgState;
     fCmdLine  : String;
     fis32proc : Boolean; //todo:
     
@@ -51,8 +50,6 @@ type
     function SetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
     function SetSingleStep(procID: TDbgProcessID; ThreadID: TDbgThreadID): Boolean; override;
 
-    function GetProcessState(procID: TDbgProcessID): TDbgState; override;
-    
     function ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
     function WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
   end;
@@ -82,11 +79,6 @@ end;
 destructor TWinDbgProcess.Destroy;  
 begin
   inherited Destroy;  
-end;
-
-function TWinDbgProcess.GetProcessState(procID: TDbgProcessID): TDbgState;
-begin
-  Result := fState;
 end;
 
 function TWinDbgProcess.ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
@@ -145,7 +137,6 @@ end;
 function TWinDbgProcess.Execute(const ACommandLine: String): Boolean;  
 begin
   fCmdLine := ACommandLine;
-  fState := ds_ReadToRun;
   
   Result := CreateDebugProcess(ACommandLine, fProcInfo);
   if not Result then Exit;
@@ -153,7 +144,6 @@ end;
 
 procedure TWinDbgProcess.Terminate;  
 begin
-  if fState in [ds_Nonstarted, ds_Terminated] then Exit;
 end;
 
 function TWinDbgProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;  

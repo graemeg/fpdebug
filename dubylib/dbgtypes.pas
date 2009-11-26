@@ -78,11 +78,11 @@ type
     function RegByIndex(idx: Integer): TDbgData; virtual; abstract;
   end;
   
-  TDbgState = (ds_Nonstarted, ds_ReadToRun, ds_Running, ds_Terminated);
-   
   TDbgEventKind = (
     dek_Other, dek_SysExc, dek_SingleStep, dek_BreakPoint, 
-    dek_ProcessStart, dek_ProcessTerminated, dek_SysCall);
+    dek_ProcessStart, dek_ProcessTerminated,
+    dek_ThreadStart, dek_ThreadTerminated,
+    dek_SysCall);
   
   TDbgEvent = record
     Addr    : TDbgPtr;
@@ -101,7 +101,6 @@ type
   public
     procedure Terminate; virtual; abstract;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; virtual; abstract;
-    function GetProcessState(AProcess: TDbgProcessID): TDbgState; virtual; abstract;
     
     function GetThreadsCount(AProcess: TDbgProcessID): Integer; virtual; abstract;
     function GetThreadID(AProcess: TDbgProcessID; AIndex: Integer): TDbgThreadID; virtual; abstract;

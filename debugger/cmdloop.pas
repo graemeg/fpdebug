@@ -250,7 +250,7 @@ var
 const
   dekStr: array [TDbgEventKind] of string = (
     'Other', 'SysExc', 'Single step', 'Breakpoint', 
-    'Process Start', 'Process Terminated', 'SysCall');
+    'Process Start', 'Process Terminated', 'Thread Start', 'Thread Terminate', 'SysCall');
 begin
   if not Assigned(Process) then begin
     writeln('no process to debug (internal error?)');

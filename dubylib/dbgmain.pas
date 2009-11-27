@@ -2,7 +2,7 @@ unit dbgMain;
 
 {$mode objfpc}{$H+}
 
-interface
+interface                      
 
 uses
   contnrs, dbgTypes; 
@@ -71,6 +71,11 @@ type
     procedure AfterRead(Proc: TDbgProcessID; var Data: array of byte; Offset: TDbgPtr; Count: Integer); virtual; abstract;
     procedure BeforeWrite(Proc: TDbgProcessID; var Data: array of byte; Offset: TDbgPtr; Count: Integer); virtual; abstract;
   end;
+  
+  TDbgEventHandler = class(TObject)
+  public
+    procedure HandleEvent(const Event: TDbgEvent; var EventHandled: Boolean); virtual; abstract;
+  end;
 
   { TDbgMain }
 
@@ -80,6 +85,7 @@ type
     fProcList : TFPObjectList;
 
     fMemHandlers  : TFPObjectList;
+    fEventHandlers : TFPObjectList;
   protected
     function DoAddProcess(AProcessID: Integer): TDbgProcess;
     procedure DoRemoveProcess(AProcessID: Integer);
@@ -214,21 +220,41 @@ begin
   fTarget:=ATarget;
   fProcList:=TFPObjectList.Create;
   fMemHandlers:=TFPObjectList.Create(false);
+  fEventHandlers:=TFPObjectList.Create(false);
   DoAddProcess(AProcessID);
 end;
 
 destructor TDbgMain.Destroy;  
 begin
   fMemHandlers.Free;
+  fEventHandlers.Free;
   fProcList.Free;
   inherited Destroy;  
 end;
 
 function TDbgMain.WaitForEvent(var Event: TDbgEvent): Boolean;  
+var
+  loopdone : Boolean;
+  hnd      : TDbgEventHandler;
+  i        : Integer;
+  handled  : Boolean;
 begin
   UpdateProcThreadState;
-  Result:=fTarget.WaitNextEvent(Event);
-  if Result then DoHandleEvent(Event);
+  
+  repeat
+    Result:=fTarget.WaitNextEvent(Event);
+    if Result then DoHandleEvent(Event);
+
+    loopdone:=True;
+    for i := 0 to fEventHandlers.Count-1 do begin
+      hnd:=TDbgEventHandler(fEventHandlers[i]);
+      handled:=false;
+      hnd.HandleEvent(Event, handled);
+      if (Event.Kind=dek_BreakPoint) and Handled then 
+        loopdone:=false;
+    end;
+
+  until loopdone;
 end;
 
 function TDbgMain.FindProcess(processID: TDbgProcessID): TDbgProcess; 

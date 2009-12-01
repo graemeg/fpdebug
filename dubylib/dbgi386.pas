@@ -13,7 +13,7 @@ type
 
   TCPUi386 = class(TCPUCode)
     function BreakPointSize: Integer; override;
-    procedure SetBreakPoint(var Buffer: array of byte; Offset: Integer); override;
+    procedure WriteBreakPoint(var Buffer: array of byte; Offset: Integer); override;
     function IsBreakPoint(const Buffer: array of byte; Offset: Integer): Boolean; override;
     
     function ExecuteRegisterName: AnsiString; override;
@@ -29,7 +29,7 @@ begin
   Result := 1;
 end;
 
-procedure TCPUi386.SetBreakPoint(var Buffer: array of byte; Offset: Integer); 
+procedure TCPUi386.WriteBreakPoint(var Buffer: array of byte; Offset: Integer); 
 begin
   Buffer[Offset] := Int3;
 end;

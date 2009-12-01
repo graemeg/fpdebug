@@ -11,7 +11,7 @@ type
   { TCPUCode }
   TCPUCode = class(TObject)
     function BreakPointSize: Integer; virtual; 
-    procedure SetBreakPoint(var Buffer: array of byte; Offset: Integer); virtual; 
+    procedure WriteBreakPoint(var Buffer: array of byte; Offset: Integer); virtual; 
     function IsBreakPoint(const Buffer: array of byte; Offset: Integer): Boolean; virtual;
     procedure BreakPointAddress(const ExeRegValue : TDbgPtr; out BreakAddr: TDbgPtr); virtual;
     
@@ -44,7 +44,7 @@ begin
   Result := 0;
 end;
 
-procedure TCPUCode.SetBreakPoint(var Buffer: array of byte; Offset: Integer); 
+procedure TCPUCode.WriteBreakPoint(var Buffer: array of byte; Offset: Integer); 
 begin
 
 end;

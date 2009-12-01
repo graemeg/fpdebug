@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, 
-  dbgTypes, dbgCPU, dbgUtils, memviewer; 
+  dbgTypes, dbgCPU, dbgUtils, memviewer, dbgMain; 
   
 type
   
@@ -219,7 +219,7 @@ begin
   end;
   
   SetLength(buf, CodeSize);
-  CPUCode.SetBreakPoint(buf, 0);
+  CPUCode.WriteBreakPoint(buf, 0);
   fEnabled := AProcess.WriteMem(0, addr, CodeSize, buf) = CodeSize;
   Result := fEnabled;
 end;

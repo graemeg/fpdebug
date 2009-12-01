@@ -5,7 +5,7 @@ unit dbgMain;
 interface                      
 
 uses
-  contnrs, dbgTypes; 
+  Classes, contnrs, dbgTypes, dbgCPU; 
   
 type
   TDbgMain = class;
@@ -57,7 +57,7 @@ type
     function FindThread(AThreadid: TDbgThreadID): TDbgThread;
     function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; 
     function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
-
+    
     property ID: TDbgProcessID read fProcID;
     property State: TDbgProcessState read fState;
     property ThreadsCount: Integer read GetThreadsCount;
@@ -66,16 +66,11 @@ type
 
   { TMemAccessHandler }
 
-  TMemAccessHandler = class(TObject)
-  public
-    procedure AfterRead(Proc: TDbgProcessID; var Data: array of byte; Offset: TDbgPtr; Count: Integer); virtual; abstract;
-    procedure BeforeWrite(Proc: TDbgProcessID; var Data: array of byte; Offset: TDbgPtr; Count: Integer); virtual; abstract;
-  end;
+  TMemAccessEvent = procedure (Proc: TDbgProcessID; var Data: array of byte; Offset: TDbgPtr; Count: Integer) of object;
   
-  TDbgEventHandler = class(TObject)
-  public
-    procedure HandleEvent(const Event: TDbgEvent; var EventHandled: Boolean); virtual; abstract;
-  end;
+  THandleState = (ehs_NotHandled, ehs_Handled, ehs_HandledIsBreakPointEvent);
+  
+  TDbgHandleEvent = procedure (const Event: TDbgEvent; var EventHandled: THandleState) of object;
 
   { TDbgMain }
 
@@ -84,7 +79,8 @@ type
     fTarget   : TDbgTarget;
     fProcList : TFPObjectList;
 
-    fMemHandlers  : TFPObjectList;
+    fReadHandlers  : TFPObjectList;
+    fWriteHandlers : TFPObjectList;
     fEventHandlers : TFPObjectList;
   protected
     function DoAddProcess(AProcessID: Integer): TDbgProcess;
@@ -98,6 +94,10 @@ type
 
     procedure UpdateProcThreadState;
     procedure DoHandleEvent(Event: TDbgEvent);
+
+    procedure AddReadHandler(AHandler: TMemAccessEvent);
+    procedure AddWriteHandler(AHandler: TMemAccessEvent);
+    procedure AddEventHandler(AHandle: TDbgHandleEvent);
   public
     constructor Create(ATarget: TDbgTarget; AProcessID: TDbgProcessID);
     destructor Destroy; override;
@@ -105,13 +105,86 @@ type
     function FindProcess(processID: TDbgProcessID): TDbgProcess;
     function FindThread(processID: TDbgProcessID; ThreadID: TDbgThreadID): TDbgThread;
 
-    procedure RegisterMemHandler(AHandler: TMemAccessHandler);
-
+    function CPU: TCPUCode;
     property ProcessCount: Integer read GetProcessCount;
     property Process[i: Integer]: TDbgProcess read GetProcess;
+    
+  end;
+  
+  
+  TDbgPointHandler = procedure (Sender: TObject; Process: TDbgProcess; Addr: TDbgPtr; var Handled: Boolean) of object;
+  
+  { TDbgBreak }
+
+  TDbgBreak = class(TObject)
+    ProcID    : TDbgProcessID;
+    Addr      : TDbgPtr;
+    Buf       : array of byte;
+    RefCount  : Integer;
+    Handler   : TDbgPointHandler;
+    constructor Create(AProcID: TDbgProcessID; AAddr: TDbgPtr);
+  end;
+  
+  { TDbgMainBreakpoints }
+
+  TDbgMainBreakpoints = class(TObject)
+  private
+    fMain   : TDbgMain;
+    fBPList : TFPList;
+    
+    function InstallBreak(process: TDbgProcess; addr: TDbgPtr; var buf: array of byte; CodeSize: Integer): Boolean;
+    procedure RemoveBreak(process: TDbgProcess; addr: TDbgPtr; const buf: array of byte; CodeSize: Integer);
+    
+    procedure BeforeProcWrite(Proc: TDbgProcessID; var Data: array of byte; Offset: TDbgPtr; Count: Integer);
+    procedure AfterProcRead(Proc: TDbgProcessID; var Data: array of byte; Offset: TDbgPtr; Count: Integer);
+    procedure HandleDbgEvent(const Event: TDbgEvent; var EventHandled: THandleState);
+    
+    function FindBreakPoint(processID: TDbgProcessID; addr: TDbgPtr): TDbgBreak;
+  public
+    constructor Create(AMain: TDbgMain);
+    destructor Destroy; override;
+    function AddBreakpoint(process: TDbgProcess; addr: TDbgPtr): Boolean; overload;
+    function AddBreakpoint(process: TDbgProcess; addr: TDbgPtr; Handler: TDbgPointHandler): Boolean; overload;
+    procedure RemoveBreakpoint(process: TDbgProcess; addr: TDbgPtr);
   end;
 
 implementation
+
+{var
+  memallocs   : TFPList;
+  eventallos  : TFPList;
+
+procedure RegisterMemHandler(allocator: TEventHandlerAlloctor);
+begin
+  if not Assigned(allocator) or (memallocs.IndexOf(@allocator) >=0)then Exit;
+  memallocs.Add(allocator);
+end;
+
+procedure RegisterEventHandler(allocator: TEventHandlerAlloctor);
+begin
+  if not Assigned(allocator) or (eventallos.IndexOf(@allocator) >=0)then Exit;
+  eventallos.Add(allocator);
+end;
+}
+
+type
+  { TMemAccessObject }
+  
+  TMemAccessObject = class(TObject)
+  public
+    event: TMemAccessEvent;
+    constructor Create(AEvent: TMemAccessEvent);
+    procedure CallEvent(Proc: TDbgProcessID; var Data: array of byte; Offset: TDbgPtr; Count: Integer);
+  end;
+  
+  { TDbgHandleObject }
+  
+  TDbgHandleObject = class(TObject)
+    event: TDbgHandleEvent;
+    constructor Create(AEvent: TDbgHandleEvent);
+    procedure CallEvent(const AEvent: TDbgEvent; var EventHandled: THandleState);
+  end;
+
 
 { TDbgMain }
 
@@ -135,8 +208,8 @@ var
   i   : Integer;
 begin
   Result := fTarget.ReadMem(Proc.ID, Offset, Count, Data);
-  for i:=0 to fMemHandlers.Count-1 do
-    TMemAccessHandler(fMemHandlers[i]).AfterRead(Proc.ID, Data, Offset, Count);
+  for i:=0 to fReadHandlers.Count-1 do
+    TMemAccessObject(fReadHandlers[i]).CallEvent(Proc.ID, Data, Offset, Count);
 end;
 
 function TDbgMain.DoWriteMem(Proc: TDbgProcess; Offset: TDbgPtr;  
@@ -144,18 +217,15 @@ function TDbgMain.DoWriteMem(Proc: TDbgProcess; Offset: TDbgPtr;
 var
   buf : array of byte;
   i   : Integer;
-  hnd : TMemAccessHandler;
 begin
   //todo: handling wrappers
-  if fMemHandlers.Count=0 then
+  if fWriteHandlers.Count=0 then
     Result := fTarget.WriteMem(Proc.ID, Offset, Count, Data)
   else begin
     SetLength(buf, Count);
     Move(Data[0], buf[0], Count);
-    for i:=0 to fMemHandlers.Count-1 do begin
-      hnd:=TMemAccessHandler(fMemHandlers[i]);
-      hnd.BeforeWrite(Proc.ID, buf, Offset, Count);
-    end;
+    for i:=0 to fWriteHandlers.Count-1 do 
+      TMemAccessObject(fWriteHandlers[i]).CallEvent(Proc.ID, buf, Offset, Count);
     Result:=fTarget.WriteMem(Proc.ID, Offset,Count, Buf);
   end;
 end;
@@ -219,15 +289,20 @@ begin
   inherited Create;
   fTarget:=ATarget;
   fProcList:=TFPObjectList.Create;
-  fMemHandlers:=TFPObjectList.Create(false);
-  fEventHandlers:=TFPObjectList.Create(false);
+  
+  fReadHandlers  := TFPObjectList.Create(true);
+  fWriteHandlers := TFPObjectList.Create(true);
+  fEventHandlers := TFPObjectList.Create(true);
+    
   DoAddProcess(AProcessID);
 end;
 
 destructor TDbgMain.Destroy;  
 begin
-  fMemHandlers.Free;
+  fReadHandlers.Free;
+  fWriteHandlers.Free;
   fEventHandlers.Free;
+  
   fProcList.Free;
   inherited Destroy;  
 end;
@@ -235,9 +310,9 @@ end;
 function TDbgMain.WaitForEvent(var Event: TDbgEvent): Boolean;  
 var
   loopdone : Boolean;
-  hnd      : TDbgEventHandler;
+  hnd      : TDbgHandleObject;
   i        : Integer;
-  handled  : Boolean;
+  handled  : THandleState;
 begin
   UpdateProcThreadState;
   
@@ -247,11 +322,17 @@ begin
 
     loopdone:=True;
     for i := 0 to fEventHandlers.Count-1 do begin
-      hnd:=TDbgEventHandler(fEventHandlers[i]);
-      handled:=false;
-      hnd.HandleEvent(Event, handled);
-      if (Event.Kind=dek_BreakPoint) and Handled then 
-        loopdone:=false;
+      hnd:=TDbgHandleObject(fEventHandlers[i]);
+      handled:=ehs_NotHandled;
+      hnd.CallEvent(Event, handled);
+      case handled of
+        ehs_Handled: 
+          loopdone:=Event.Kind=dek_BreakPoint;
+        ehs_HandledIsBreakPointEvent: begin
+          loopdone:=event.Kind in [dek_SingleStep, dek_BreakPoint];
+          if loopdone then event.Kind:=dek_BreakPoint;
+        end;
+      end;
     end;
 
   until loopdone;
@@ -279,9 +360,24 @@ begin
   Result:=prc.FindThread(ThreadID);
 end;
 
-procedure TDbgMain.RegisterMemHandler(AHandler: TMemAccessHandler);
+function TDbgMain.CPU: TCPUCode; 
 begin
-  fMemHandlers.Add(AHandler);
+  Result:=dbgCPU.CPUCode;
+end;
+
+procedure TDbgMain.AddReadHandler(AHandler: TMemAccessEvent);
+begin
+  fReadHandlers.Add(TMemAccessObject.Create(AHandler));
+end;
+
+procedure TDbgMain.AddWriteHandler(AHandler: TMemAccessEvent);
+begin
+  fWriteHandlers.Add(TMemAccessObject.Create(AHandler));
+end;
+
+procedure TDbgMain.AddEventHandler(AHandle: TDbgHandleEvent);
+begin
+  fEventHandlers.Add(TDbgHandleObject.Create(AHandle));
 end;
 
 { TDbgProcess }
@@ -389,6 +485,158 @@ function TDbgThread.SetSingleStep: Boolean;
 begin
   Result:=DbgTarget.SetSingleStep(fOwner.ID, fID);
 end;
+
+
+{procedure InitAllocs;
+begin
+  memallocs.Free;
+  eventallos.Free;
+end;
+
+procedure ReleaseAllocs;
+begin
+  memallocs.Free;
+  eventallos.Free;
+end;
+}
+
+{ TDbgMainBreakpoints }
+
+function  TDbgMainBreakpoints.InstallBreak(process: TDbgProcess; addr: TDbgPtr;  
+  var buf: array of byte; CodeSize: Integer): Boolean; 
+var
+  temp  : array of byte;
+begin
+  Result:=(fMain.CPU.BreakPointSize<=CodeSize);
+  
+  process.ReadMem(addr, CodeSize, buf);
+  {checking if hard breakpoint is written}
+  if fMain.CPU.IsBreakPoint(buf, 0) then begin
+    Result:=false;
+    Exit;
+  end;
+  {reusing the original buffer (in case the original content is critical)}
+  SetLength(temp, fMain.CPU.BreakPointSize);
+  move(buf[0], temp[0], fMain.CPU.BreakPointSize);
+  {writing breakpoint code to the buffer}
+  fMain.CPU.WriteBreakPoint(temp, 0);
+  {writing break point to process address space}
+  process.WriteMem(addr, CodeSize, buf);
+  
+  Result:=true;
+end;
+
+procedure TDbgMainBreakpoints.RemoveBreak(process: TDbgProcess; addr: TDbgPtr;
+  const buf: array of byte; CodeSize: Integer); 
+begin
+  process.WriteMem(addr, Codesize, buf);
+end;
+
+procedure TDbgMainBreakpoints.BeforeProcWrite(Proc: TDbgProcessID;  
+  var Data: array of byte; Offset: TDbgPtr; Count: Integer); 
+begin
+
+end;
+
+procedure TDbgMainBreakpoints.AfterProcRead(Proc: TDbgProcessID;  
+  var Data: array of byte; Offset: TDbgPtr; Count: Integer); 
+begin
+
+end;
+
+procedure TDbgMainBreakpoints.HandleDbgEvent(const Event: TDbgEvent;  
+  var EventHandled: THandleState); 
+begin
+
+end;
+
+function TDbgMainBreakpoints.FindBreakPoint(processID: TDbgProcessID; addr: TDbgPtr): TDbgBreak; 
+var
+  i : Integer;
+begin
+  for i:=0 to fBPList.Count-1 do begin
+    
+  end;
+end;
+
+constructor TDbgMainBreakpoints.Create(AMain: TDbgMain); 
+begin
+  inherited Create;
+  fMain:=AMain;
+  fBPList := TFPList.Create;
+  
+  fMain.AddWriteHandler(@BeforeProcWrite);
+  fMain.AddReadHandler(@AfterProcRead);
+  fMain.AddEventHandler(@HandleDbgEvent);
+end;
+
+destructor TDbgMainBreakpoints.Destroy;
+begin
+  fBPList.Free;
+end;
+
+function TDbgMainBreakpoints.AddBreakpoint(process: TDbgProcess; addr: TDbgPtr): Boolean; 
+begin
+  Result:=AddBreakpoint(process, addr, nil);
+end;
+
+function TDbgMainBreakpoints.AddBreakpoint(process: TDbgProcess;  
+  addr: TDbgPtr; Handler: TDbgPointHandler): Boolean; 
+begin
+  Result:=false;
+  if not Assigned(process) then Exit;
+    
+  Result:=true;
+end;
+
+procedure TDbgMainBreakpoints.RemoveBreakpoint(process: TDbgProcess; addr: TDbgPtr); 
+begin
+
+end;
+
+
+{ TMemAccessObject }
+
+constructor TMemAccessObject.Create(AEvent: TMemAccessEvent); 
+begin
+  inherited Create;
+  event:=AEvent;
+end;
+
+procedure TMemAccessObject.CallEvent(Proc: TDbgProcessID;  
+  var Data: array of byte; Offset: TDbgPtr; Count: Integer); 
+begin
+  if Assigned(event) then event(Proc, Data, Offset, Count);
+end;
+
+{ TDbgHandleObject }
+
+constructor TDbgHandleObject.Create(AEvent: TDbgHandleEvent); 
+begin
+  inherited Create;
+  event:=AEvent;
+end;
+
+procedure TDbgHandleObject.CallEvent(const AEvent: TDbgEvent;  
+  var EventHandled: THandleState); 
+begin
+  if Assigned(event) then event(AEvent, EventHandled);
+end;
+
+{ TDbgBreak }
+
+constructor TDbgBreak.Create(AProcID: TDbgProcessID; AAddr: TDbgPtr); 
+begin
+  inherited Create;
+  ProcID:=AProcID;
+  Addr:=AAddr;
+end;
+
+initialization
+  //InitAllocs;
+
+finalization
+  //ReleaseAllocs;
 
 end.
 

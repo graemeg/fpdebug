@@ -6,14 +6,15 @@ interface
 
 uses
   Classes, SysUtils,
-  dbgTypes, dbgUtils, commands, dbgConsts;
+  dbgTypes, dbgUtils, dbgConsts, dbgMain,
+  commands;
 
 type
 
   { TViewMemCommand }
 
   TViewMemCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Target: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ResetParamsCache: Boolean; override;
     function ShortHelp: String; override;
   end;
@@ -21,7 +22,7 @@ type
   { TRegistersView }
 
   TRegistersView = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Target: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
 
@@ -63,7 +64,7 @@ begin
   end;
 end;
 
-procedure PrintProcessMem(Target: TDbgTarget; Offset: TDbgPtr);
+procedure PrintProcessMem(AProcess: TDbgProcess; Offset: TDbgPtr);
 var
   buf : array [0..32*16-1]of byte;
   ofs : String; 
@@ -72,7 +73,7 @@ var
   i   : Integer;  
 begin
   FillChar(buf[0], sizeof(buf), 0);
-  if Target.ReadMem(0, Offset, sizeof(buf), buf) < 0 then begin
+  if AProcess.ReadMem(Offset, sizeof(buf), buf) < 0 then begin
     writeln('cannot read proc mem ');
     Exit;
   end;
@@ -87,7 +88,7 @@ end;
 
 { TViewMemCommand }
 
-procedure TViewMemCommand.Execute(CmdParams: TStrings; Target: TDbgTarget);
+procedure TViewMemCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   ofs : TDbgPtr;
   err : Integer;
@@ -102,7 +103,7 @@ begin
     end;
   end;
   try
-    PrintProcessMem(Target, ofs);
+    PrintProcessMem(Env.Process, ofs);
     LastReadOfs := ofs + 32*16;
   except
     writeln('exception while reading process memory');
@@ -156,13 +157,18 @@ begin
   end;
 end;
 
-procedure TRegistersView.Execute(CmdParams: TStrings; Target: TDbgTarget);
+procedure TRegistersView.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   regs  : TDbgDataBytesList;
 begin
+  //todo: thread number can be passed in CmdParams
+  if not Assigned(Env.Thread) then begin
+    writeln('no execution thread');
+    Exit;
+  end;
+  
   regs := TDbgDataBytesList.Create;
-  Target.GetThreadRegs( 0, Target.MainThreadID(0), regs );
-
+  Env.Thread.GetThreadRegs(regs);
   //PrintAllRegs(regs);
   PrintI386Regs(regs);
 

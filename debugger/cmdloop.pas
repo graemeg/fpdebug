@@ -5,16 +5,18 @@ unit cmdloop;
 interface
 
 uses
-  Classes, SysUtils, dbgTypes, dbgUtils, dbgConsts, commands; 
+  Classes, SysUtils, 
+  dbgTypes, dbgUtils, dbgConsts, dbgMain,
+  commands; 
 
-procedure RunLoop(Process: TDbgTarget);
+procedure RunLoop(Process: TDbgMain);
 
-type
+{type
   TEventHandler = procedure (Process: TDbgTarget; Event : TDbgEvent) of object;
 
 procedure InstallHandler(AHandler: TEventHandler);
 procedure RemoveHandler(AHandler: TEventHandler);
-procedure HandleEvent(Process: TDbgTarget; Event : TDbgEvent);
+procedure HandleEvent(Process: TDbgTarget; Event : TDbgEvent);}
   
 implementation
 
@@ -27,7 +29,48 @@ var
   StopOnSysCall : Boolean = False;
   
   EventHandlers : TFPList;  
+  
+type
+  TDebugEnvironment=class(TCommandEnvironment)
+  private
+    fMain    : TDbgMain;
+    fProcess : TDbgProcess;
+    fThread  : TDbgThread;
+  public
+    constructor Create(AMain: TDbgMain);
+    procedure SetProcess(AProcess: TDbgProcessID; AThread: TDbgThreadID);
+    function Main: TDbgMain; override;
+    function Process: TDbgProcess; override;
+    function Thread: TDbgThread; override;
+  end;
 
+constructor TDebugEnvironment.Create(AMain: TDbgMain);
+begin
+  inherited Create;
+  fMain:=AMain;
+end;
+
+procedure TDebugEnvironment.SetProcess(AProcess: TDbgProcessID; AThread: TDbgThreadID);
+begin
+  fProcess:=fMain.FindProcess(AProcess);
+  if Assigned(fProcess) then fThread:=fProcess.FindThread(AThread);
+end;
+
+function TDebugEnvironment.Main: TDbgMain; 
+begin
+  Result:=fMain;
+end;
+
+function TDebugEnvironment.Process: TDbgProcess; 
+begin
+  Result:=fProcess;
+end;
+
+function TDebugEnvironment.Thread: TDbgThread; 
+begin
+  Result:=fThread;
+end;
+  
 const
   CmdPrefix = 'duby> ';
   HexSize   = sizeof(TDbgPtr) * 2;
@@ -36,39 +79,42 @@ type
   { TRunCommand }
 
   TRunCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
   
   { TRunToCommand }
 
   TRunToCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
   
   { TStepCommand }
 
   TStepCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
 
   { TContinueCommand }
 
   TContinueCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
 
 { TRunToCommand }
 
-procedure TRunToCommand.Execute(CmdParams: TStrings; Process: TDbgTarget);
+procedure TRunToCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   reg : TDbgDataBytesList;
   addr : TDbgPtr;
   err  : integer;
 begin 
+  writeln('sorry not implemented');
+  Exit;
+  
   if CmdParams.Count > 1 then Val(CmdParams[1], addr, err);
   //todo: replace with break-point usage!
   if (CmdParams.Count <= 1) or (err <> 0) then begin
@@ -80,28 +126,13 @@ begin
   
   reg := TDbgDataBytesList.Create;
   try
-    if not Process.GetThreadRegs(0, Process.MainThreadID, reg) then begin
+    if not Env.Thread.GetThreadRegs(reg) then begin
       writeln('unable to read thread regs');
       Exit;
     end;
     if reg.Reg[_Eip].DbgPtr = addr then begin
       writeln('addr achieved: ', addr);
       Exit;
-    end;
-    
-    Process.SetSingleStep(0, Process.MainThreadID);
-    while Process.WaitNextEvent(DbgEvent) do begin
-      if not Process.GetThreadRegs(0, Process.MainThreadID, reg) then begin
-        writeln('unable to read thread regs');
-      end;
-      
-      //writeln('eip = ', IntToHex(reg.Reg[_Eip].DbgPtr, Sizeof(TDbgPtr)*2 ));
-      //writeln('eax = ', IntToHex(reg.Reg[_Eax].UInt32, Sizeof(LongWord)*2 ));
-      if reg.Reg[_Eip].DbgPtr = addr then begin
-        writeln('addr achieved: ', addr);
-        Break;        
-      end;
-      Process.SetSingleStep(0, Process.MainThreadID);
     end;
     
   finally
@@ -116,11 +147,14 @@ end;
 
 { TStepCommand }
 
-procedure TStepCommand.Execute(CmdParams: TStrings; Process: TDbgTarget);
+procedure TStepCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
+var
+  Success: Boolean;
 begin
   if not Running then WriteLn('not running');
     
-  Process.SetSingleStep(0, Process.MainThreadID );
+  Success:=Assigned(Env.Thread) and Env.Thread.NextSingleStep;
+  if not Success then writeln('unable to make a step');
   
   WaitForNext := true;
 end;
@@ -132,7 +166,7 @@ end;
 
 { TContinueCommand }
 
-procedure TContinueCommand.Execute(CmdParams: TStrings; Process: TDbgTarget);
+procedure TContinueCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 begin
   if not Running then
     writeln('not running')
@@ -147,7 +181,7 @@ end;
 
 { TRunComand }
 
-procedure TRunCommand.Execute(CmdParams: TStrings; Process: TDbgTarget);
+procedure TRunCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 begin
   if not Running then begin
     running := true;
@@ -216,7 +250,7 @@ begin
 end;
 
   
-procedure ExecuteNextCommand(AProcess: TDbgTarget);
+procedure ExecuteNextCommand(Env: TCommandEnvironment);
 var
   s : string;
   p : TStringList;
@@ -232,7 +266,7 @@ begin
   if s <> '' then begin
     p := TStringList.Create;
     ParseCommand(s, p);
-    if not ExecuteCommand(p, AProcess, cmd) then 
+    if not ExecuteCommand(p, Env, cmd) then 
       writeln('unknown command ', p[0])
     else begin
       LastCommand := s;
@@ -243,19 +277,22 @@ begin
   end;
 end;
 
-procedure DoRunLoop(Process: TDbgTarget);
+procedure DoRunLoop(Target: TDbgMain);
 var
   ProcTerm     : Boolean;
   StopForUser  : Boolean;
+  Env : TDebugEnvironment;
+  
 const
   dekStr: array [TDbgEventKind] of string = (
     'Other', 'SysExc', 'Single step', 'Breakpoint', 
     'Process Start', 'Process Terminated', 'Thread Start', 'Thread Terminate', 'SysCall');
 begin
-  if not Assigned(Process) then begin
+  if not Assigned(Target) then begin
     writeln('no process to debug (internal error?)');
     Exit;
   end;
+  Env:=TDebugEnvironment.Create(Target);
 
   ProcTerm := false;
   StopForUser := true;
@@ -263,19 +300,19 @@ begin
   while true do begin
     if StopForUser then begin
       WaitForNext := false;
-      ExecuteNextCommand(Process);
+      ExecuteNextCommand(Env);
     end else
       WaitForNext := true;
     StopForUser  := true;
 
     if WaitForNext and not ProcTerm then begin
-      if not Process.WaitNextEvent(DbgEvent) then
-        writeln('process terminated?')
-      else begin
+      if not Target.WaitNextEvent(DbgEvent) then begin
+        writeln('the process terminated? (type "quit" to quit)');
+      end else begin
+        Env.SetProcess(DbgEvent.Process, DbgEvent.Thread);
         
-        HandleEvent( Process, DbgEvent);
+        //HandleEvent( Process, DbgEvent);
         
-        //writeln('event: ', DbgEvent.Debug);
         case DbgEvent.Kind of
           dek_SysExc:;
             //writeln('system exception at ', IntToHex(DbgEvent.Addr, HexSize));
@@ -289,8 +326,10 @@ begin
             StopForUser := StopOnSysCall;
           end;
         end;
-        writeln('even: ', dekStr[DbgEvent.Kind]);
-        writeln('addr: $', HexAddr(DbgEvent.Addr), ' / ', DbgEvent.Addr);
+        writeln('even:    ',  dekStr[DbgEvent.Kind]);
+        writeln('process: ',  DbgEvent.Process);
+        writeln('thread:  ',  DbgEvent.Thread);
+        writeln('addr:    $', HexAddr(DbgEvent.Addr), ' / ', DbgEvent.Addr);
       end;
       if DbgEvent.Kind = dek_ProcessTerminated then
         writeln('process has been terminated');
@@ -298,7 +337,7 @@ begin
   end;
 end;
 
-procedure RunLoop(Process: TDbgTarget);
+procedure RunLoop(Process: TDbgMain);
 begin
   try
     DoRunLoop(Process);
@@ -306,14 +345,14 @@ begin
   end;
 end;
 
-type
+{type
   TProcHandler = class(TObject)
     Handler: TEventHandler;
-  end;
+  end;}
 
 // Hanlder routines
 
-procedure InstallHandler(AHandler: TEventHandler);
+{procedure InstallHandler(AHandler: TEventHandler);
 var
   p : TProcHandler;
 begin
@@ -357,6 +396,7 @@ begin
   for i := 0 to EventHandlers.Count - 1 do TProcHandler(EventHandlers[i]).free;
   EventHandlers.Free;
 end;
+}
 
 // Registering commands
 procedure RegisterLoopCommands;
@@ -369,10 +409,10 @@ end;
 
 initialization
   RegisterLoopCommands;
-  InitHandlers;
+//  InitHandlers;
  
 finalization
-  ReleaseHandlers;
+//  ReleaseHandlers;
     
   
 

@@ -46,6 +46,7 @@ type
   
 function AddBreakPoint(const addr: TDbgPtr): TBreakPoint;
 // function fails, if break point already exists, cannot be enabled or matches hard-coded breakpoint
+//todo:
 function AddEnabledBreakPoint(const addr: TDbgPtr; AProcess: TDbgTarget): TBreakPoint;
 function FindBreakpoint(const addr: TDbgPtr): TBreakPoint;
 procedure RemoveBreakPoint(var Bp: TBreakPoint);

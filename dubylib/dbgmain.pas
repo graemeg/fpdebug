@@ -26,7 +26,7 @@ type
     constructor Create(AOwner: TDbgProcess; AID: TDbgThreadID);
     function GetThreadRegs(Registers: TDbgDataList): Boolean; 
     function SetThreadRegs(Registers: TDbgDataList): Boolean; 
-    function SetSingleStep: Boolean; 
+    function NextSingleStep: Boolean; 
     property ID: TDbgThreadID read fID;
     property State: TDbgThreadState read fState;
   end;
@@ -101,16 +101,14 @@ type
   public
     constructor Create(ATarget: TDbgTarget; AProcessID: TDbgProcessID);
     destructor Destroy; override;
-    function WaitForEvent(var Event: TDbgEvent): Boolean;  
+    function WaitNextEvent(var Event: TDbgEvent): Boolean;  
     function FindProcess(processID: TDbgProcessID): TDbgProcess;
     function FindThread(processID: TDbgProcessID; ThreadID: TDbgThreadID): TDbgThread;
 
     function CPU: TCPUCode;
     property ProcessCount: Integer read GetProcessCount;
     property Process[i: Integer]: TDbgProcess read GetProcess;
-    
   end;
-  
   
   TDbgPointHandler = procedure (Sender: TObject; Process: TDbgProcess; Addr: TDbgPtr; var Handled: Boolean) of object;
   
@@ -307,7 +305,7 @@ begin
   inherited Destroy;  
 end;
 
-function TDbgMain.WaitForEvent(var Event: TDbgEvent): Boolean;  
+function TDbgMain.WaitNextEvent(var Event: TDbgEvent): Boolean;  
 var
   loopdone : Boolean;
   hnd      : TDbgHandleObject;
@@ -481,7 +479,7 @@ begin
   Result:=DbgTarget.GetThreadRegs(fOwner.ID, fID, Registers);
 end;
 
-function TDbgThread.SetSingleStep: Boolean; 
+function TDbgThread.NextSingleStep: Boolean; 
 begin
   Result:=DbgTarget.SetSingleStep(fOwner.ID, fID);
 end;

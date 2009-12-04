@@ -28,7 +28,7 @@ type
 
   TWhereCommand = class(TCommand)
   public
-    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;  
   
@@ -36,41 +36,41 @@ type
 
   TAddrOf = class(TCommand)
   public
-    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
   
   { TIntValue }
 
   TIntValue = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
   
   { TListSymbols }
 
   TListSymbols = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
   
   { TSetBreak }
 
   TSetBreak = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
   
   { TRemoveBreak }
 
   TRemoveBreak = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Process: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
 
 { TIntValue }
 
-procedure TIntValue.Execute(CmdParams: TStrings; Process: TDbgTarget);
+procedure TIntValue.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   name  : string;
   err   : Integer;
@@ -101,7 +101,7 @@ begin
     end;
   end;
     
-  res := Process.ReadMem(0, addr, sizeof(vl), PByteArray(@vl)^);
+  res := Env.Process.ReadMem(addr, sizeof(vl), PByteArray(@vl)^);
   if res = sizeof(vl) then writeln(vl)
   else writeln('value cannot be read');
 end;
@@ -123,7 +123,7 @@ end;
   
 { TRemoveBreak }
 
-procedure TRemoveBreak.Execute(CmdParams: TStrings; Process: TDbgTarget);
+procedure TRemoveBreak.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   addr  : TDbgPtr;
   bp    : TBreakPoint;
@@ -148,7 +148,7 @@ end;
 
 { TSetBreak }
 
-procedure TSetBreak.Execute(CmdParams: TStrings; Process: TDbgTarget);
+procedure TSetBreak.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   addr  : TDbgPtr;
 begin
@@ -156,10 +156,10 @@ begin
     writeln('please specify valid adress to set breakpoint');
     Exit;
   end;
-  if Assigned(AddEnabledBreakPoint(addr, Process)) then 
+{  if Assigned(AddEnabledBreakPoint(addr, Env.Main)) then 
     writeln('breakpoint added at: ', HexAddr(addr))
   else
-    writeln('failed to set breakpoint at: ', HexAddr(addr));
+    writeln('failed to set breakpoint at: ', HexAddr(addr));}
 end;
 
 function TSetBreak.ShortHelp: String;  
@@ -170,13 +170,7 @@ end;
   
 { TListSymbols }
 
-procedure TListSymbols.Execute(CmdParams: TStrings; Process: TDbgTarget);
-{var
-  st  : TStringList;
-  i   : Integer;
-  s   : string;
-  addr  : TDbgPtr;
-  maxlen  : integer;}
+procedure TListSymbols.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 begin
   if not Assigned(CommonInfo) then begin
     WriteLn('no debug info');
@@ -262,7 +256,7 @@ end;
 
 { TAddrOf }
 
-procedure TAddrOf.Execute(CmdParams: TStrings; Process: TDbgTarget);
+procedure TAddrOf.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   name      : String;
   sym       : TDbgSymbol;
@@ -330,7 +324,7 @@ begin
   st.Free;
 end;  
   
-procedure TWhereCommand.Execute(CmdParams: TStrings; Process: TDbgTarget);
+procedure TWhereCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   regs : TDbgDataList;
   fn   : WideString;
@@ -338,8 +332,10 @@ var
   addr : TDbgPtr;
   err  : Integer;
 begin
+  Exit;
+  
   if CmdParams.Count <= 1 then begin
-    regs := GetProcessRegisters(Process, 0);
+    //regs := GetProcessRegisters(Process, 0);
     if not Assigned(regs) then begin
       writeln('Cannot read process state. ');
       Exit;
@@ -411,7 +407,7 @@ var
 procedure InitBreakCommands;
 begin
   bh := TBreakHandler.Create;
-  InstallHandler(@bh.BreakHandle);
+{  InstallHandler(@bh.BreakHandle);}
   RegisterCommand(['break', 'b'], TSetBreak.Create);
   RegisterCommand(['rmbreak', 'rb'], TRemoveBreak.Create);
 end;

@@ -5,16 +5,23 @@ unit commands;
 interface
 
 uses
-  Classes, SysUtils, dbgTypes; 
+  Classes, SysUtils, 
+  dbgTypes, dbgMain; 
 
 type
+  TCommandEnvironment = class
+    function Main: TDbgMain; virtual; abstract;
+    function Process: TDbgProcess; virtual; abstract; // process where stopped
+    function Thread: TDbgThread; virtual; abstract; // thread there stopped
+  end;
+  
   { TCommand }
 
   TCommand = class(TObject)
   public
     ProcessID : TDbgProcessID;
     ThreadID  : TDbgThreadID;
-    procedure Execute(CmdParams: TStrings; Target: TDbgTarget); virtual; abstract;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); virtual; abstract;
     procedure PrintHelp; virtual; 
     function ShortHelp: String; virtual;
     function ResetParamsCache: Boolean; virtual;
@@ -22,7 +29,7 @@ type
   
 function RegisterCommand(const Keys: array of String; ACommand: TCommand): Boolean;
 function FindCommand(const Key: String): TCommand;
-function ExecuteCommand(Params: TStrings; Target: TDbgTarget; var ExecutedCommand: TCommand): Boolean;
+function ExecuteCommand(Params: TStrings; var Env: TCommandEnvironment; var ExecutedCommand: TCommand): Boolean;
 
 implementation
 
@@ -34,21 +41,21 @@ type
   { THelpCommand }
   THelpCommand = class(TCommand)
   public
-    procedure Execute(CmdParams: TStrings; Target: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
   
   { TExitCommand }
 
   TExitCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Target: TDbgTarget); override;
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     procedure PrintHelp; override;
     function ShortHelp: String; override;
   end;
 
 { TExitCommand }
 
-procedure TExitCommand.Execute(CmdParams: TStrings; Target: TDbgTarget);
+procedure TExitCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 begin
   Halt;
 end;
@@ -77,7 +84,7 @@ end;
 
 { THelpCommand }
 
-procedure THelpCommand.Execute(CmdParams: TStrings; Target: TDbgTarget);
+procedure THelpCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   i   : Integer;
   nm  : String;
@@ -159,7 +166,7 @@ begin
   else Result := TCommand(keyslist.Objects[i]);
 end;  
 
-function ExecuteCommand(Params: TStrings; Target: TDbgTarget; var ExecutedCommand: TCommand): Boolean;
+function ExecuteCommand(Params: TStrings; var Env: TCommandEnvironment; var ExecutedCommand: TCommand): Boolean;
 var
   cmd : TCommand;
 begin
@@ -168,7 +175,7 @@ begin
   if not Assigned(Params) then Exit;
   cmd := FindCommand(Params[0]);
   if not Assigned(cmd) then Exit;
-  cmd.Execute(Params, Target);
+  cmd.Execute(Params, Env);
   ExecutedCommand := cmd;
   Result := true;
 end;

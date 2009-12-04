@@ -37,8 +37,9 @@ uses
  
 procedure RunDebugger;
 var
-  dbg : TDbgTarget;
-  cmd : String;
+  dbg  : TDbgTarget;
+  main : TDbgMain;
+  cmd  : String;
 begin
   cmd := ParamStr(1);
   if cmd = '' then begin
@@ -48,8 +49,9 @@ begin
     writeln('debugging process: ', cmd);
 
   LoadDebugInfo(cmd);
-    
-  dbg := DebugProcessStart(cmd);
+
+  dbg:=DebugProcessStart(cmd);
+  main:=TDbgMain.Create(dbg, 0);
   if not Assigned(dbg) then begin
     writeln('cannot start debug process');
     Exit;
@@ -58,13 +60,14 @@ begin
   try
     try
       //SetCommandLine(cmd);
-      RunLoop(dbg);
+      RunLoop(main);
     finally
       dbg.Free;
     end;
   except
     writeln('main loop exception');
   end;
+  main.Free;
 end;
 
 begin

@@ -13,7 +13,7 @@
       <TargetFileExt Value=".exe"/>
       <Title Value="dubyline"/>
       <UseXPManifest Value="True"/>
-      <ActiveEditorIndexAtStart Value="1"/>
+      <ActiveEditorIndexAtStart Value="2"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -33,15 +33,15 @@
         <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <Units Count="113">
+    <Units Count="115">
       <Unit0>
         <Filename Value="dubyline.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dubyline"/>
-        <CursorPos X="11" Y="34"/>
-        <TopLine Value="19"/>
+        <CursorPos X="1" Y="80"/>
+        <TopLine Value="54"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="137"/>
+        <UsageCount Value="139"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -108,16 +108,18 @@
       <Unit9>
         <Filename Value="cmdloop.pas"/>
         <UnitName Value="cmdloop"/>
-        <CursorPos X="79" Y="253"/>
-        <TopLine Value="238"/>
-        <UsageCount Value="20"/>
+        <CursorPos X="31" Y="329"/>
+        <TopLine Value="308"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
       </Unit9>
       <Unit10>
         <Filename Value="..\dubylib\dbgtypes.pas"/>
         <UnitName Value="dbgTypes"/>
-        <CursorPos X="1" Y="104"/>
-        <TopLine Value="89"/>
-        <UsageCount Value="31"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="32"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\dubylib\pesource.pas"/>
@@ -210,9 +212,11 @@
       <Unit23>
         <Filename Value="memviewer.pas"/>
         <UnitName Value="memviewer"/>
-        <CursorPos X="50" Y="164"/>
-        <TopLine Value="153"/>
+        <CursorPos X="36" Y="170"/>
+        <TopLine Value="160"/>
+        <EditorIndex Value="1"/>
         <UsageCount Value="10"/>
+        <Loaded Value="True"/>
       </Unit23>
       <Unit24>
         <Filename Value="macdbgproc.pas"/>
@@ -355,9 +359,9 @@
       <Unit42>
         <Filename Value="commands.pas"/>
         <UnitName Value="commands"/>
-        <CursorPos X="27" Y="8"/>
-        <TopLine Value="6"/>
-        <UsageCount Value="18"/>
+        <CursorPos X="68" Y="23"/>
+        <TopLine Value="13"/>
+        <UsageCount Value="19"/>
       </Unit42>
       <Unit43>
         <Filename Value="E:\FPC_Laz\fpc\packages\fcl-base\src\contnrs.pp"/>
@@ -386,7 +390,7 @@
         <UnitName Value="macDbgProc"/>
         <CursorPos X="17" Y="2"/>
         <TopLine Value="1"/>
-        <UsageCount Value="95"/>
+        <UsageCount Value="97"/>
       </Unit46>
       <Unit47>
         <Filename Value="..\dubylib\mach_port.pas"/>
@@ -408,18 +412,15 @@
         <UnitName Value="cmdlineutils"/>
         <CursorPos X="10" Y="14"/>
         <TopLine Value="1"/>
-        <UsageCount Value="92"/>
+        <UsageCount Value="94"/>
       </Unit49>
       <Unit50>
         <Filename Value="cmddbg.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="cmddbg"/>
-        <CursorPos X="43" Y="342"/>
-        <TopLine Value="333"/>
-        <UsageCount Value="91"/>
-        <Bookmarks Count="1">
-          <Item0 X="27" Y="400" ID="2"/>
-        </Bookmarks>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="93"/>
       </Unit50>
       <Unit51>
         <Filename Value="dbgRegisters.pas"/>
@@ -476,7 +477,7 @@
         <UnitName Value="dbgInfoDwarf"/>
         <CursorPos X="14" Y="10"/>
         <TopLine Value="1"/>
-        <UsageCount Value="83"/>
+        <UsageCount Value="85"/>
       </Unit58>
       <Unit59>
         <Filename Value="..\dubylib\dwarftypes.pas"/>
@@ -498,7 +499,7 @@
         <UnitName Value="dwarfProc"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="81"/>
+        <UsageCount Value="83"/>
       </Unit61>
       <Unit62>
         <Filename Value="..\..\..\Desktop\macho\Archive\ogmacho.pas"/>
@@ -520,7 +521,7 @@
         <UnitName Value="machoDbgSource"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="80"/>
+        <UsageCount Value="82"/>
       </Unit64>
       <Unit65>
         <Filename Value="..\dubylib\macho.pas"/>
@@ -535,7 +536,7 @@
         <UnitName Value="machoFile"/>
         <CursorPos X="16" Y="46"/>
         <TopLine Value="32"/>
-        <UsageCount Value="79"/>
+        <UsageCount Value="81"/>
       </Unit66>
       <Unit67>
         <Filename Value="E:\FPC_Laz\fpc\rtl\objpas\classes\classesh.inc"/>
@@ -647,11 +648,9 @@
         <Filename Value="..\dubylib\dbgbreakpoints.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgBreakPoints"/>
-        <CursorPos X="26" Y="222"/>
-        <TopLine Value="209"/>
-        <EditorIndex Value="3"/>
-        <UsageCount Value="58"/>
-        <Loaded Value="True"/>
+        <CursorPos X="8" Y="48"/>
+        <TopLine Value="36"/>
+        <UsageCount Value="60"/>
       </Unit81>
       <Unit82>
         <Filename Value="..\dubylib\dbgcpu.pas"/>
@@ -659,9 +658,7 @@
         <UnitName Value="dbgCPU"/>
         <CursorPos X="14" Y="13"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="2"/>
-        <UsageCount Value="58"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="60"/>
       </Unit82>
       <Unit83>
         <Filename Value="..\dubylib\dbgi386.pas"/>
@@ -669,7 +666,7 @@
         <UnitName Value="dbgi386"/>
         <CursorPos X="25" Y="32"/>
         <TopLine Value="19"/>
-        <UsageCount Value="58"/>
+        <UsageCount Value="60"/>
       </Unit83>
       <Unit84>
         <Filename Value="E:\FPC_Laz\Lazarus\debugger\fpdebug\dbgsymbols.pas"/>
@@ -853,15 +850,13 @@
         <Filename Value="..\dubylib\dbgmain.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgMain"/>
-        <CursorPos X="17" Y="125"/>
-        <TopLine Value="112"/>
-        <EditorIndex Value="1"/>
-        <UsageCount Value="27"/>
+        <CursorPos X="43" Y="102"/>
+        <TopLine Value="102"/>
+        <UsageCount Value="29"/>
         <Bookmarks Count="2">
-          <Item0 X="4" Y="517" ID="2"/>
-          <Item1 X="21" Y="380" ID="3"/>
+          <Item0 X="4" Y="515" ID="2"/>
+          <Item1 X="21" Y="378" ID="3"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit108>
       <Unit109>
         <Filename Value="..\..\fpc\rtl\win32\classes.pp"/>
@@ -893,128 +888,102 @@
         <TopLine Value="1"/>
         <UsageCount Value="20"/>
       </Unit112>
+      <Unit113>
+        <Filename Value="E:\FPC_Laz\Lazarus\lcl\masks.pas"/>
+        <UnitName Value="Masks"/>
+        <CursorPos X="23" Y="29"/>
+        <TopLine Value="25"/>
+        <UsageCount Value="11"/>
+      </Unit113>
+      <Unit114>
+        <Filename Value="..\..\Sourceforge\lazlocalbase\LLBVariant.pas"/>
+        <UnitName Value="LLBVariant"/>
+        <CursorPos X="41" Y="2350"/>
+        <TopLine Value="2341"/>
+        <UsageCount Value="10"/>
+      </Unit114>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="20" HistoryIndex="19">
       <Position1>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="302" Column="15" TopLine="289"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="19" Column="23" TopLine="1"/>
       </Position1>
       <Position2>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="312" Column="30" TopLine="299"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="222" Column="11" TopLine="196"/>
       </Position2>
       <Position3>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="314" Column="28" TopLine="299"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="309" Column="14" TopLine="296"/>
       </Position3>
       <Position4>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="282" Column="35" TopLine="274"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="280" Column="37" TopLine="267"/>
       </Position4>
       <Position5>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="357" Column="22" TopLine="347"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="309" Column="25" TopLine="296"/>
       </Position5>
       <Position6>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="190" Column="1" TopLine="164"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="349" Column="8" TopLine="335"/>
       </Position6>
       <Position7>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="369" Column="21" TopLine="356"/>
+        <Filename Value="dubyline.pas"/>
+        <Caret Line="61" Column="14" TopLine="54"/>
       </Position7>
       <Position8>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="79" Column="20" TopLine="64"/>
+        <Filename Value="dubyline.pas"/>
+        <Caret Line="55" Column="1" TopLine="36"/>
       </Position8>
       <Position9>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="369" Column="60" TopLine="351"/>
+        <Filename Value="dubyline.pas"/>
+        <Caret Line="54" Column="17" TopLine="50"/>
       </Position9>
       <Position10>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="364" Column="55" TopLine="351"/>
+        <Filename Value="dubyline.pas"/>
+        <Caret Line="54" Column="17" TopLine="50"/>
       </Position10>
       <Position11>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="367" Column="46" TopLine="354"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="96" Column="3" TopLine="95"/>
       </Position11>
       <Position12>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="100" Column="15" TopLine="87"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position12>
       <Position13>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="369" Column="49" TopLine="356"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="313" Column="22" TopLine="300"/>
       </Position13>
       <Position14>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="89" Column="52" TopLine="76"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="41" Column="72" TopLine="28"/>
       </Position14>
       <Position15>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="55" Column="1" TopLine="53"/>
       </Position15>
       <Position16>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="73" Column="3" TopLine="54"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="309" Column="1" TopLine="296"/>
       </Position16>
       <Position17>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="100" Column="55" TopLine="87"/>
+        <Filename Value="dubyline.pas"/>
+        <Caret Line="70" Column="1" TopLine="50"/>
       </Position17>
       <Position18>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="173" Column="47" TopLine="160"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="4" Column="1" TopLine="1"/>
       </Position18>
       <Position19>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="367" Column="60" TopLine="354"/>
+        <Filename Value="dubyline.pas"/>
+        <Caret Line="26" Column="3" TopLine="3"/>
       </Position19>
       <Position20>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="569" Column="65" TopLine="553"/>
+        <Filename Value="cmdloop.pas"/>
+        <Caret Line="393" Column="1" TopLine="368"/>
       </Position20>
-      <Position21>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="171" Column="6" TopLine="160"/>
-      </Position21>
-      <Position22>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="173" Column="21" TopLine="158"/>
-      </Position22>
-      <Position23>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="302" Column="30" TopLine="289"/>
-      </Position23>
-      <Position24>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="314" Column="28" TopLine="301"/>
-      </Position24>
-      <Position25>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="369" Column="38" TopLine="356"/>
-      </Position25>
-      <Position26>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="135" Column="99" TopLine="121"/>
-      </Position26>
-      <Position27>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="552" Column="33" TopLine="549"/>
-      </Position27>
-      <Position28>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="551" Column="3" TopLine="549"/>
-      </Position28>
-      <Position29>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="557" Column="26" TopLine="542"/>
-      </Position29>
-      <Position30>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
-        <Caret Line="125" Column="63" TopLine="119"/>
-      </Position30>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>

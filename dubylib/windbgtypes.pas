@@ -187,7 +187,11 @@ begin
   fWaited:=Result;
   
   if Result then begin
-    WinEventToDbgEvent(fProcInfo.hProcess, fLastEvent, Event);
+    Event.Debug := DebugWinEvent(fProcInfo.hProcess, fLastEvent);
+    WinEventToDbgEvent(fLastEvent, Event);
+    Event.Process:=fLastEvent.dwProcessId;    
+    Event.Thread:=fLastEvent.dwThreadId;
+    
     case fLastEvent.dwDebugEventCode of
       CREATE_PROCESS_DEBUG_EVENT: 
       begin

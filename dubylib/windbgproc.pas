@@ -82,7 +82,8 @@ function CreateDebugProcess(const CmdLine: String; out Info: TProcessInformation
 function ReadProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; var data: array of byte): Integer;
 function WriteProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; const data: array of byte): Integer;
 
-procedure WinEventToDbgEvent(ProcessHandle: THandle; const Win: TDebugEvent; var Dbg: TDbgEvent);
+function DebugWinEvent(ProcessHandle: THandle; const Win: TDebugEvent): String;
+procedure WinEventToDbgEvent(const WinEvent: TDebugEvent; var Dbg: TDbgEvent);
 
 function DoReadThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
 function DoWriteThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
@@ -399,26 +400,26 @@ begin
   end;
 end;
 
-procedure WinEventToDbgEvent(ProcessHandle: THandle; const Win: TDebugEvent; var Dbg: TDbgEvent);
+procedure WinEventToDbgEvent(const WinEvent: TDebugEvent; var Dbg: TDbgEvent);
 begin
-  Dbg.Debug := DebugWinEvent(ProcessHandle, Win);
-  case Win.dwDebugEventCode of
+  Dbg.Thread := WinEvent.dwThreadId;
+  Dbg.Process := WinEvent.dwProcessId;
+  case WinEvent.dwDebugEventCode of
     CREATE_PROCESS_DEBUG_EVENT:
       Dbg.Kind := dek_ProcessStart;
     EXIT_PROCESS_DEBUG_EVENT:     
       Dbg.Kind := dek_ProcessTerminated;
     EXCEPTION_DEBUG_EVENT:  
     begin
-      case Win.Exception.ExceptionRecord.ExceptionCode  of
+      case WinEvent.Exception.ExceptionRecord.ExceptionCode  of
         EXCEPTION_BREAKPOINT: 
-          WinBreakPointToDbg(Win, Dbg);
+          WinBreakPointToDbg(WinEvent, Dbg);
         EXCEPTION_SINGLE_STEP: 
           dbg.Kind := dek_SingleStep;
       else
         Dbg.Kind := dek_SysExc;
       end;
-      Dbg.Addr := TDbgPtr(Win.Exception.ExceptionRecord.ExceptionAddress);
-      Dbg.Thread := Win.dwThreadId;
+      Dbg.Addr := TDbgPtr(WinEvent.Exception.ExceptionRecord.ExceptionAddress);
     end;
   else
     Dbg.Kind := dek_SysCall;

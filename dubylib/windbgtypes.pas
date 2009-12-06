@@ -16,31 +16,64 @@ type
     ID      : TThreadId;
     Handle  : THandle;
   end;
+  
+  TWinHandleIDPair = record
+    Hnd   : THandle;
+    ID    : DWORD;    
+    Tag   : TObject;
+  end;
+  
+  { TProcessThreads }
 
-  TWinDbgProcess = class(TDbgTarget)
+  TProcessThreads = class(TObject)
+    Count   : Integer;
+    IDs     : array of DWORD;
+    Is32Bit : Boolean; // todo:
+    procedure AddID(ThreadID: Integer);
+    procedure RemoveID(ThreadID: Integer);
+  end;
+  
+  { THandleList }
+
+  THandleList = class(TObject)
+  private
+    fList   : array of TWinHandleIDPair;
+    fCount  : Integer;
+    procedure DeleteByIndex(i: Integer; FreeTag: Boolean);
+    function FindByID(ID: Integer): Integer;
+  public
+    procedure Add(AHandle: THandle; ID: DWORD; Tag: TObject);
+    procedure DeleteByID(ID: DWORD; FreeTag: Boolean=False);
+    procedure DeleteByHandle(AHandle: THandle; FreeTag: Boolean=False);
+    function HandleByID(ID: DWORD): THandle;
+    function TagByID(ID: DWORD): TObject;
+  end;
+  
+
+  TWinDbgTarget = class(TDbgTarget)
   private
     fCmdLine  : String;
     fis32proc : Boolean; //todo:
+  
+    {the root process. If it's terminated the Target is terminated too}
+    fMainProc   : TProcessInformation; 
     
-    fProcInfo     : TProcessInformation;
+    fProcesses  : THandleList;  
+    fThreads    : THandleList;
     fLastEvent    : TDebugEvent;
     fWaiting      : Boolean;
     fWaited       : Boolean;
     fTerminated   : Boolean;
     fEHandled     : Boolean;
     
-    fThreadsCount : Integer;
-    fThreads      : array of TWinThreadInfo;
   protected
-    
     procedure AddThread(ThreadID: TThreadID; ThreadHandle: THandle);
     procedure RemoveThread(ThreadID: TThreadID);
-    function GetThreadIndex(ThreadID: TThreadID): Integer;
+    
   public
     constructor Create;
     destructor Destroy; override;
-    
-    function Execute(const ACommandLine: String): Boolean; 
+
     procedure Terminate; override;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
     
@@ -52,16 +85,18 @@ type
 
     function ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
     function WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
+    
+    function StartDebugProcess(const ACommandLine: String; OnlyProcess: Boolean): Boolean; 
   end;
 
 implementation
 
 function WinDebugProcessStart(const ACommandLine: String): TDbgTarget;
 var
-  win : TWinDbgProcess;
+  win : TWinDbgTarget;
 begin
-  win := TWinDbgProcess.Create;
-  if not win.Execute(ACommandLine) then begin
+  win := TWinDbgTarget.Create;
+  if not win.StartDebugProcess(ACommandLine, True) then begin
     win.Free;
     Result := nil
   end else
@@ -69,84 +104,64 @@ begin
 end;
 
 
-{ TWinDbgProcess }
+{ TWinDbgTarget }
 
-constructor TWinDbgProcess.Create; 
+constructor TWinDbgTarget.Create; 
 begin
   fis32proc := True;
 end;
 
-destructor TWinDbgProcess.Destroy;  
+destructor TWinDbgTarget.Destroy;  
 begin
   inherited Destroy;  
 end;
 
-function TWinDbgProcess.ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
-begin
-  Result := ReadProcMem(fProcInfo.hProcess, Offset, Count, Data);
-end;
-
-function TWinDbgProcess.WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
-begin
-  Result := WriteProcMem(fProcInfo.hProcess, Offset, Count, Data);
-  FlushInstructionCache(fProcInfo.hProcess, @Offset, Count);
-end;
-
-procedure TWinDbgProcess.AddThread(ThreadID: TThreadID; ThreadHandle: THandle);
+function TWinDbgTarget.ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
 var
-  i : Integer;
+  hnd : Integer;
 begin
-  for i:=0 to fThreadsCount-1 do 
-    if fThreads[i].id = ThreadID then 
-      Exit;
-  if fThreadsCount = length(fThreads) then begin
-    if fThreadsCount = 0 then SetLength(fThreads, 4)
-    else SetLength(fThreads, fThreadsCount*2);
+  hnd:=fProcesses.FindByID(procID);
+  if hnd=0 then Result:=-1
+  else Result := ReadProcMem(hnd, Offset, Count, Data);
+end;
+
+function TWinDbgTarget.WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
+var
+  hnd : Integer;
+begin
+  hnd:=fProcesses.FindByID(procID);
+  if hnd=0 then Result:=-1
+  else begin
+    Result := WriteProcMem(hnd, Offset, Count, Data);
+    FlushInstructionCache(hnd, @Offset, Count);
   end;
-  fThreads[fThreadsCount].id := ThreadID;
-  fThreads[fThreadsCount].Handle := ThreadHandle;
-  inc(fThreadsCount);  
 end;
 
-procedure TWinDbgProcess.RemoveThread(ThreadID: TThreadID); 
-var
-  i : Integer;
-  j : Integer;
+procedure TWinDbgTarget.AddThread(ThreadID: TThreadID; ThreadHandle: THandle);
 begin
-  for i:=0 to fThreadsCount-1 do 
-    if fThreads[i].id=ThreadID then begin
-      for j := i + 1 to  fThreadsCount-1 do fThreads[j-1]:=fThreads[j];
-      dec(fThreadsCount);
-      Exit;
-    end;
+  fThreads.Add(ThreadHandle, ThreadID, nil);
 end;
 
-function TWinDbgProcess.GetThreadIndex(ThreadID: TThreadID): Integer;
-var
-  i : Integer;
+procedure TWinDbgTarget.RemoveThread(ThreadID: TThreadID); 
 begin
-  for i := 0 to fThreadsCount - 1 do
-    if fThreads[i].id=ThreadID then begin
-      Result := i;
-      Exit;
-    end;
-  Result := -1;
+  fThreads.DeleteByID(ThreadID);
 end;
 
 
-function TWinDbgProcess.Execute(const ACommandLine: String): Boolean;  
+function TWinDbgTarget.StartDebugProcess(const ACommandLine: String; OnlyProcess: Boolean): Boolean;  
 begin
   fCmdLine := ACommandLine;
+  Result := CreateDebugProcess(ACommandLine, OnlyProcess, fMainProc);
+  //todo:
   
-  Result := CreateDebugProcess(ACommandLine, fProcInfo);
   if not Result then Exit;
 end;
 
-procedure TWinDbgProcess.Terminate;  
+procedure TWinDbgTarget.Terminate;  
 begin
 end;
 
-function TWinDbgProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;  
+function TWinDbgTarget.WaitNextEvent(var Event: TDbgEvent): Boolean;  
 var
   ContStatus  : LongWord;
 const
@@ -187,7 +202,7 @@ begin
   fWaited:=Result;
   
   if Result then begin
-    Event.Debug := DebugWinEvent(fProcInfo.hProcess, fLastEvent);
+    Event.Debug := DebugWinEvent( fThreads.FindByID(fLastEvent.dwThreadId), fLastEvent);
     WinEventToDbgEvent(fLastEvent, Event);
     Event.Process:=fLastEvent.dwProcessId;    
     Event.Thread:=fLastEvent.dwThreadId;
@@ -208,37 +223,47 @@ begin
       end;
     end;
   
-    fTerminated := (Event.Kind = dek_ProcessTerminated) and (fLastEvent.dwProcessId = fProcInfo.dwProcessId);
+    fTerminated := (Event.Kind = dek_ProcessTerminated) and (fLastEvent.dwProcessId = fMainProc.dwProcessId);
     Event.Debug := '*'+Event.Debug + ' ' + IntToStr(fLastEvent.dwDebugEventCode);
   end else
     event.Debug := 'GetLastError = ' + IntToStr(GetLastError);
 end;
 
-function TWinDbgProcess.GetThreadsCount(procID: TDbgProcessID): Integer;
+function TWinDbgTarget.GetThreadsCount(procID: TDbgProcessID): Integer;
+var
+  info : TProcessThreads;
 begin
-  Result := fThreadsCount;  
+  info:=TProcessThreads(fThreads.TagByID(procID));
+  if not Assigned(info) then Result:=0
+  else Result:=info.Count;
 end;
 
-function TWinDbgProcess.GetThreadID(procID: TDbgProcessID; AIndex: Integer): TDbgThreadID;
+function TWinDbgTarget.GetThreadID(procID: TDbgProcessID; AIndex: Integer): TDbgThreadID;
+var
+  info : TProcessThreads;
 begin
-  if (AIndex < 0) or (AIndex >= fThreadsCount) 
+  info:=TProcessThreads(fThreads.TagByID(procID));
+  if not Assigned(info) then begin
+    Result:=0;
+    Exit;
+  end;
+  if (AIndex < 0) or (AIndex >= info.Count) 
     then Result := 0
-    else Result := fThreads[AIndex].id;
+    else Result := info.IDs[AIndex];
 end;
 
-function TWinDbgProcess.GetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;
+function TWinDbgTarget.GetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;
 var
   idx   : Integer;
   hnd   : THandle;
 begin
   Result := false;
-  if fWaiting then Exit;
-
-  idx := GetThreadIndex(ThreadID);
-  Result := idx >= 0;
-  if not Result then Exit;
-  
-  hnd := fThreads[idx].Handle;
+ 
+  { "Thread Handles and Identifiers" http://msdn.microsoft.com/en-us/library/ms686746(VS.85).aspx }
+  { Threads are uniquelty identified throughout the system }
+  { there's no need to find "a thread of a process"        }
+  hnd:=fThreads.HandleByID(threadID);
+  if hnd=0 then Exit;
   
   if fis32proc then begin
     Result:=DoReadThreadRegs32(hnd, Regs);
@@ -246,7 +271,7 @@ begin
     Result := false;
 end;
 
-function TWinDbgProcess.SetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;
+function TWinDbgTarget.SetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;
 var
   idx   : Integer;
   hnd   : THandle;
@@ -254,28 +279,23 @@ begin
   Result := false;
   if fWaiting then Exit;
 
-  idx := GetThreadIndex(ThreadID);
-  Result := idx >= 0;
-  if not Result then Exit;
-  
-  hnd := fThreads[idx].Handle;
-  
+  hnd:=fThreads.HandleByID(ThreadID);
+  if hnd=0 then Exit;
   if fis32proc then 
     Result:=DoWriteThreadRegs32(hnd, Regs)
   else
     Result := false;
 end;
 
-function TWinDbgProcess.SetSingleStep(procID: TDbgProcessID; ThreadID: TDbgThreadID): Boolean;
+function TWinDbgTarget.SetSingleStep(procID: TDbgProcessID; ThreadID: TDbgThreadID): Boolean;
 var
-  idx : Integer;
+  hnd : THandle;
 begin
-  idx := GetThreadIndex(ThreadID);
-  Result := idx >= 0;
-  if not Result then Exit;
-
+  Result:=false;
+  hnd:=fThreads.FindByID(ThreadID);
+  if hnd=0 then Exit;
   if fis32proc then 
-    Result := SetThread32SingleStep(fThreads[idx].Handle)
+    Result := SetThread32SingleStep(hnd)
   else 
     //todo:
     Result := false;
@@ -289,6 +309,104 @@ end;
 procedure InitWindowsDebug;
 begin
   DebugProcessStart := @WinDebugProcessStart;
+end;
+
+{ THandleList }
+
+procedure THandleList.DeleteByIndex(i: Integer; FreeTag: Boolean); 
+begin
+  if FreeTag then fList[i].Tag.Free;
+  if i<fCount-1 then  
+    fList[i]:=fList[fCount-1];
+  dec(fCount);
+end;
+
+function THandleList.FindByID(ID: Integer): Integer;
+var
+  i: Integer;
+begin
+  for i:=0 to fCount-1 do
+    if fList[i].ID=ID then begin
+      Result:=i;
+      Exit;
+    end;
+  Result:=-1;
+end;
+
+procedure THandleList.Add(AHandle: THandle; ID: DWORD; Tag: TObject); 
+begin
+  if fCount=length(fList) then begin
+    if fCount=0 then SetLength(fList, 4)
+    else SetLength(fList, fCount*2);
+  end;
+  fList[fCount].Hnd:=AHandle;
+  fList[fCount].ID:=ID;
+  fList[fCount].Tag:=Tag;
+  inc(fCount);
+end;
+
+procedure THandleList.DeleteByID(ID: DWORD; FreeTag: Boolean); 
+var
+  i : Integer;
+begin
+  for i:=0 to fCount-1 do
+    if fList[i].ID=ID then begin
+      DeleteByIndex(i, FreeTag);
+      Exit;
+    end;
+end;
+
+procedure THandleList.DeleteByHandle(AHandle: THandle; FreeTag: Boolean); 
+var
+  i : Integer;
+begin
+  for i:=0 to fCount-1 do
+    if fList[i].Hnd=AHandle then begin
+      DeleteByIndex(i, FreeTag);
+      Exit;
+    end;
+end;
+
+function THandleList.HandleByID(ID: DWORD): THandle; 
+var
+  i : Integer;
+begin
+  i:=FindByID(ID);
+  if i < 0 then Result:=0
+  else Result:=fList[i].Hnd;
+end;
+
+function THandleList.TagByID(ID: DWORD): TObject; 
+var
+  i : Integer;
+begin
+  i:=FindByID(ID);
+  if i < 0 then Result:=nil
+  else Result:=fList[i].Tag;
+end;
+
+{ TProcessThreads }
+
+procedure TProcessThreads.AddID(ThreadID: Integer); 
+begin
+  if Count=length(IDs) then begin
+    if Count=0 then SetLength(IDs, 4)
+    else SetLength(IDs, Count*2);
+  end;
+  IDs[Count]:=ThreadID;
+  inc(Count);
+end;
+
+procedure TProcessThreads.RemoveID(ThreadID: Integer); 
+var
+  i : Integer;
+begin
+  for i:=0 to Count - 1 do
+    if IDs[i]=ThreadID then begin
+      IDs[i]:=IDs[Count-1];
+      dec(Count);
+      Exit;
+    end;
 end;
 
 initialization

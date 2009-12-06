@@ -77,7 +77,7 @@ type
 const
   hexsize = sizeof(TDbgPtr)*2;
 
-function CreateDebugProcess(const CmdLine: String; out Info: TProcessInformation): Boolean;
+function CreateDebugProcess(const CmdLine: String; OnlyProcess: Boolean; out Info: TProcessInformation): Boolean;
 
 function ReadProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; var data: array of byte): Integer;
 function WriteProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; const data: array of byte): Integer;
@@ -262,10 +262,11 @@ end;
 function ReadProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; var data: array of byte): Integer;
 var
   res : LongWord;
+  err : LongWord;
 begin
   if not ReadProcessMemory(dwProc, Pointer(Offset), @data[0], Count, res) then begin
+    err:=GetLastError;
     Result := -1;
-    //writeln('error reading Proc mem = ',GetLastError);
   end else
     Result := res;  
 end;
@@ -274,27 +275,22 @@ function WriteProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; const d
 var
   res : LongWord;
 begin
-  writeln('WriteMem: ');
-  writeln('dwProc = ', dwProc);
-  writeln('Offset = ', Offset, ' ', IntToHex(Offset, 8));
-  writeln('data   = ', Integer(@data[0]));
-  writeln('count  = ', Count);
-  if not WriteProcessMemory(dwProc, Pointer(Offset), @data[0], Count, res) then
-    Result := -1
-  else
+  if not WriteProcessMemory(dwProc, Pointer(Offset), @data[0], Count, res) then begin
+    Result := -1;
+  end else
     Result := res;
-  if Result < 0 then 
-    writeln('memory writing: ', GetLastError);
 end;
 
 
-function CreateDebugProcess(const CmdLine: String; out Info: TProcessInformation): Boolean;
+function CreateDebugProcess(const CmdLine: String; OnlyProcess: Boolean; out Info: TProcessInformation): Boolean;
 var
   StartUpInfo : TSTARTUPINFO;
-const
-  CreateFlags = DEBUG_PROCESS or CREATE_NEW_CONSOLE;
+  CreateFlags : DWORD;
   
 begin
+  CreateFlags:=DEBUG_PROCESS or CREATE_NEW_CONSOLE;
+  if OnlyProcess then CreateFlags:=CreateFlags or DEBUG_ONLY_THIS_PROCESS;
+  
   FillChar(StartUpInfo, SizeOf(StartupInfo), 0);
   StartUpInfo.cb := SizeOf(StartupInfo);
   StartUpInfo.dwFlags := STARTF_USESTDHANDLES or STARTF_USESHOWWINDOW;
@@ -411,7 +407,7 @@ begin
       Dbg.Kind := dek_ProcessTerminated;
     EXCEPTION_DEBUG_EVENT:  
     begin
-      case WinEvent.Exception.ExceptionRecord.ExceptionCode  of
+      case WinEvent.Exception.ExceptionRecord.ExceptionCode of
         EXCEPTION_BREAKPOINT: 
           WinBreakPointToDbg(WinEvent, Dbg);
         EXCEPTION_SINGLE_STEP: 

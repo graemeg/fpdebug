@@ -29,8 +29,8 @@ type
     Count   : Integer;
     IDs     : array of DWORD;
     Is32Bit : Boolean; // todo:
-    procedure AddID(ThreadID: Integer);
-    procedure RemoveID(ThreadID: Integer);
+    procedure AddID(ThreadID: DWORD);
+    procedure RemoveID(ThreadID: DWORD);
   end;
   
   { THandleList }
@@ -40,7 +40,7 @@ type
     fList   : array of TWinHandleIDPair;
     fCount  : Integer;
     procedure DeleteByIndex(i: Integer; FreeTag: Boolean);
-    function FindByID(ID: Integer): Integer;
+    function FindByID(ID: DWORD): Integer;
   public
     procedure Add(AHandle: THandle; ID: DWORD; Tag: TObject);
     procedure DeleteByID(ID: DWORD; FreeTag: Boolean=False);
@@ -254,7 +254,6 @@ end;
 
 function TWinDbgTarget.GetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;
 var
-  idx   : Integer;
   hnd   : THandle;
 begin
   Result := false;
@@ -273,7 +272,6 @@ end;
 
 function TWinDbgTarget.SetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;
 var
-  idx   : Integer;
   hnd   : THandle;
 begin
   Result := false;
@@ -321,7 +319,7 @@ begin
   dec(fCount);
 end;
 
-function THandleList.FindByID(ID: Integer): Integer;
+function THandleList.FindByID(ID: DWORD): Integer;
 var
   i: Integer;
 begin
@@ -387,7 +385,7 @@ end;
 
 { TProcessThreads }
 
-procedure TProcessThreads.AddID(ThreadID: Integer); 
+procedure TProcessThreads.AddID(ThreadID: DWORD); 
 begin
   if Count=length(IDs) then begin
     if Count=0 then SetLength(IDs, 4)
@@ -397,7 +395,7 @@ begin
   inc(Count);
 end;
 
-procedure TProcessThreads.RemoveID(ThreadID: Integer); 
+procedure TProcessThreads.RemoveID(ThreadID: DWORD); 
 var
   i : Integer;
 begin

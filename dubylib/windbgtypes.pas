@@ -50,6 +50,8 @@ type
   end;
   
 
+  { TWinDbgTarget }
+
   TWinDbgTarget = class(TDbgTarget)
   private
     fCmdLine  : String;
@@ -67,7 +69,8 @@ type
     fEHandled     : Boolean;
     
   protected
-    procedure AddThread(ThreadID: TThreadID; ThreadHandle: THandle);
+    procedure AddProcess(ProcessID: DWORD; ProcessHandle: THandle);
+    procedure AddThread(ProcessID, ThreadID: DWORD; ThreadHandle: THandle);
     procedure RemoveThread(ThreadID: TThreadID);
     
   public
@@ -109,6 +112,8 @@ end;
 constructor TWinDbgTarget.Create; 
 begin
   fis32proc := True;
+  fProcesses := THandleList.Create;  
+  fThreads := THandleList.Create;
 end;
 
 destructor TWinDbgTarget.Destroy;  
@@ -120,7 +125,8 @@ function TWinDbgTarget.ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: In
 var
   hnd : Integer;
 begin
-  hnd:=fProcesses.FindByID(procID);
+  hnd:=fProcesses.HandleByID(procID);
+  writeln('reading mem: ');
   if hnd=0 then Result:=-1
   else Result := ReadProcMem(hnd, Offset, Count, Data);
 end;
@@ -129,7 +135,7 @@ function TWinDbgTarget.WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: I
 var
   hnd : Integer;
 begin
-  hnd:=fProcesses.FindByID(procID);
+  hnd:=fProcesses.HandleByID(procID);
   if hnd=0 then Result:=-1
   else begin
     Result := WriteProcMem(hnd, Offset, Count, Data);
@@ -137,8 +143,18 @@ begin
   end;
 end;
 
-procedure TWinDbgTarget.AddThread(ThreadID: TThreadID; ThreadHandle: THandle);
+procedure TWinDbgTarget.AddProcess(ProcessID: DWORD; ProcessHandle: THandle); 
 begin
+  fProcesses.Add(ProcessHandle, ProcessID, TProcessThreads.Create);
+end;
+
+procedure TWinDbgTarget.AddThread(ProcessID, ThreadID: DWORD; ThreadHandle: THandle);
+var
+  info  : TProcessThreads;
+begin
+  info:=TProcessThreads(fProcesses.TagByID(ProcessID));
+  if Assigned(info) then info.AddID(ThreadID);
+  
   fThreads.Add(ThreadHandle, ThreadID, nil);
 end;
 
@@ -152,13 +168,16 @@ function TWinDbgTarget.StartDebugProcess(const ACommandLine: String; OnlyProcess
 begin
   fCmdLine := ACommandLine;
   Result := CreateDebugProcess(ACommandLine, OnlyProcess, fMainProc);
-  //todo:
-  
   if not Result then Exit;
+  
+  // events like Create_Process and Create_Thread will be fired  
+  {  AddProcess(fMainProc.dwProcessId, fMainProc.hProcess);
+     AddThread(fMainProc.dwProcessId, fMainProc.hThread, fMainProc.dwThreadId);}
 end;
 
 procedure TWinDbgTarget.Terminate;  
 begin
+  //todo: terminate all processes
 end;
 
 function TWinDbgTarget.WaitNextEvent(var Event: TDbgEvent): Boolean;  
@@ -202,7 +221,7 @@ begin
   fWaited:=Result;
   
   if Result then begin
-    Event.Debug := DebugWinEvent( fThreads.FindByID(fLastEvent.dwThreadId), fLastEvent);
+    Event.Debug := DebugWinEvent( fThreads.HandleByID(fLastEvent.dwThreadId), fLastEvent);
     WinEventToDbgEvent(fLastEvent, Event);
     Event.Process:=fLastEvent.dwProcessId;    
     Event.Thread:=fLastEvent.dwThreadId;
@@ -211,10 +230,11 @@ begin
       CREATE_PROCESS_DEBUG_EVENT: 
       begin
         writeln('Win Process Started: ', fLastEvent.dwProcessId);
-        AddThread(fLastEvent.dwThreadId, fLastEvent.CreateProcessInfo.hThread); 
+        AddProcess(fLastEvent.dwProcessId, fLastEvent.CreateProcessInfo.hProcess);
+        AddThread(fLastEvent.dwProcessId, fLastEvent.dwThreadId, fLastEvent.CreateProcessInfo.hThread); 
       end;
       CREATE_THREAD_DEBUG_EVENT:
-        AddThread(fLastEvent.dwThreadId, fLastEvent.CreateThread.hThread);
+        AddThread(fLastEvent.dwProcessId, fLastEvent.dwThreadId, fLastEvent.CreateThread.hThread);
       EXIT_PROCESS_DEBUG_EVENT, EXIT_THREAD_DEBUG_EVENT: 
       begin
         if fLastEvent.dwDebugEventCode =  EXIT_PROCESS_DEBUG_EVENT then
@@ -290,7 +310,7 @@ var
   hnd : THandle;
 begin
   Result:=false;
-  hnd:=fThreads.FindByID(ThreadID);
+  hnd:=fThreads.HandleByID(ThreadID);
   if hnd=0 then Exit;
   if fis32proc then 
     Result := SetThread32SingleStep(hnd)

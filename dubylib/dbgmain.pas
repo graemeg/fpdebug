@@ -52,6 +52,8 @@ type
     function GetThreadsCount: Integer;
     
   public
+    Tags   : TList; // process relative information: Breakpoints, DebugInfo... etc
+    
     constructor Create(AOwner: TDbgMain; AProcessID: TDbgProcessID);
     destructor Destroy; override;
     function FindThread(AThreadid: TDbgThreadID): TDbgThread;

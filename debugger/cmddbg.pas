@@ -336,6 +336,7 @@ begin
   
   if CmdParams.Count <= 1 then begin
     //regs := GetProcessRegisters(Process, 0);
+    regs:=nil;
     if not Assigned(regs) then begin
       writeln('Cannot read process state. ');
       Exit;

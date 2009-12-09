@@ -96,7 +96,7 @@ type
   
   { TDbgTarget }
 
-  TDbgTarget = class(TObject)
+  TDbgTarget = class(TObject) {TDbgSysAPI}
   protected
   public
     procedure Terminate; virtual; abstract;
@@ -109,7 +109,7 @@ type
 
     function SetSingleStep(AProcess: TDbgProcessID; ThreadID: TDbgThreadID): Boolean; virtual; abstract;
 
-    //todo: remove TDbgProcessID=0
+    //todo: remove 
     function MainThreadID(AProcess: TDbgProcessID=0): TDbgThreadID; virtual;
     
     function ReadMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; virtual; abstract;

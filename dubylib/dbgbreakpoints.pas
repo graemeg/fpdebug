@@ -9,7 +9,84 @@ uses
   dbgTypes, dbgCPU, dbgUtils, memviewer, dbgMain; 
   
 type
+  TRawBreakpoint = class(TObject);
   
+  TBreakpointAccess = class(TObject)
+  public
+    function CanSetBreakpoint(Addr: TDbgPtr; AProcess: TDbgProcess): Boolean; virtual; abstract;
+    function SetBreakpoint(Addr: TDbgPtr; AProcess: TDbgProcess): TRawBreakpoint; virtual; abstract;
+    procedure UnsetBreakpoint(AProcess: TDbgProcess; var Point: TRawBreakpoint); virtual; abstract;
+  end;
+  
+  { TCPURawBreakpoint }
+  TCPUBreakpointAcccess = class;
+
+  TCPURawBreakpoint = class(TRawBreakpoint)
+  private
+    FOwner    : TCPUBreakpointAcccess;
+  public
+    Addr      : TDbgPtr;
+    CodeSize  : Integer;
+    Code      : array of byte;
+    constructor Create(AOwner: TCPUBreakpointAcccess);
+    function Install(AAddr: TDbgPtr; AProcess: TDbgProcess): Boolean;
+    procedure Uninstall(AProcess: TDbgProcess);
+    destructor Destroy; override;
+  end;
+  
+  { TCPUBreakpointAcccess }
+
+  TCPUBreakpointAcccess = class(TBreakpointAccess)
+  private
+    fCPU      : TCPUCode;
+  public
+    constructor Create(ACPU: TCPUCode);
+    function CanSetBreakpoint(Addr: TDbgPtr; AProcess: TDbgProcess): Boolean; override;
+    function SetBreakpoint(Addr: TDbgPtr; AProcess: TDbgProcess): TRawBreakpoint; override;
+    procedure UnsetBreakpoint(AProcess: TDbgProcess; var Point: TRawBreakpoint); override;
+  end;
+  
+
+(*
+  TBreakpointPool = class;
+  TBreakpoint = class;
+  
+  TBreakpoint = class(TObject)
+  private
+    fOnBreak  : TNotifyEvent;
+    fTag      : TObject;
+  protected
+    function GetAddr: TDbgAddr; virtual; abstract;
+    function GetOwner: TDbgAddr; virtual; abstract;
+    function GetEnabled: Boolean; virtual; abstract;
+    procedure SetEnabled(AEnabled: Boolean); virtual; abstract;
+  public
+    property Owner: TBreakpointPool read GetOwner; 
+    property Addr: TDbgAddr read GetAddr;
+    property Enabled: Boolean read GetEnabled write SetEnabled;
+    property Tag: TObject read fTag write fTag;
+  end;
+  
+  TBreakEvent = procedure (Sender: TBreakpoint; Handler: TBreakHandler) of object;
+  
+  TBreakHandler = class(TObject)
+  private
+    fTag    : TObject;
+  public
+    property Tag: TObject read fTag write fTag;
+  end;
+  
+  TBreakpointPool = class(TObject)
+  protected
+    function GetProcess: TDbgProcess; virtual; abstract;
+  public
+    procedure AddBreakpoint(Addr: TDbgAddr; ATag: TObject = nil): TObject; virtual; abstract;
+    procedure RemoveBreakpoint(var Point: TBreakpoint); virtual; abstract;
+    procedure AddBreakHandler(Addr: TDbgAddr; Handler: TBreakEvent): TBreakHandler; virtual; abstract;
+    procedure RemoveHandler(var hnd: TBreakHandler); virtual; abstract;
+    property Process: TDbgProcess read GetPorcess; 
+  end;
+  *)  
   { TBreakPoint }
 
   TBreakPoint = class(TObject)
@@ -245,6 +322,80 @@ end;
 procedure ReleaseBreakpoints;
 begin
   fBreakPoints.Free;
+end;
+
+{ TCPUBreakpointAcccess }
+
+constructor TCPUBreakpointAcccess.Create(ACPU: TCPUCode); 
+begin
+  inherited Create;
+  fCPU:=ACPU;
+end;
+
+function TCPUBreakpointAcccess.CanSetBreakpoint(Addr: TDbgPtr; AProcess: TDbgProcess): Boolean;  
+var
+  buf : array of byte;
+begin
+  SetLength(buf, fCPU.BreakPointSize);
+  Result:=not fCPU.IsBreakPoint(buf, 0);
+end;
+
+function TCPUBreakpointAcccess.SetBreakpoint(Addr: TDbgPtr; AProcess: TDbgProcess): TRawBreakpoint;  
+var
+  cpubp : TCPURawBreakpoint;
+begin
+  Result:=nil;
+  cpubp:=TCPURawBreakpoint.Create(Self);
+  if not cpubp.Install(Addr, AProcess) then 
+    cpubp.Free
+  else
+    Result:=cpubp;
+end;
+
+procedure TCPUBreakpointAcccess.UnsetBreakpoint(AProcess: TDbgProcess; var Point: TRawBreakpoint);  
+begin
+  if not Assigned(Point) or not (Point is TCPURawBreakpoint) then Exit;
+  if Assigned(AProcess) then TCPURawBreakpoint(Point).Uninstall(AProcess);
+  Point.Free;
+  Point:=nil;
+end;
+
+{ TCPURawBreakpoint }
+
+constructor TCPURawBreakpoint.Create(AOwner: TCPUBreakpointAcccess); 
+begin
+  inherited Create;
+  fOwner:=AOwner;
+end;
+
+destructor TCPURawBreakpoint.Destroy; 
+begin
+  inherited;
+end;
+
+function TCPURawBreakpoint.Install(AAddr: TDbgPtr; AProcess: TDbgProcess): Boolean; 
+var
+  buf : array of byte;
+  CPU : TCPUCode;
+begin
+  CPU:=FOwner.fCPU;
+  Addr:=AAddr;
+  CodeSize := CPU.BreakPointSize;
+  
+  if length(Code) < CodeSize then SetLength(code, CodeSize);
+  Result := (AProcess.ReadMem(Addr, CodeSize, Code) = CodeSize);
+  if Result then Result:= not CPUCode.IsBreakPoint(Code, 0);
+  if not Result then Exit;
+  
+  SetLength(buf, CodeSize);
+  CPUCode.WriteBreakPoint(buf, 0);
+  Result := AProcess.WriteMem(Addr, CodeSize, buf) = CodeSize;
+end;
+
+procedure TCPURawBreakpoint.Uninstall(AProcess: TDbgProcess); 
+begin
+  if CodeSize=0 then Exit;
+  if Assigned(AProcess) then AProcess.WriteMem(Addr, CodeSize, Code);
 end;
 
 initialization

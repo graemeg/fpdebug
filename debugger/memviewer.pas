@@ -74,7 +74,7 @@ var
 begin
   FillChar(buf[0], sizeof(buf), 0);
   if AProcess.ReadMem(Offset, sizeof(buf), buf) < 0 then begin
-    writeln('cannot read proc mem ');
+    writeln('cannot read proc ', AProcess.ID, ', mem ');
     Exit;
   end;
 

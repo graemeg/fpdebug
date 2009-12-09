@@ -27,7 +27,7 @@ uses
   cmddbg      // debug-info commands
   
   {$ifdef mswindows},winDbgTypes{$endif}          // windows debug API
-  {$ifdef darwin},macDbgType, macDbgProc {$endif} // macosx debug API
+  {$ifdef darwin},macDbgType{$endif} // macosx debug API
   {$ifdef linux},nixDbgTypes{$endif}              // linux debug API
   
   {$ifdef CPUI386},dbgi386{$endif} // i386 CPU routines

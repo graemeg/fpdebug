@@ -124,11 +124,11 @@ end;
 { TRemoveBreak }
 
 procedure TRemoveBreak.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
-var
+{var
   addr  : TDbgPtr;
-  bp    : TBreakPoint;
+  bp    : TBreakPoint;}
 begin
-  if not GetAddr(CmdParams, Addr) then begin
+{  if not GetAddr(CmdParams, Addr) then begin
     writeln('please specify valid adress to set breakpoint');
     Exit;
   end;
@@ -138,7 +138,7 @@ begin
   else begin
     RemoveBreakPoint(bp);
     writeln('breakpoint removed');
-  end;
+  end;}
 end;
 
 function TRemoveBreak.ShortHelp: String;  
@@ -378,10 +378,10 @@ type
   end;
 
 procedure TBreakHandler.BreakHandle(Process: TDbgTarget; Event : TDbgEvent);
-var
-  bp    : TBreakPoint;  
+{var
+  bp    : TBreakPoint;  }
 begin
-  if Event.Kind = dek_BreakPoint then begin
+{  if Event.Kind = dek_BreakPoint then begin
     writelN('Break?');
     if Event.addr = 0 then begin
       // no address. do nothing.
@@ -399,7 +399,7 @@ begin
       WriteLn('breakpoint handled and disabled at ', HexAddr(bp.Addr) )
     else
       WriteLn('failed to handle break point at ', HexAddr(bp.Addr) );
-  end;
+  end;}
 end;  
   
 var

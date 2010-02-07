@@ -15,6 +15,8 @@ type
 
   { TDbgThread }
 
+  // process thread wrapper
+  
   TDbgThread = class(TObject)
   private
     fID     : TDbgThreadID;
@@ -33,6 +35,8 @@ type
 
   TDbgProcessState = (dps_Starting, dps_Running, dps_Terminating);
 
+  TDbgHandlerEvent = procedure (Sender: TObject; Addr: TDbgPtr; var NeedStopWithBreak: Boolean) of object;
+  
   { TDbgProcess }
 
   TDbgProcess  = class(TObject)
@@ -52,14 +56,20 @@ type
     function GetThreadsCount: Integer;
     
   public
-    Tags   : TList; // process relative information: Breakpoints, DebugInfo... etc
+    //   Tags   : TList; // process relative information: Breakpoints, DebugInfo... etc
     
     constructor Create(AOwner: TDbgMain; AProcessID: TDbgProcessID);
     destructor Destroy; override;
+
     function FindThread(AThreadid: TDbgThreadID): TDbgThread;
     function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; 
     function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
-    
+
+    function EnabledBreakpoint(const Addr: TDbgPtr): Boolean;
+    procedure DisableBreakpoint(const Addr: TDbgPtr);
+    function AddBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent): Boolean;
+    procedure RemoveBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent);
+
     property ID: TDbgProcessID read fProcID;
     property State: TDbgProcessState read fState;
     property ThreadsCount: Integer read GetThreadsCount;
@@ -74,6 +84,37 @@ type
   
   TDbgHandleEvent = procedure (const Event: TDbgEvent; var EventHandled: THandleState) of object;
 
+  TDbgPointHandler = procedure (Sender: TObject; Addr: TDbgPtr; var Handled: Boolean) of object;
+
+  { TDbgBreakWatch }
+
+  TRawBreakpoint = class(TObject)
+  public
+    procedure Enable; virtual; abstract;
+    procedure Disable; virtual; abstract;
+  end;
+  
+  TDbgBreakWatch = class(TObject)
+  private
+    fAddr       : TDbgPtr;
+    fEnabled    : Boolean;
+    fOwner      : TDbgMain;
+    fRaw        : TRawBreakpoint;    
+    fRawEnabled : Boolean;
+    Handlers    : array of TDbgPointHandler;
+    Count       : Integer;
+    procedure SetEnabled(AEnabled: Boolean);
+    procedure RefreshRaw;
+  public
+    constructor Create(AOwner: TDbgMain; AAddr: TDbgPtr);
+    destructor Destroy; override;
+    procedure NotifyHandlers(var NeedToStop: Boolean);
+    procedure AddHandler(AHandleEvent: TDbgPointHandler);
+    procedure RemoveHandler(AHandleEvent: TDbgPointHandler);
+    property Addr: TDbgPtr read fAddr;
+    property Enabled: Boolean read fEnabled write SetEnabled;
+  end;
+  
   { TDbgMain }
 
   TDbgMain = class(TObject)
@@ -112,7 +153,6 @@ type
     property Process[i: Integer]: TDbgProcess read GetProcess;
   end;
   
-  TDbgPointHandler = procedure (Sender: TObject; Process: TDbgProcess; Addr: TDbgPtr; var Handled: Boolean) of object;
   
   { TDbgBreak }
 
@@ -456,6 +496,28 @@ begin
   Result:=fOwner.DoWriteMem(Self, Offset, Count, Data);
 end;
 
+function TDbgProcess.EnabledBreakpoint(const Addr: TDbgPtr): Boolean; 
+begin
+
+end;
+
+procedure TDbgProcess.DisableBreakpoint(const Addr: TDbgPtr); 
+begin
+
+end;
+
+function TDbgProcess.AddBreakHandler(const Addr: TDbgPtr;  
+  Handler: TDbgHandlerEvent): Boolean; 
+begin
+
+end;
+
+procedure TDbgProcess.RemoveBreakHandler(const Addr: TDbgPtr;  
+  Handler: TDbgHandlerEvent); 
+begin
+
+end;
+
 { TDbgThread }
 
 constructor TDbgThread.Create(AOwner: TDbgProcess; AID: TDbgThreadID); 
@@ -630,6 +692,81 @@ begin
   inherited Create;
   ProcID:=AProcID;
   Addr:=AAddr;
+end;
+
+{ TDbgBreakWatch }
+
+procedure TDbgBreakWatch.SetEnabled(AEnabled: Boolean); 
+begin
+  if fEnabled=AEnabled then Exit;
+  fEnabled:=AEnabled;
+  RefreshRaw;
+end;
+
+procedure TDbgBreakWatch.RefreshRaw; 
+var
+  WantedRawState : Boolean;
+begin
+  WantedRawState := fEnabled or (Count>0);
+  if WantedRawState = fRawEnabled then Exit;
+  fRawEnabled:=WantedRawState;
+  if fRawEnabled then fRaw.Enable else fRaw.Disable;
+end;
+
+constructor TDbgBreakWatch.Create(AOwner: TDbgMain; AAddr: TDbgPtr); 
+begin
+  inherited Create;
+  fAddr:=AAddr; 
+  fOwner:=AOwner;
+end;
+
+destructor TDbgBreakWatch.Destroy;  
+begin
+  inherited Destroy;  
+end;
+
+procedure TDbgBreakWatch.NotifyHandlers(var NeedToStop: Boolean); 
+var
+  i       : Integer;
+  doStop  : Boolean;
+begin
+  NeedToStop:=False;
+  for i:=0 to Count-1 do
+    try
+      doStop:=false;
+      Handlers[i](fOwner, fAddr, NeedToStop);
+      NeedToStop:=NeedToStop or doStop;
+    except
+    end;
+end;
+
+procedure TDbgBreakWatch.AddHandler(AHandleEvent: TDbgPointHandler); 
+var
+  i: Integer;
+begin
+  for i:=0 to Count-1 do
+    if Handlers[i] = AHandleEvent then Exit;
+  if length(Handlers)=Count then begin
+    if Count=0 then SetLength(Handlers, 4)
+    else SetLength(Handlers,Count*2);
+  end;
+  Handlers[Count]:=AHandleEvent;
+  inc(Count);
+  RefreshRaw;
+end;
+
+procedure TDbgBreakWatch.RemoveHandler(AHandleEvent: TDbgPointHandler); 
+var
+  i,  j : Integer;
+begin
+  for i:=0 to Count-1 do
+    if Handlers[i]=AHandleEvent then begin
+      for j:=i to count - 2 do
+        Handlers[j]:=Handlers[j+1];
+      dec(Count);
+      Exit;
+    end;
+  RefreshRaw;
 end;
 
 initialization

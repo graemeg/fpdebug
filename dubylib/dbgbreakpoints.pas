@@ -9,6 +9,8 @@ uses
   dbgTypes, dbgCPU, dbgUtils, memviewer, dbgMain; 
   
 type
+  { --- low-level breakpoints --- }
+  
   TRawBreakpoint = class(TObject);
   
   TBreakpointAccess = class(TObject)
@@ -19,6 +21,7 @@ type
   end;
   
   { TCPURawBreakpoint }
+  
   TCPUBreakpointAcccess = class;
 
   TCPURawBreakpoint = class(TRawBreakpoint)
@@ -45,106 +48,91 @@ type
     function SetBreakpoint(Addr: TDbgPtr; AProcess: TDbgProcess): TRawBreakpoint; override;
     procedure UnsetBreakpoint(AProcess: TDbgProcess; var Point: TRawBreakpoint); override;
   end;
-  
 
-(*
-  TBreakpointPool = class;
-  TBreakpoint = class;
+  { --- high-level breakpoints --- }  
   
-  TBreakpoint = class(TObject)
-  private
-    fOnBreak  : TNotifyEvent;
-    fTag      : TObject;
-  protected
-    function GetAddr: TDbgAddr; virtual; abstract;
-    function GetOwner: TDbgAddr; virtual; abstract;
-    function GetEnabled: Boolean; virtual; abstract;
-    procedure SetEnabled(AEnabled: Boolean); virtual; abstract;
-  public
-    property Owner: TBreakpointPool read GetOwner; 
-    property Addr: TDbgAddr read GetAddr;
-    property Enabled: Boolean read GetEnabled write SetEnabled;
-    property Tag: TObject read fTag write fTag;
-  end;
+  TDbgProcessBreakpoints = class;
+  TProcessBreakpoint = class;
   
-  TBreakEvent = procedure (Sender: TBreakpoint; Handler: TBreakHandler) of object;
-  
-  TBreakHandler = class(TObject)
-  private
-    fTag    : TObject;
-  public
-    property Tag: TObject read fTag write fTag;
-  end;
-  
-  TBreakpointPool = class(TObject)
-  protected
-    function GetProcess: TDbgProcess; virtual; abstract;
-  public
-    procedure AddBreakpoint(Addr: TDbgAddr; ATag: TObject = nil): TObject; virtual; abstract;
-    procedure RemoveBreakpoint(var Point: TBreakpoint); virtual; abstract;
-    procedure AddBreakHandler(Addr: TDbgAddr; Handler: TBreakEvent): TBreakHandler; virtual; abstract;
-    procedure RemoveHandler(var hnd: TBreakHandler); virtual; abstract;
-    property Process: TDbgProcess read GetPorcess; 
-  end;
-  *)  
-  { TBreakPoint }
+  { TDbgBreakPoint }
 
-  TBreakPoint = class(TObject)
+  TDbgBreakPoint = class(TObject)
   private
-    fAddr     : TDbgPtr;
-    CodeSize  : Integer;
-    Code      : array of byte;
+    fProcBP   : TProcessBreakpoint;
     fEnabled  : Boolean;
+  protected
+    function GetAddr: TDbgPtr;
+    procedure SetEnabled(AEnabled: Boolean);    
   public
-    Tag       : TObject;
-    function Enable(AProcess: TDbgTarget): Boolean;
-    function Disable(AProcess: TDbgTarget): Boolean;
-    
-    property Enabled : Boolean read fEnabled;
-    property Addr: TDbgPtr read fAddr;
+    Tag  : TObject;
+    constructor Create(AOwner: TProcessBreakpoint; AEnabled: Boolean);
+    property Enabled : Boolean read fEnabled write SetEnabled;
+    property Addr: TDbgPtr read GetAddr;
+  end;
+ 
+  { TProcessBreakpoint }
+
+  TProcessBreakpoint = class(TObject)
+  private
+    fRefCount: Integer;
+    procedure IncRefCount;
+    procedure DecRefCount;
+  public
+    Owner     : TDbgProcessBreakpoints;
+    RawPoint  : TRawBreakpoint;
+    Handlers  : array of TNotifyEvent;
+    HndCount  : Integer;
+    Addr      : TDbgPtr;
+    constructor Create(AOwner: TDbgProcessBreakpoints; AAddr: TDbgPtr);
+    function AddBreakpoint(AEnabled: Boolean): TDbgBreakPoint;
+    procedure RemoveBreakPoint(var Dbg: TDbgBreakPoint);
+    procedure AddHandler(Event: TNotifyEvent);
+    procedure RemoveHandler(Event: TNotifyEvent);
+    property RefCount  : Integer read fRefCount;
   end;
   
-  { TBreakPointsList }
+  
+  { TDbgProcessBreakpoints }
 
-  TBreakPointsList = class(TObject)
+  TDbgProcessBreakpoints = class(TObject)
   private
-    fList : TFPList; // todo: binary-search (sorted) list? AVL tree? 
+    fProcess  : TDbgProcess;
+    fAccesss  : TBreakpointAccess;
+    fList     : TFPList; // todo: binary-search (sorted) list? AVL tree? 
   protected
     function FindBreakpointInt(const addr: TDbgPtr): Integer;
   public
-    constructor Create;
+    constructor Create(AProcess: TDbgProcess; BpAccess: TBreakpointAccess);
     destructor Destroy; override;
     
-    function AddBreakPoint(const addr: TDbgPtr): TBreakPoint; 
-    function FindBreakpoint(const addr: TDbgPtr): TBreakPoint;
-    procedure RemoveBreakPoint(var Bp: TBreakPoint);
+    function AddBreakPoint(const addr: TDbgPtr; AEnabled: Boolean): TDbgBreakPoint; 
+    function FindBreakpoint(const addr: TDbgPtr): TDbgBreakPoint;
+    procedure RemoveBreakPoint(var Bp: TDbgBreakPoint);
     procedure Clear;
+    
+    property Process: TDbgProcess read fProcess;
   end;
   
-function AddBreakPoint(const addr: TDbgPtr): TBreakPoint;
+//function AddBreakPoint(const addr: TDbgPtr): TBreakPoint;
 // function fails, if break point already exists, cannot be enabled or matches hard-coded breakpoint
 //todo:
-function AddEnabledBreakPoint(const addr: TDbgPtr; AProcess: TDbgTarget): TBreakPoint;
+{function AddEnabledBreakPoint(const addr: TDbgPtr; AProcess: TDbgTarget): TBreakPoint;
 function FindBreakpoint(const addr: TDbgPtr): TBreakPoint;
 procedure RemoveBreakPoint(var Bp: TBreakPoint);
 
 function HandleBreakpoint(bp: TBreakpoint; ThreadID: TDbgThreadID; Process: TDbgTarget): Boolean; overload;
-function HandleBreakpoint(addr: TDbgPtr; ThreadID: TDbgThreadID; Process: TDbgTarget; RemoveIfHandled: Boolean = false): Boolean; overload;
-
+function HandleBreakpoint(addr: TDbgPtr; ThreadID: TDbgThreadID; Process: TDbgTarget; RemoveIfHandled: Boolean = false): Boolean; overload;}
 
 implementation
-
-var
-  fBreakPoints : TBreakPointsList = nil;
-
+(*
 function AddBreakPoint(const addr: TDbgPtr): TBreakPoint;
 begin
-  Result := fBreakPoints.AddBreakPoint(addr);
+//  Result := fBreakPoints.AddBreakPoint(addr);
 end;
 
 function AddEnabledBreakPoint(const addr: TDbgPtr; AProcess: TDbgTarget): TBreakPoint;
 begin
-  Result := FindBreakpoint(addr);
+(*  Result := FindBreakpoint(addr);
   if Assigned(Result) and Result.Enabled then begin
     Result := nil;
     Exit;
@@ -154,17 +142,17 @@ begin
   if not Result.Enabled then begin
     Result.Free;
     Result := nil;
-  end;
+  end;*)
 end;
 
 function FindBreakpoint(const addr: TDbgPtr): TBreakPoint;
 begin
-  Result := fBreakPoints.FindBreakPoint(addr);
+//  Result := fBreakPoints.FindBreakPoint(addr);
 end;
 
 procedure RemoveBreakPoint(var Bp: TBreakPoint);
 begin
-  fBreakPoints.RemoveBreakPoint(bp);
+//  fBreakPoints.RemoveBreakPoint(bp);
 end;
 
 function HandleBreakpoint( bp: TBreakpoint; ThreadID: TDbgThreadID; Process: TDbgTarget): Boolean;
@@ -205,87 +193,93 @@ begin
   
   if Result and RemoveIfHandled then RemoveBreakPoint(bp);
 end;
- 
-{ TBreakPointsList }
+*)
 
-constructor TBreakPointsList.Create; 
+{ TDbgProcessBreakpoints }
+
+constructor TDbgProcessBreakpoints.Create(AProcess: TDbgProcess; BpAccess: TBreakpointAccess); 
 begin
   inherited Create;
   fList:=TFPList.Create;
 end;
 
-destructor TBreakPointsList.Destroy;  
+destructor TDbgProcessBreakpoints.Destroy;  
 begin
   Clear;
   fList.Free;
   inherited Destroy;  
 end;
 
-function TBreakPointsList.AddBreakPoint(const addr: TDbgPtr): TBreakPoint; 
+function TDbgProcessBreakpoints.AddBreakPoint(const addr: TDbgPtr; AEnabled: Boolean): TDbgBreakPoint; 
 begin
-  Result := FindBreakpoint(addr);
+{  Result := FindBreakpoint(addr);
   if Assigned(Result) then Exit;
-  Result := TBreakPoint.Create;
+  Result := TDbgBreakPoint.Create(Self, ;
   Result.fAddr := addr;
-  fList.Add(Result);
+  fList.Add(Result);}
 end;
 
-function TBreakPointsList.FindBreakpointInt(const addr: TDbgPtr): Integer;
-var
-  i : Integer;
+function TDbgProcessBreakpoints.FindBreakpointInt(const addr: TDbgPtr): Integer;
+{var
+  i : Integer;}
 begin
-  Result := -1;
+{  Result := -1;
   for i := 0 to fList.Count - 1 do begin
     if TBreakPoint(fList[i]).Addr = addr then begin
       Result := i;
       Exit;
     end;
-  end;
+  end;}
 end;
 
-function TBreakPointsList.FindBreakpoint(const addr: TDbgPtr): TBreakPoint; 
-var
-  i : Integer;
+function TDbgProcessBreakpoints.FindBreakpoint(const addr: TDbgPtr): TDbgBreakPoint; 
+{var
+  i : Integer;}
 begin
-  i := FindBreakpointInt(addr);
+{  i := FindBreakpointInt(addr);
   if i < 0 then 
     Result := nil
   else
-    Result := TBreakPoint(fList[i]);
+    Result := TBreakPoint(fList[i]);}
 end;
 
-procedure TBreakPointsList.RemoveBreakPoint(var bp: TBreakPoint); 
-var
-  i : Integer;
+procedure TDbgProcessBreakpoints.RemoveBreakPoint(var bp: TDbgBreakPoint); 
+{var
+  i : Integer;}
 begin
-  i := fList.IndexOf(bp);
+{  i := fList.IndexOf(bp);
   if i < 0 then Exit;
   
   bp.Free;
   fList.Delete(i);
-  bp:=nil;
+  bp:=nil;}
 end;
 
-procedure TBreakPointsList.Clear; 
-var
-  i   : Integer;
+procedure TDbgProcessBreakpoints.Clear; 
+{var
+  i   : Integer;}
 begin
-  for i := 0 to fList.Count - 1 do 
+{  for i := 0 to fList.Count - 1 do 
     TBreakPoint(FList[i]).Free;
-  FList.Clear;
+  FList.Clear;}
 end;
 
-{ TBreakPoint }
+{ TDbgBreakPoint }
 
-function TBreakPoint.Enable(AProcess: TDbgTarget): Boolean;
+function TDbgBreakPoint.GetAddr: TDbgPtr; 
+begin
+
+end;
+
+procedure TDbgBreakPoint.SetEnabled(AEnabled: Boolean);
 var
   buf : array of byte;
 begin
   if fEnabled then begin
-    Result := true;
+    //Result := true;
     Exit;
   end;
-  
+  (*
   CodeSize := CPUCode.BreakPointSize;
   
   if length(code) < CodeSize then SetLength(code, CodeSize);
@@ -300,9 +294,17 @@ begin
   CPUCode.WriteBreakPoint(buf, 0);
   fEnabled := AProcess.WriteMem(0, addr, CodeSize, buf) = CodeSize;
   Result := fEnabled;
+  *)
 end;
 
-function TBreakPoint.Disable(AProcess: TDbgTarget): Boolean;
+constructor TDbgBreakPoint.Create(AOwner: TProcessBreakpoint; AEnabled: Boolean
+  ); 
+begin
+
+end;
+
+(*
+function TDbgBreakPoint.Disable(AProcess: TDbgTarget): Boolean;
 begin
   if not fEnabled then begin
     Result := True;
@@ -313,16 +315,7 @@ begin
     
   Result := not fEnabled;
 end;
-
-procedure InitBreakpoints;
-begin
-  fBreakPoints := TBreakPointsList.Create;
-end;
-
-procedure ReleaseBreakpoints;
-begin
-  fBreakPoints.Free;
-end;
+*)
 
 { TCPUBreakpointAcccess }
 
@@ -398,11 +391,71 @@ begin
   if Assigned(AProcess) then AProcess.WriteMem(Addr, CodeSize, Code);
 end;
 
+{ TProcessBreakpoint }
+
+procedure TProcessBreakpoint.IncRefCount; 
+begin
+  if fRefCount=0 then 
+    RawPoint:=Owner.fAccesss.SetBreakpoint(Addr, Owner.Process);    
+  inc(fRefCount);
+end;
+
+procedure TProcessBreakpoint.DecRefCount; 
+begin
+  if fRefCount = 0 then begin
+    //todo: ERROR!
+    Exit;
+  end;
+  
+  dec(fRefCount);
+  if fRefCount=0 then
+    Owner.fAccesss.UnsetBreakpoint(Owner.Process, RawPoint);
+end;
+
+constructor TProcessBreakpoint.Create(AOwner: TDbgProcessBreakpoints; AAddr: TDbgPtr); 
+begin
+  inherited Create;
+  Owner:=AOwner;
+  Addr:=AAddr;
+end;
+
+function TProcessBreakpoint.AddBreakpoint(AEnabled: Boolean): TDbgBreakPoint; 
+begin
+  Result:=TDbgBreakPoint.Create(Self, AEnabled);
+end;
+
+procedure TProcessBreakpoint.AddHandler(Event: TNotifyEvent); 
+begin
+  if HndCount=length(Handlers) then begin
+    if HndCount=0 then SetLength(Handlers, 4)
+    else SetLength(Handlers, HndCount*2);
+  end;
+  Handlers[HndCount]:=Event;
+  inc(HndCount);
+end;
+
+procedure TProcessBreakpoint.RemoveHandler(Event: TNotifyEvent); 
+var
+  i : Integer;
+begin
+  for i:=0 to HndCount-1 do 
+    if Handlers[i]=Event then begin
+      Handlers[i]:=Handlers[HndCount-1];
+      dec(HndCount);
+      Exit;
+    end;
+end;
+
+procedure TProcessBreakpoint.RemoveBreakPoint(var Dbg: TDbgBreakPoint); 
+begin
+  if not Assigned(Dbg) or (Dbg.fProcBP<>Self) then Exit;
+  Dbg.Free;
+  Dbg:=nil;
+end;
+
 initialization
-  InitBreakpoints;
 
 finalization
-  ReleaseBreakpoints;
 
 end.
 

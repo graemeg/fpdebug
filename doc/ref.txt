@@ -1,35 +1,34 @@
-TDbgProcess = class. 
+== Unit:dbgTypes ==
 
-The class is designed to wrap OS debugging API.
+The unit contains main types declared for the library.
+It also introduces the core debugging class TDbgTarget.
 
-It should never be created directly, by using TDbg*Process.Create, global allocation functions should be used instead. Global allocation function should allow to debug a new process (started by command line) or
-attach to an existing process (not implemented, yet).
+TDbgTarget is simply a class wrapper over underlaying system debug API.
 
-* Terminate() - terminates running process
+The user should never create TDbgTarget directly (via class constructor). Instread
+the one must use allocator functions:
+  DebugProcessStart
+  DebugProcessAttach (not implemented)
 
-* WaitNextEvent(var Event: TDbgEvent; HandledEvent: Boolean) - continues execution of the  proces (if not terminated)
-    If process was not started, starts the process.
-    The method returns only if something happens in the running process (signal, exception, process
-    termination or pause). Event structure is filled discribing the debugging event happened.
-    HandledEvent - describes if previosly fired event, has been processed by the debugger.
-    If waitnextEvent is called for the first time HandledEvent is ignored.
 
-    the function returns false if process is terminated. Event structure field values are undefined.
+== Unit:dbgMain ==
 
-* GetProcessState - returns current process state:
-    notstarted  - process has not been started, yet
-    running     - process is now running
-    stopped     - process has been stopped by pausing or by an event
-    terminated  - process has been terminated
+todo: rename to dbgClassic
 
-* GetThreadsCount: Integer; - (the process must be in stopped state) returns number of threads
-    in the process. otherwise function may return incorrect results
+The unit provides Object Wrappers over TDbgTarget low-level API.
+it also provides an additional easy-to-use breakpoints handling in TDbgProcess class
 
-* GetThreadID(AIndex: Integer) - (the process must be in stopped state) returns a thread id, from a thread
-    index. ThreadID order might change between WaitNextEvent calls. Pair of ID <-> threadindex should not
-    be retained.
+=== TDbgThread ===
 
-* GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgRegisters) - (the process must be in stopped state)
-    fills TDbgRegisters class with the register state of a thread, specified by ThreadID.
-    function returns false, if threadid is invalid or thread has been terminated.
+The object wrapper to a debugged thread. The thread is used to examine register status,
+enable or disable step-by-step debugging.
+   
+=== TDbgProcess ===
+
+The object wrapper for a debugged process. The wrappers handles reading/writting process memory,
+stores the list of process threads and list of breakpoints set in the process mem space.
+
+=== TDbgMain ===
+
+Is the main access to a debugged target, holds list of debugged processes (only one or more).
 

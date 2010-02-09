@@ -1,6 +1,8 @@
 unit dbgCPU; 
 
 {$mode objfpc}{$H+}
+// low-level CPU information. Currently it returns the information about the host.
+// todo: rewrite the interface to support target CPU information
 
 interface
 

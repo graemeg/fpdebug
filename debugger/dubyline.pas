@@ -8,6 +8,7 @@ program dubyline;
 {$endif}
 
 uses
+  SysUtils,
   dbgTypes,
 
   dbgInfoTypes,
@@ -74,7 +75,13 @@ begin
   try
     RunDebugger;
   except
-    writeln('exception while debugging');
+    on E: Exception do
+      begin
+        writeln('ERROR: exception while debugging');
+        writeln('Details:');
+        writeln(E.Message);
+        writeln('');
+      end;
   end;
 end.
 

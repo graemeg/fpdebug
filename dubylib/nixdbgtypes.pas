@@ -18,7 +18,6 @@ type
 
   TLinuxProcess = class(TDbgTarget)
   private
-    fState      : TDbgState;
     fChild      : TPid;
     fContSig    : Integer;
     fTerminated : Boolean;
@@ -30,7 +29,6 @@ type
     function StartProcess(const ACmdLine: String): Boolean;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
     procedure Terminate; override;
-    function GetProcessState(procID: TDbgProcessID): TDbgState; override;
 
     function GetThreadsCount(procID: TDbgProcessID): Integer; override;
     function GetThreadID(procID: TDbgProcessID; AIndex: Integer): TDbgThreadID; override;
@@ -65,11 +63,6 @@ begin
 end;
 
 { TLinuxProcess }
-
-function TLinuxProcess.GetProcessState(procID: TDbgProcessID): TDbgState;
-begin
-  Result := fState;
-end;
 
 function TLinuxProcess.GetThreadsCount(procID: TDbgProcessID): Integer;
 begin
@@ -125,6 +118,7 @@ end;
 constructor TLinuxProcess.Create;
 begin
   {$ifdef cpui386}fcputype:=cpi386;{$endif}
+  {$ifdef CPUx86_64}fcputype:=cpx64;{$endif}
 end;
 
 function TLinuxProcess.StartProcess(const ACmdLine: String): Boolean;

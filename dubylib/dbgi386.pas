@@ -1,6 +1,7 @@
 unit dbgi386; 
 
 {$mode objfpc}{$H+}
+//todo: cleanup ifdefs
 
 interface
 
@@ -17,7 +18,13 @@ type
     function IsBreakPoint(const Buffer: array of byte; Offset: Integer): Boolean; override;
     
     function ExecuteRegisterName: AnsiString; override;
-  end;  
+  end;
+
+  { TCPUx64 }
+
+  TCPUx64 = class(TCPUi386)
+    function ExecuteRegisterName: AnsiString; override;
+  end;
 
 implementation
 
@@ -45,8 +52,19 @@ begin
 end;
 
 
+{ TCPUx64 }
+
+function TCPUx64.ExecuteRegisterName: AnsiString;
+begin
+  Result:=_rip;
+end;
+
 initialization
+  {$ifdef CPUx64}
+  InstallCPU(TCPUx64.Create);
+  {$else}
   InstallCPU(TCPUi386.Create);
+  {$endif}
 
 end.
 

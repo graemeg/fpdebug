@@ -163,14 +163,18 @@ var
 begin
   //todo: thread number can be passed in CmdParams
   if not Assigned(Env.Thread) then begin
+
     writeln('no execution thread');
     Exit;
   end;
   
   regs := TDbgDataBytesList.Create;
   Env.Thread.GetThreadRegs(regs);
-  //PrintAllRegs(regs);
+  {$ifdef CPUi386}
   PrintI386Regs(regs);
+  {$else}
+  PrintAllRegs(regs);
+  {$endif}
 
   regs.Free;
 end;

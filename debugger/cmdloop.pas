@@ -53,7 +53,8 @@ end;
 procedure TDebugEnvironment.SetProcess(AProcess: TDbgProcessID; AThread: TDbgThreadID);
 begin
   fProcess:=fMain.FindProcess(AProcess);
-  if Assigned(fProcess) then fThread:=fProcess.FindThread(AThread);
+  if Assigned(fProcess) then
+     fThread:=fProcess.FindThread(AThread);
 end;
 
 function TDebugEnvironment.Main: TDbgMain; 
@@ -310,7 +311,7 @@ begin
         writeln('the process terminated? (type "quit" to quit)');
       end else begin
         Env.SetProcess(DbgEvent.Process, DbgEvent.Thread);
-        
+
         //HandleEvent( Process, DbgEvent);
         
         case DbgEvent.Kind of

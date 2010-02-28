@@ -33,6 +33,28 @@ const
   _Dr6 = 'DR6';
   _Dr7 = 'DR7';
 
+  _r15 = 'R15';
+  _r14 = 'R14';
+  _r13 = 'R13';
+  _r12 = 'R12';
+  _rbp = 'RBP';
+  _rbx = 'RBX';
+  _r11 = 'R11';
+  _r10 = 'R15';
+  _r9  = 'R9';
+  _r8  = 'R8';
+  _rax = 'RAX';
+  _rcx = 'RCX';
+  _rdx = 'RDX';
+  _rsi = 'RSI';
+  _rdi      = 'RDI';
+  _orig_rax = 'ORIGRAX';
+  _rip     = 'RIP';
+  _rsp     = 'RSP';
+  _fs_base = 'FSBASE';
+  _gs_base = 'GSBASE';
+
+
 implementation
 
 end.

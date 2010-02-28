@@ -24,9 +24,14 @@ type
     fWaited     : Boolean;
     fcputype    : TCpuType;
 
+    EmulateThread : Boolean; // the next WaitEvent is CreateThread!
+    Started       : Boolean; // has start thread been reported?
+
+  protected
+    function GetNextEmulatedEvent(var Event: TDbgEvent): Boolean;
+
   public
     constructor Create;
-    function StartProcess(const ACmdLine: String): Boolean;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
     procedure Terminate; override;
 
@@ -41,6 +46,9 @@ type
 
     function ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
     function WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
+
+    // Linux specific methods
+    function StartProcess(const ACmdLine: String): Boolean;
   end;
 
 function DebugLinuxProcessStart(const ACmdLine: String): TDbgTarget;
@@ -78,7 +86,9 @@ function TLinuxProcess.GetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThread
 begin
   case fcputype of
     cpi386:
-      Result := ReadRegsi386(fChild, Registers);
+      Result := ReadRegsi386(ThreadId, Registers);
+    cpx64:
+      Result := ReadRegsx64(ThreadId, Registers);
   else
     Result := false;
   end;
@@ -87,9 +97,10 @@ end;
 function TLinuxProcess.SetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean;
 begin
   case fcputype of
-    cpi386: begin
-      Result := WriteRegsi386(fChild, Registers);
-    end;
+    cpi386:
+      Result := WriteRegsi386(ThreadId, Registers);
+    cpx64:
+      Result := WriteRegsx64(ThreadId, Registers);
   else
     Result := false;
   end;
@@ -115,6 +126,30 @@ begin
   Result := fChild;
 end;
 
+function TLinuxProcess.GetNextEmulatedEvent(var Event: TDbgEvent): Boolean;
+begin
+  //todo: some events must not be emulated but catched via ptracing syscall()
+  Result:=False;
+  if not Started then begin
+    writeln('emulating dek_ProcessStart');
+    Event.Kind:=dek_ProcessStart;
+    Event.Process:=fChild;
+    Event.Thread:=0;
+    Event.Addr:=0;
+    EmulateThread:=True;
+    Started:=True;
+    Result:=True;
+  end else if EmulateThread then begin
+    writeln('emulating dek_ThreadStart');
+    Event.Kind:=dek_ThreadStart;
+    Event.Process:=fChild;
+    Event.Thread:=fChild;
+    Event.Addr:=0;
+    EmulateThread:=False;
+    Result:=True;
+  end;
+end;
+
 constructor TLinuxProcess.Create;
 begin
   {$ifdef cpui386}fcputype:=cpi386;{$endif}
@@ -138,39 +173,44 @@ var
   Status : Integer;
   fch    : TPid;
 begin
-  if fChild = 0 then begin
-    Result := false;
-    Exit;
-  end;
-
-  if fWaited then ptraceCont(fChild, fContSig);
-
-  if fTerminated then begin
-    Result := false;
-    Exit;
-  end;
-
-  fCh := FpWaitPid(fChild, Status, 0);
-  if fCh < 0 then begin // failed to wait
-    Result := false;
-    fChild := 0;
-    fTerminated := true;
-    Exit;
-  end else if Status = 0 then begin
-
-  end;
-
-  if isStopped(Status, fContSig) then begin
-    case fContSig of
-      SIGTRAP: fContSig := 0;
+  try
+    if fChild = 0 then begin
+      Result := false;
+      Exit;
     end;
+
+    if GetNextEmulatedEvent(Event) then Exit;
+
+    if fWaited then ptraceCont(fChild, fContSig);
+
+    if fTerminated then begin
+      Result := false;
+      Exit;
+    end;
+
+    fCh := FpWaitPid(fChild, Status, 0);
+    if fCh < 0 then begin // failed to wait
+      Result := false;
+      fChild := 0;
+      fTerminated := true;
+      Exit;
+    end else if Status = 0 then begin
+
+    end;
+
+    if isStopped(Status, fContSig) then begin
+      case fContSig of
+        SIGTRAP: fContSig := 0;
+      end;
+    end;
+
+    Result := WaitStatusToDbgEvent(fChild, Status, Event);
+
+    fWaited := Result;
+    fTerminated := Event.Kind = dek_ProcessTerminated;
+  finally
+    Writeln('Linux wait... ', Event.Kind);
   end;
-
-  Result := WaitStatusToDbgEvent(fChild, Status, Event);
-
-  fWaited := Result;
-  fTerminated := Event.Kind = dek_ProcessTerminated;
-
 end;
 
 initialization

@@ -25,6 +25,9 @@ function WriteProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data
 function ReadRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
 function WriteRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
 
+function ReadRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
+function WriteRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
+
 implementation
 
 type
@@ -84,6 +87,54 @@ begin
 
   res := WriteProcMemUser(pid, 0, sizeof(regs32), PByteArray(@regs32)^);
   Result := res = sizeof(regs32);
+end;
+
+
+function ReadRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
+var
+  regs64 : user_64;
+begin
+  Result := ReadProcMemUser(pid, 0, sizeof(regs64), PByteArray(@regs64)^) = sizeof(regs64);
+  if not Result then Exit;
+
+  with regs64.regs do begin
+    regs[_r15].UInt64 := r15;
+    regs[_r14].UInt64 := r14;
+    regs[_r13].UInt64 := r13;
+    regs[_r12].UInt64 := r12;
+    regs[_rbp].UInt64 := rbp;
+    regs[_rbx].UInt64 := rbx;
+    regs[_r11].UInt64 := r11;
+    regs[_r10].UInt64 := r10;
+    regs[_r9].UInt64 := r9;
+    regs[_r8].UInt64 := r8;
+    regs[_rax].UInt64 := rax;
+    regs[_rcx].UInt64 := rcx;
+    regs[_rdx].UInt64 := rdx;
+    regs[_rsi].UInt64 := rsi;
+    regs[_rdi].UInt64 := rdi;
+    regs[_orig_rax].UInt64 := orig_rax;
+    regs[_rip].UInt64 := rip;
+    regs[_cs].UInt64 := cs;
+    regs[_eflags].UInt64 := eflags;
+    regs[_rsp].UInt64 := rsp;
+    regs[_ss].UInt64 := ss;
+    regs[_fs_base].UInt64 := fs_base;
+    regs[_gs_base].UInt64 := gs_base;
+    regs[_ds].UInt64 := ds;
+    regs[_es].UInt64 := es;
+    regs[_fs].UInt64 := fs;
+    regs[_gs].UInt64 := gs;
+  end;
+
+
+
+end;
+
+function WriteRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
+begin
+  //todo:!
+  Result:=False;
 end;
 
 function ReadProcMem(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;

@@ -1,0 +1,8 @@
+Coding convention.
+
+* Don't use exceptions in anyway in dubylib. You can use try..except, but never raise.
+  Use functions returning Boolean (or Integers) instead.
+  
+  Objects must always be created. Use an object flag to indicate that object is ready for work or not 
+  (to avoid using exception in constructors)
+

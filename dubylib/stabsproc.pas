@@ -57,8 +57,8 @@ type
     fUnnamed  : TStringList;
     
     function CurrentProcName: AnsiString;
-    function CurrentProcAddr: Integer;
-    procedure PushProc(const Name: AnsiString; Addr: Integer);
+    function CurrentProcAddr: PtrInt;
+    procedure PushProc(const Name: AnsiString; Addr: PtrInt);
     procedure PopProc;
 
     function StabStr(strx: integer): AnsiString;
@@ -103,13 +103,13 @@ begin
   else Result := '';
 end;
 
-function TStabsReader.CurrentProcAddr: Integer;
+function TStabsReader.CurrentProcAddr: PtrInt;
 begin
-  if fProcStack.Count > 0 then Result := Integer(fProcStack.Objects[fProcStack.Count-1])
+  if fProcStack.Count > 0 then Result := PtrInt(fProcStack.Objects[fProcStack.Count-1])
   else Result := 0;
 end;
 
-procedure TStabsReader.PushProc(const Name: AnsiString; Addr: Integer); 
+procedure TStabsReader.PushProc(const Name: AnsiString; Addr: PtrInt); 
 begin
   fProcStack.AddObject(Name, TObject(Addr));
 end;

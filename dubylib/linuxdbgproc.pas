@@ -11,7 +11,7 @@ uses
   dbgTypes, dbgConsts;
 
 function ForkAndDebugProcess(const ACmdLine: String; var childid: TPid): Boolean;
-function WaitStatusToDbgEvent(ChildID: TPid; Status: Integer; var event: TDbgEvent): Boolean;
+function WaitStatusToDbgEvent(WaitedPid, EventPid: TPid; Status: Integer; var event: TDbgEvent): Boolean;
 
 function isTerminated(Status: Integer; var TermSignal: Integer): Boolean;
 function isStopped(Status: Integer; var StopSignal: Integer): Boolean;
@@ -27,6 +27,13 @@ function WriteRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
 
 function ReadRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
 function WriteRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
+
+function ReadRegEIP(pid: Integer; var Addr: TDbgPtr): Boolean;
+function ReadRegRIP(pid: Integer; var Addr: TDbgPtr): Boolean;
+
+var
+  GetExecInstrAddr: function(pid: Integer; var Addr: TDbgPtr): Boolean = nil;
+  SoftBreakSize   : Integer;
 
 implementation
 
@@ -92,10 +99,15 @@ end;
 
 function ReadRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
 var
-  regs64 : user_64;
+  regs64  : user_64;
+  res     : Integer;
 begin
-  Result := ReadProcMemUser(pid, 0, sizeof(regs64), PByteArray(@regs64)^) = sizeof(regs64);
-  if not Result then Exit;
+  res := ReadProcMemUser(pid, 0, sizeof(regs64), PByteArray(@regs64)^);
+  writeln('res = ', res, ' ', sizeof(regs64));
+  Result := res = sizeof(regs64);
+  if not Result then begin
+    Exit;
+  end;
 
   with regs64.regs do begin
     regs[_r15].UInt64 := r15;
@@ -184,11 +196,18 @@ end;
 function ReadProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
 var
   i   : Integer;
+  w   : TPtraceWord;
 begin
   i := 0;
   while i < Size do begin
-    ptracePeekUser(pid, Offset, PPtraceWord(@Data[i])^);
-    inc(i, sizeof(TPtraceWord));
+    if i - size > sizeof(TPtraceWord) then begin
+      ptracePeekUser(pid, Offset, PPtraceWord(@Data[i])^);
+      inc(i, sizeof(TPtraceWord));
+    end else begin
+      ptracePeekUser(pid, Offset, w);
+      Move(w, Data[i], Size - i);
+      inc(i, Size-i);
+    end;
     inc(Offset, sizeof(TPtraceWord));
   end;
   Result := i;
@@ -254,6 +273,23 @@ begin
   end;
 end;
 
+function ReadRegEIP(pid: Integer; var Addr: TDbgPtr): Boolean;
+var
+  reg32 : user_regs_struct_32;
+begin
+  Result:=ReadProcMemUser(pid, 0, sizeof(reg32), PByteArray(@reg32)^) = sizeof(reg32);
+  if Result then Addr:=reg32.eip;
+end;
+
+function ReadRegRIP(pid: Integer; var Addr: TDbgPtr): Boolean;
+var
+  reg64 : user_regs_struct_64;
+begin
+  Result:=ReadProcMemUser(pid, 0, sizeof(reg64), PByteArray(@reg64)^) = sizeof(reg64);
+  if Result then Addr:=reg64.rip;
+end;
+
+
 function StopSigToStr(stopsig: Integer): String;
 begin
   case stopsig of
@@ -295,14 +331,17 @@ begin
 end;
 
 
-procedure SigInfoToEvent(const siginfo: TSigInfo; var event: TDbgEvent);
+procedure SigInfoToEvent(id: TPid; const siginfo: TSigInfo; var event: TDbgEvent);
 begin
   event.debug := event.debug + ' si_code='+IntToStr(siginfo.si_code)+
                                ' si_errno='+IntToStr(siginfo.si_errno);
   case siginfo.si_signo of
     SIGILL, SIGFPE, SIGSEGV, SIGBUS: begin
+      writeln('exception?! ;)');
       event.Kind := dek_SysExc;
       event.Addr := TDbgPtr(siginfo._sifields._sigfault._addr);
+      if (event.Addr=0) and Assigned(GetExecInstrAddr) then
+        GetExecInstrAddr(id, event.Addr);
     end;
 
     SIGTRAP: begin
@@ -316,25 +355,13 @@ begin
 end;
 
 
-function GetBreakAddri386(pid: TPid; var CurrentAddr, PrevDelta: TDbgPtr): Boolean; inline;
-var
-  user  : user_32;
-begin
-  Result := ReadProcMemUser(pid, 0, sizeof(user), PByteArray(@user)^) = sizeof(user);
-  if Result then CurrentAddr:=user.regs.eip;
-  PrevDelta:=1;
-end;
-
 function GetBreakAddr(pid: TPid; var CurrentAddr, PrevDelta: TDbgPtr): Boolean;
 begin
-  {$ifdef cpui386}
-  Result := GetBreakAddri386(pid, CurrentAddr, PrevDelta);
-  {$else}
-  Result := false;
-  {$endif}
+  Result:=GetExecInstrAddr(pid, CurrentAddr);
+  PrevDelta:=SoftBreakSize;
 end;
 
-function WaitStatusToDbgEvent(ChildID: TPid; Status: Integer; var event: TDbgEvent): Boolean;
+function WaitStatusToDbgEvent(WaitedPid, EventPid: TPid; Status: Integer; var event: TDbgEvent): Boolean;
 var
   termSig : Integer;
   exitSig : Integer;
@@ -346,17 +373,19 @@ var
   trapaddr  : TDbgPtr;
   trapdelta : TDbgPtr;
 begin
-  //writeln('Status = ', Status);
+  event.Process:=WaitedPid;
+  event.Thread:=EventPid;
+
   Result := true;
   if isStopped(Status, stopSig) then begin
     event.Debug := 'stop ' + StopSigToStr(stopsig);
     event.Kind := StopSigToEventKind(stopSig);
 
-    res := ptraceGetSigInfo(ChildID, siginfo);
+    res := ptraceGetSigInfo(EventPid, siginfo);
     if res = 0 then begin
-      SigInfoToEvent(siginfo, event);
+      SigInfoToEvent(EventPid, siginfo, event);
       if stopSIG = SIGTRAP then begin
-        GetBreakAddr(ChildID, trapaddr, trapdelta);
+        GetBreakAddr(EventPid, trapaddr, trapdelta);
         if (event.Kind = dek_BreakPoint) and (siginfo.si_code > 0) then begin
           // breakpoint, not singlestep call
           event.Addr := trapaddr - trapdelta;
@@ -380,5 +409,14 @@ begin
   end;
 end;
 
+initialization
+  {$ifdef CPUi386}
+  GetExecInstrAddr := @ReadRegEIP;
+  SoftBreakSize := 1;
+  {$endif}
+  {$ifdef CPUX86_64}
+  GetExecInstrAddr := @ReadRegRIP;
+  SoftBreakSize := 1;
+  {$endif}
 end.
 

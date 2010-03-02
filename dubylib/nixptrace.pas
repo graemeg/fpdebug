@@ -342,7 +342,7 @@ const
 //function ptrace(request: Tptrace_request; args: array of const): Integer; cdecl; external;
 
 type
-  TPtraceWord = Integer;
+  TPtraceWord = PtrInt;
   PPtraceWord = ^TPtraceWord;
 
 function ptrace(request: Tptrace_request; pid: TPid; addr, data: Pointer): TPtraceWord;
@@ -377,8 +377,11 @@ begin
 end;}
 
 function ptraceCont(pid: TPid; Signal: Integer): TPtraceWord;
+var
+  sigptr  : PtrInt;
 begin
-  Result := ptrace(PTRACE_CONT, pid, nil, Pointer(Signal));
+  sigptr:=Signal;
+  Result := ptrace(PTRACE_CONT, pid, nil, Pointer(sigptr));
 end;
 
 function ptraceMe: TPtraceWord;
@@ -450,26 +453,6 @@ begin
   ptrace(PTRACE_SINGLESTEP, pid, nil, nil);
   Result := fpgeterrno = 0;
 end;
-
-{function ptracePeekSysUser(pid: TPid; var userdata: Tuser): Boolean;
-type
-  TByteArray = array [word] of byte;
-  PByteArray = ^TByteArray;
-var
-  p : PByteArray;
-  i : PtrInt;
-begin
-  p := @userdata;
-  i := 0;
-  Result := true;
-  while i < sizeof(Tuser) do begin
-    PPtraceWord(@p[i])^:= ptrace(PTRACE_PEEKUSER, pid, Pointer(i), nil);
-    inc(i, sizeof(TPtraceWord));
-    Result := errno = 0;
-    if not Result then Break;
-  end;
-  writeln;
-end;}
 
 end.
 

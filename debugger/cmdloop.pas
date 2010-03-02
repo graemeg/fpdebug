@@ -316,7 +316,6 @@ begin
         
         case DbgEvent.Kind of
           dek_SysExc:;
-            //writeln('system exception at ', IntToHex(DbgEvent.Addr, HexSize));
           dek_SingleStep:;
             //writeln('single step');
           dek_BreakPoint:;
@@ -346,10 +345,6 @@ begin
   end;
 end;
 
-{type
-  TProcHandler = class(TObject)
-    Handler: TEventHandler;
-  end;}
 
 // Hanlder routines
 

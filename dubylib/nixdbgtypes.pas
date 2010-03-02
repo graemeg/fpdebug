@@ -14,6 +14,9 @@ uses
 type
   TCpuType = (cpi386, cpx64);
 
+
+  TExcAddrProc = function (pid: TPid; var addr: TDbgPtr): Boolean;
+
   { TLinuxProcess }
 
   TLinuxProcess = class(TDbgTarget)
@@ -87,8 +90,10 @@ begin
   case fcputype of
     cpi386:
       Result := ReadRegsi386(ThreadId, Registers);
-    cpx64:
+    cpx64: begin
+      writeln('reading x86_64 registers... ', ThreadID);
       Result := ReadRegsx64(ThreadId, Registers);
+    end;
   else
     Result := false;
   end;
@@ -131,7 +136,6 @@ begin
   //todo: some events must not be emulated but catched via ptracing syscall()
   Result:=False;
   if not Started then begin
-    writeln('emulating dek_ProcessStart');
     Event.Kind:=dek_ProcessStart;
     Event.Process:=fChild;
     Event.Thread:=0;
@@ -140,7 +144,6 @@ begin
     Started:=True;
     Result:=True;
   end else if EmulateThread then begin
-    writeln('emulating dek_ThreadStart');
     Event.Kind:=dek_ThreadStart;
     Event.Process:=fChild;
     Event.Thread:=fChild;
@@ -152,8 +155,12 @@ end;
 
 constructor TLinuxProcess.Create;
 begin
-  {$ifdef cpui386}fcputype:=cpi386;{$endif}
-  {$ifdef CPUx86_64}fcputype:=cpx64;{$endif}
+  {$ifdef cpui386}
+  fcputype:=cpi386;
+  {$endif}
+  {$ifdef CPUx86_64}
+  fcputype:=cpx64;
+  {$endif}
 end;
 
 function TLinuxProcess.StartProcess(const ACmdLine: String): Boolean;
@@ -171,46 +178,43 @@ end;
 function TLinuxProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;
 var
   Status : Integer;
-  fch    : TPid;
+  fCh    : TPid;
 begin
-  try
-    if fChild = 0 then begin
-      Result := false;
-      Exit;
-    end;
-
-    if GetNextEmulatedEvent(Event) then Exit;
-
-    if fWaited then ptraceCont(fChild, fContSig);
-
-    if fTerminated then begin
-      Result := false;
-      Exit;
-    end;
-
-    fCh := FpWaitPid(fChild, Status, 0);
-    if fCh < 0 then begin // failed to wait
-      Result := false;
-      fChild := 0;
-      fTerminated := true;
-      Exit;
-    end else if Status = 0 then begin
-
-    end;
-
-    if isStopped(Status, fContSig) then begin
-      case fContSig of
-        SIGTRAP: fContSig := 0;
-      end;
-    end;
-
-    Result := WaitStatusToDbgEvent(fChild, Status, Event);
-
-    fWaited := Result;
-    fTerminated := Event.Kind = dek_ProcessTerminated;
-  finally
-    Writeln('Linux wait... ', Event.Kind);
+  if fChild = 0 then begin
+    Result := false;
+    Exit;
   end;
+
+  if GetNextEmulatedEvent(Event) then Exit;
+
+  if fWaited then ptraceCont(fChild, fContSig);
+
+  if fTerminated then begin
+    Result := false;
+    Exit;
+  end;
+
+  fCh := FpWaitPid(fChild, Status, 0);
+
+  if fCh < 0 then begin // failed to wait
+    Result := false;
+    fChild := 0;
+    fTerminated := true;
+    Exit;
+  end else if Status = 0 then begin
+    //terminated?
+  end;
+
+  if isStopped(Status, fContSig) then begin
+    case fContSig of
+      SIGTRAP: fContSig := 0;
+    end;
+  end;
+
+  Result := WaitStatusToDbgEvent(fChild, fCh, Status, Event);
+
+  fWaited := Result;
+  fTerminated := Event.Kind = dek_ProcessTerminated;
 end;
 
 initialization

@@ -103,7 +103,6 @@ var
   res     : Integer;
 begin
   res := ReadProcMemUser(pid, 0, sizeof(regs64), PByteArray(@regs64)^);
-  writeln('res = ', res, ' ', sizeof(regs64));
   Result := res = sizeof(regs64);
   if not Result then begin
     Exit;
@@ -338,7 +337,6 @@ begin
                                ' si_errno='+IntToStr(siginfo.si_errno);
   case siginfo.si_signo of
     SIGILL, SIGFPE, SIGSEGV, SIGBUS: begin
-      writeln('exception?! ;)');
       event.Kind := dek_SysExc;
       event.Addr := TDbgPtr(siginfo._sifields._sigfault._addr);
       if (event.Addr=0) and Assigned(GetExecInstrAddr) then

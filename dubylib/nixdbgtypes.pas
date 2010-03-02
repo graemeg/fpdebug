@@ -90,10 +90,8 @@ begin
   case fcputype of
     cpi386:
       Result := ReadRegsi386(ThreadId, Registers);
-    cpx64: begin
-      writeln('reading x86_64 registers... ', ThreadID);
+    cpx64:
       Result := ReadRegsx64(ThreadId, Registers);
-    end;
   else
     Result := false;
   end;

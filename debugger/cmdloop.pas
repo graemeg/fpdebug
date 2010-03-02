@@ -329,7 +329,7 @@ begin
         end;
         writeln('even:    ',  dekStr[DbgEvent.Kind]);
         writeln('process: ',  DbgEvent.Process);
-        writeln('thread:  ',  DbgEvent.Thread);
+        writeln('thread:  ',  PtrUInt(DbgEvent.Thread));
         writeln('addr:    $', HexAddr(DbgEvent.Addr), ' / ', DbgEvent.Addr);
       end;
       if DbgEvent.Kind = dek_ProcessTerminated then

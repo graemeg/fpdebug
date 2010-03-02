@@ -196,19 +196,20 @@ end;
 function ReadProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
 var
   i   : Integer;
-  w   : TPtraceWord;
+  w   : array [0..sizeof(TPtraceWord)-1] of byte;
 begin
   i := 0;
   while i < Size do begin
-    if i - size > sizeof(TPtraceWord) then begin
+    if Size-i >= sizeof(TPtraceWord) then begin
       ptracePeekUser(pid, Offset, PPtraceWord(@Data[i])^);
       inc(i, sizeof(TPtraceWord));
+      inc(Offset, sizeof(TPtraceWord));
     end else begin
-      ptracePeekUser(pid, Offset, w);
-      Move(w, Data[i], Size - i);
+      ptracePeekUser(pid, Offset, PPtraceWord(@w)^);
+      Move(w[0], Data[i], Size - i);
+      inc(Offset, Size-i);
       inc(i, Size-i);
     end;
-    inc(Offset, sizeof(TPtraceWord));
   end;
   Result := i;
 end;

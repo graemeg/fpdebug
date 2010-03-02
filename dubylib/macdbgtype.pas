@@ -10,9 +10,9 @@ uses
   dbgTypes, macPtrace, macDbgProc;
 
 type
-  { TMachDbgProcess }
+  { TMacDbgTarget }
 
-  TMachDbgProcess = class(TDbgTarget)
+  TMacDbgTarget = class(TDbgTarget)
   private
     fchildpid   : TPid;
     fchildtask  : mach_port_t;
@@ -27,16 +27,16 @@ type
   public
     procedure Terminate; override;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
-    function GetProcessState: TDbgState; override;
 
-    function GetThreadsCount: Integer; override;
-    function GetThreadID(AIndex: Integer): TDbgThreadID; override;
-    function GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
-    function SetSingleStep(ThreadID: TDbgThreadID): Boolean; override;
+    function GetThreadsCount(AProcess: TDbgProcessID): Integer; override;
+    function GetThreadID(AProcess: TDbgProcessID; AIndex: Integer): TDbgThreadID; override;
+    function GetThreadRegs(AProcess: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
+    function SetSingleStep(AProcess: TDbgProcessID; ThreadID: TDbgThreadID): Boolean; override;
 
-    function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
-    function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
+    function ReadMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
+    function WriteMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
 
+    // MacOSX specific function
     function StartProcess(const ACmdLine: String): Boolean;
   end;
 
@@ -79,12 +79,8 @@ begin
   end;
 end;
 
-function TMachDbgProcess.GetProcessState: TDbgState;
-begin
-  Result := ds_Nonstarted;
-end;
 
-function TMachDbgProcess.GetThreadsCount: Integer;
+function TMacDbgTarget.GetThreadsCount(AProcess: TDbgProcessID): Integer;
 var
   r             : QWord;
   portarray     : mach_port_array_t;
@@ -107,22 +103,22 @@ begin
 }
 end;
 
-function TMachDbgProcess.GetThreadID(AIndex: Integer): TDbgThreadID;
+function TMacDbgTarget.GetThreadID(AProcess: TDbgProcessID; AIndex: Integer): TDbgThreadID;
 begin
   Result:=nil;
 end;
 
-function TMachDbgProcess.GetThreadRegs(ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;
+function TMacDbgTarget.GetThreadRegs(AProcess: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean;
 begin
   Result:=false;
 end;
 
-function TMachDbgProcess.SetSingleStep(ThreadID: TDbgThreadID): Boolean;
+function TMacDbgTarget.SetSingleStep(AProcess: TDbgProcessID; ThreadID: TDbgThreadID): Boolean;
 begin
   Result := false;
 end;
 
-function TMachDbgProcess.ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
+function TMacDbgTarget.ReadMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
 var
   r : QWord;
 begin
@@ -134,12 +130,12 @@ begin
     Result := r;
 end;
 
-function TMachDbgProcess.WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
+function TMacDbgTarget.WriteMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
 begin
   Result := -1;
 end;
 
-procedure TMachDbgProcess.SetupChildTask(child: task_t);
+procedure TMacDbgTarget.SetupChildTask(child: task_t);
 var
   res : Integer;
 const
@@ -182,7 +178,7 @@ begin
   writeln('[setting process exceptions handlers. done]');
 end;
 
-procedure TMachDbgProcess.Terminate;
+procedure TMacDbgTarget.Terminate;
 begin
 end;
 
@@ -267,7 +263,7 @@ begin
 end;
 
 
-function TMachDbgProcess.WaitNextEvent(var Event: TDbgEvent): Boolean;
+function TMacDbgTarget.WaitNextEvent(var Event: TDbgEvent): Boolean;
 var
   buf     : array [0..4095] of byte;
   reqbuf  : array [0..4095] of byte;
@@ -423,7 +419,7 @@ begin
 end;
 *)
 
-function TMachDbgProcess.StartProcess(const ACmdLine: String): Boolean;
+function TMacDbgTarget.StartProcess(const ACmdLine: String): Boolean;
 begin
   Result := ForkAndRun(ACmdLine, fchildpid, fchildtask);
   SetupChildTask(fchildtask);
@@ -431,9 +427,9 @@ end;
 
 function MachDebugProcessStart(const ACmdLine: String): TDbgTarget;
 var
-  machdbg : TMachDbgProcess;
+  machdbg : TMacDbgTarget;
 begin
-  machdbg := TMachDbgProcess.Create;
+  machdbg := TMacDbgTarget.Create;
   if machdbg.StartProcess(ACmdLine) then
     Result := machdbg
   else begin

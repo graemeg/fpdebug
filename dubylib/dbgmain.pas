@@ -89,8 +89,8 @@ type
   protected
     function DbgTarget: TDbgTarget;
 
-    procedure AddThread(threadid: Integer);
-    procedure RemoveThread(threadid: Integer);
+    procedure AddThread(threadid: TDbgThreadID);
+    procedure RemoveThread(threadid: TDbgThreadID);
     function GetThread(i: Integer): TDbgThread;
     function GetThreadsCount: Integer;
 
@@ -137,8 +137,8 @@ type
     fWriteHandlers : TFPObjectList;
     fEventHandlers : TFPObjectList;
   protected
-    function DoAddProcess(AProcessID: Integer): TDbgProcess;
-    procedure DoRemoveProcess(AProcessID: Integer);
+    function DoAddProcess(AProcessID: TDbgProcessID): TDbgProcess;
+    procedure DoRemoveProcess(AProcessID: TDbgProcessID);
 
     function GetProcessCount: Integer;
     function GetProcess(i: Integer): TDbgProcess;
@@ -231,13 +231,13 @@ end;
 
 { TDbgMain }
 
-function TDbgMain.DoAddProcess(AProcessID: Integer): TDbgProcess;
+function TDbgMain.DoAddProcess(AProcessID: TDbgProcessID): TDbgProcess;
 begin
   Result := TDbgProcess.Create(Self, AProcessID);
   fProcList.Add(Result);
 end;
 
-procedure TDbgMain.DoRemoveProcess(AProcessID: Integer); 
+procedure TDbgMain.DoRemoveProcess(AProcessID: TDbgProcessID);
 var
   proc  : TDbgProcess;
 begin
@@ -418,12 +418,12 @@ begin
   Result:=fOwner.fTarget;
 end;
 
-procedure TDbgProcess.AddThread(threadid: Integer); 
+procedure TDbgProcess.AddThread(threadid: TDbgThreadID);
 begin
   fThreads.Add(TDbgThread.Create(Self, threadid));
 end;
 
-procedure TDbgProcess.RemoveThread(threadid: Integer); 
+procedure TDbgProcess.RemoveThread(threadid: TDbgThreadID);
 var
   t: TDbgThread;
 begin

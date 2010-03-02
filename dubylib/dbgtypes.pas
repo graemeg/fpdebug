@@ -86,7 +86,7 @@ type
   
   TDbgEvent = record
     Addr    : TDbgPtr;
-    Process : TDbgThreadID;
+    Process : TDbgProcessID;
     Thread  : TDbgThreadID;
     Kind    : TDbgEventKind;
     Debug   : String;

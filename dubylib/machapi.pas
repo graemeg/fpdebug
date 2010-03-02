@@ -266,10 +266,12 @@ type
   processor_set_array_t = ^processor_set_t;
   processor_set_name_array_t = ^processor_set_t;
   processor_array_t  = ^processor_t;
-  {Tthread_act_array_t = array [word] of thread_act_t;
+
+  Tthread_act_array_t = array [word] of thread_act_t;
   Pthread_act_array_t = ^Tthread_act_array_t;
-  thread_act_array_t = Pthread_act_array_t;}
-  thread_act_array_t = ^thread_act_t;
+  thread_act_array_t = Pthread_act_array_t;
+
+  //thread_act_array_t = ^thread_act_t;
 
 
   ledger_array_t     = ^ledger_t;
@@ -1833,9 +1835,13 @@ function task_get_emulation_vector (task: task_t; vector_start: Pinteger;
 ): kern_return_t; cdecl external name 'task_get_emulation_vector';
 
 //task_get_exception_ports - Return send rights to the target task's exception ports.
-function task_get_exception_ports (task: task_t; exception_mask : exception_mask_t;
-	masks : exception_mask_array_t;	var masksCnt: mach_msg_type_number_t;
-	old_handlers: exception_handler_array_t; old_behaviors: exception_behavior_array_t;
+function task_get_exception_ports (
+  task: task_t;
+  exception_mask : exception_mask_t;
+	masks : exception_mask_array_t;
+  var masksCnt: mach_msg_type_number_t;
+	old_handlers: exception_handler_array_t;
+  old_behaviors: exception_behavior_array_t;
   old_flavors: exception_flavor_array_t): kern_return_t;
   cdecl external name 'task_get_exception_ports';
 

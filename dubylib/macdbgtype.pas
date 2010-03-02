@@ -31,6 +31,8 @@ type
     function GetThreadsCount(AProcess: TDbgProcessID): Integer; override;
     function GetThreadID(AProcess: TDbgProcessID; AIndex: Integer): TDbgThreadID; override;
     function GetThreadRegs(AProcess: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
+    function SetThreadRegs(AProcess: TDbgProcessID; ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; override;
+
     function SetSingleStep(AProcess: TDbgProcessID; ThreadID: TDbgThreadID): Boolean; override;
 
     function ReadMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
@@ -42,47 +44,9 @@ type
 
 implementation
 
-function ForkAndRun(const CommandLine: String; var ChildId: TPid; var ChildTask: mach_port_t): Boolean;
-var
-  len   : Integer;
-  res   : Integer;
-  pname : mach_port_name_t;
-  kret  : kern_return_t;
-begin
-  Result := false;
-  childid := FpFork;
-  if childid < 0 then Exit;
-
-  if childid = 0 then begin
-    ptraceme;
-    //todo: ptrace_sig_as_exc, what needs to be initialized after going from signals to exceptions?
-    ptrace_sig_as_exc;
-
-    res := FpExecV(CommandLine, nil);
-    if res < 0 then begin
-      writeln('failed to run: ', CommandLine);
-      Halt;
-    end;
-
-  end else begin
-    writeln('self  task = ', mach_task_self);
-    writeln('child pid  = ', ChildId);
-    pname := 0;
-
-    kret := task_for_pid(mach_task_self, ChildId, pname);
-    writeln('task_for_pid, returned = ', kret);
-
-    ChildTask := mach_port_t(pname);
-    writeln('child task = ', ChildTask);
-
-    Result := true;
-  end;
-end;
-
-
 function TMacDbgTarget.GetThreadsCount(AProcess: TDbgProcessID): Integer;
 var
-  r             : QWord;
+  //r             : QWord;
   portarray     : mach_port_array_t;
   portcount     : integer;
   res           : kern_return_t;
@@ -113,6 +77,12 @@ begin
   Result:=false;
 end;
 
+function TMacDbgTarget.SetThreadRegs(AProcess: TDbgProcessID;
+  ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean;
+begin
+  Result:=False;
+end;
+
 function TMacDbgTarget.SetSingleStep(AProcess: TDbgProcessID; ThreadID: TDbgThreadID): Boolean;
 begin
   Result := false;
@@ -122,8 +92,6 @@ function TMacDbgTarget.ReadMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: 
 var
   r : QWord;
 begin
-  writeln('child pid = ', fchildpid);
-
   if ReadTaskMem(fchildtask, Offset, Count, Data, r) <> 0 then
     Result := -1
   else
@@ -204,26 +172,23 @@ end;
 
 var
   hackthread : Integer;
-  hacksig    : Integer;
 
 function catch_exception_raise (exception_port, thread, task : mach_port_t;
 	exception  : exception_type_t;
 	code       : exception_data_t;
 	codeCnt    : mach_msg_type_number_t
 ): kern_return_t; cdecl; [public];
-var
-  i  : Integer;
 begin
   writeln('--- catch_exception_raise called! ---');
-  writeln('exc_port  = ', exception_port);
-  writeln('thread    = ', thread);
-  writeln('exception = ', exception, ' ', ExceptionType(exception));
-  writeln('codeCnt   = ', codeCnt);
+  writeln('  exc_port  = ', exception_port);
+  writeln('  thread    = ', thread);
+  writeln('  exception = ', exception, ' ', ExceptionType(exception));
+  writeln('  codeCnt   = ', codeCnt);
   // for i := 0 to codeCnt - 1 do  writeln('code[',i,'] = ', code[i]);
   if (exception = EXC_SOFTWARE) and (CodeCnt = 2) and (code[0] = EXC_SOFT_SIGNAL) then begin
     writeln('unix signal! ', GetSigStr(code[1]));
     hackthread := thread;
-    hacksig := code[1];
+    //hacksig := code[1];
   end;
   Result := KERN_SUCCESS;
 end;
@@ -270,8 +235,6 @@ var
   ret     : mach_msg_return_t;
   mreq    : PRequestUnion__exc_subsystem;
   mrep    : PReplyUnion__exc_subsystem;
-  st      : Integer;
-  pidres  : pid_t;
   b       : boolean_t;
   i       : Integer;
 begin
@@ -304,7 +267,7 @@ begin
   // replacment for FPWaitPid
   ret := mach_msg(
     @reqbuf,
-    MACH_RCV_MSG or MACH_RCV_LARGE,
+    MACH_RCV_MSG or MACH_RCV_LARGE or MACH_SEND_TIMEOUT,
     sizeof(reqbuf),
     sizeof(reqbuf),
     catchport,
@@ -421,7 +384,7 @@ end;
 
 function TMacDbgTarget.StartProcess(const ACmdLine: String): Boolean;
 begin
-  Result := ForkAndRun(ACmdLine, fchildpid, fchildtask);
+  Result := ForkAndRun(ACmdLine, fchildpid, fchildtask, True);
   SetupChildTask(fchildtask);
 end;
 

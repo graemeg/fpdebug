@@ -7,29 +7,227 @@ interface
 uses
   BaseUnix,
   Classes, SysUtils,
-  machapi,  machexc, mach_port;
-  
-// if err <> 0, writes to stdout comment and error.
-// function returns err value
-function debugout_kret(err: kern_return_t; const comment: AnsiString): kern_return_t;
+  machapi, machexc, mach_port, macPtrace;
+
+// == utility functions ==
+
+// running the process
+function ForkAndRun(const CommandLine: String; var ChildId: TPid; var ChildTask: mach_port_t; SuspendSelf: Boolean): Boolean;
 
 // mach-port allocation routines
 function MachAllocPortForSelf: mach_port_name_t;
 function MachAllocPortForTask(atask: task_t): mach_port_name_t;
 
-//function MachRecvMessage(port: mach_port_name_t; var buf: array of byte; bufSize: Integer): Integer;
+// ???
+procedure RecvMessage(port: port_t);//todo: remove?
 
 // reads tasks memory
+
 function ReadTaskMem(task: task_t; const Offset, Size: Qword; var data: array of byte; var BytesRead: Qword): kern_return_t;
 
-// ???
-procedure RecvMessage(port: port_t);
+// == debugging functions ==
 
-function GetSigStr(sig: Integer): String;
+// if err <> 0, writes to stdout comment and error. function returns err value
+function debugout_kret(err: kern_return_t; const comment: AnsiString): kern_return_t;
+
+function GetSigStr(sig: Integer): string;
 function kern_err_str(err: Integer): string;
-function ExceptionType(exc_type: Integer): String;
+function ExceptionType(exc_type: Integer): string;
+function ExcMaskStr(excMask: Integer): string;
+
+procedure PrintTaskBasicInfo32(task: task_t);
+procedure PrintTaskThreadInfo32(task: task_t);
+procedure PrintTaskAllInfo(task: task_t);
+
+procedure PrintThreadBasicInfo(thread: thread_act_t);
+procedure PrintTaskThreads(task: task_t);
+
+function PolicyStr(p: policy_t): string;
+function MachTimeStr(t: time_value): string;
+function ThRunStateStr(run_state: Integer): string;
+function ThFlagStr(flags: Integer): string;
 
 implementation
+
+function MachTimeStr(t: time_value): string;
+begin
+  Result:=IntToStr(t.seconds) + ' : ' + IntToStr(t.microseconds)
+end;
+
+function PolicyStr(p: policy_t): string;
+begin
+  if p = POLICY_NULL then
+    Result:='POLICY_NULL'
+  else begin
+    Result:='';
+    if p and POLICYCLASS_FIXEDPRI > 0 then
+      Result:=Result+ 'POLICYCLASS_FIXEDPRI '
+    else if p and POLICY_RR > 0 then
+      Result:=Result+ 'POLICY_RR '
+    else if p and POLICY_FIFO > 0 then
+      Result:=Result+ 'POLICY_FIFO ';
+    if p and POLICY_TIMESHARE > 0 then
+      Result:=Result + 'POLICY_TIMESHARE ';
+  end;
+end;
+
+procedure PrintTaskBasicInfo32(task: task_t);
+var
+  ret   : kern_return_t;
+  info  : task_basic_info;
+  cnt   : Integer;
+begin
+  FillChar(info, sizeof(info), 0);
+  cnt := TASK_BASIC_INFO_32_COUNT;
+
+  ret:=task_info(task, TASK_BASIC_INFO_32, @info, cnt);
+  if ret <> KERN_SUCCESS then begin
+    writeln('  failed: ', ret,' ', HexStr(ret,8));
+    exit;
+  end;
+
+  writeln('  suspend count:   ', info.suspend_count);
+  writeln('  virtual pages:   ', info.virtual_size);
+  writeln('  resident pages:  ', info.resident_size);
+  writeln('  user time (sec): ', MachTimeStr(info.user_time));
+  writeln('  sys time (sec):  ', MachTimeStr(info.system_time));
+  writeln('  policy: ', PolicyStr(info.policy));
+end;
+
+procedure PrintTaskThreadInfo32(task: task_t);
+var
+  ret   : kern_return_t;
+  info  : task_thread_times_info_data_t;
+  cnt   : Integer;
+begin
+  FillChar(info, sizeof(info), 0);
+  cnt := TASK_THREAD_TIMES_INFO_COUNT;
+
+  ret:=task_info(task, TASK_THREAD_TIMES_INFO, @info, cnt);
+  if ret <> KERN_SUCCESS then begin
+    writeln('  failed: ', HexStr(ret,8));
+    Exit;
+  end;
+
+  writeln('  user time (sec): ', MachTimeStr(info.user_time));
+  writeln('  sys time (sec):  ', MachTimeStr(info.system_time));
+end;
+
+procedure PrintTaskAllInfo(task: task_t);
+begin
+  writeln('task info: ', PtrUInt(task));
+  writeln('basic info:');
+  PrintTaskBasicInfo32(task);
+  writeln('live thread time info:');
+  PrintTaskThreadInfo32(task);
+  writeln;
+end;
+
+function ThRunStateStr(run_state: Integer): string;
+const
+  ThStateStr : array [TH_STATE_RUNNING..TH_STATE_HALTED] of String = (
+    'TH_STATE_RUNNING', 'TH_STATE_STOPPED', 'TH_STATE_WAITING',
+    'TH_STATE_UNINTERRUPTIBLE', 'TH_STATE_HALTED'
+  );
+begin
+  case run_state of
+    TH_STATE_RUNNING..TH_STATE_HALTED:
+      Result:=ThStateStr[run_state];
+  else
+    Result:='TH_OTHER! (error?) ' + IntToStr(run_state);
+  end;
+end;
+
+function ThFlagStr(flags: Integer): string;
+begin
+  Result:='';
+  if flags and TH_FLAGS_SWAPPED > 0 then Result:=Result + 'TH_FLAGS_SWAPPED ';
+  if flags and TH_FLAGS_IDLE > 0 then Result:=Result+ 'TH_FLAGS_IDLE ';
+end;
+
+procedure PrintThreadBasicInfo(thread: thread_act_t);
+var
+  info  : thread_basic_info_data_t;
+  cnt   : Integer;
+  ret   : kern_return_t;
+begin
+  FillChar(info, sizeof(info), 0);
+  cnt:=THREAD_BASIC_INFO_COUNT;
+  ret := thread_info(thread, THREAD_BASIC_INFO, @info, cnt);
+  if ret<>KERN_SUCCESS then begin
+    writeln('  failed ', HexStr(ret,8));
+    Exit;
+  end;
+
+  writeln('  user time (sec): ', MachTimeStr(info.user_time));
+  writeln('  sys time (sec):  ', MachTimeStr(info.system_time)); { system run time }
+  writeln('  cpu usage:       ', info.cpu_usage);
+	writeln('  policy:          ', PolicyStr(info.policy));
+  writeln('  run state:       ', ThRunStateStr(info.run_state));
+  writeln('  flags:           ', ThFlagStr(info.flags));
+  writeln('  suspend count:   ', info.suspend_count);
+  writeln('  sleep time: '     , info.sleep_time);
+
+end;
+
+procedure PrintTaskThreads(task: task_t);
+var
+  list  : thread_act_array_t;
+  cnt   : Integer;
+  ret   : kern_return_t;
+  i     : Integer;
+begin
+  list:=nil;
+  ret := task_threads(task, list, cnt);
+
+  if ret<>KERN_SUCCESS then begin
+    writeln('  failed ', HexStr(ret, 8));
+    Exit;
+  end;
+
+  writeln('task ', PtrUInt(task),', threads count = ', cnt);
+  for i:=0 to cnt-1 do begin
+    writeln('thread: ', list^[i]);
+    PrintThreadBasicInfo(list^[i]);
+  end;
+end;
+
+function ForkAndRun(const CommandLine: String; var ChildId: TPid; var ChildTask: mach_port_t; SuspendSelf: Boolean): Boolean;
+var
+  res   : Integer;
+  pname : mach_port_name_t;
+  kret  : kern_return_t;
+begin
+  Result := false;
+  childid := FpFork;
+  if childid < 0 then Exit;
+
+  if childid = 0 then begin
+    task_suspend(mach_task_self);
+
+    ptraceme;
+    //todo: ptrace_sig_as_exc, what needs to be initialized after going from signals to exceptions?
+    ptrace_sig_as_exc;
+
+
+
+    res := FpExecV(CommandLine, nil);
+    if res < 0 then begin
+      writeln('failed to run: ', CommandLine);
+      Halt;
+    end;
+
+  end else begin
+    pname := 0;
+    kret := task_for_pid(mach_task_self, ChildId, pname);
+    if kret=KERN_SUCCESS then
+      ChildTask:=mach_port_t(pname)
+    else
+      ChildTask:=0;
+    Result := true;
+  end;
+end;
+
 
 function MachAllocPortForSelf: mach_port_name_t;
 begin
@@ -211,13 +409,20 @@ begin
     EXC_MACH_SYSCALL          :Result := 'EXC_MACH_SYSCALL';
     EXC_RPC_ALERT             :Result := 'EXC_RPC_ALERT';
     EXC_CRASH                 :Result := 'EXC_CRASH';
-    {EXCEPTION_DEFAULT         :Result := 'EXCEPTION_DEFAULT';
-    EXCEPTION_STATE           :Result := 'EXCEPTION_STATE';
-    EXCEPTION_STATE_IDENTITY  :Result := 'EXCEPTION_STATE_IDENTITY';}
   else
     Result := 'Unknown ' + IntToHex(exc_type, 8);
   end;
 
+end;
+
+function ExcMaskStr(excMask: Integer): string;
+var
+  i : integer;
+begin
+  Result:='';
+  for i:=EXC_BAD_ACCESS to EXC_CRASH do
+    if (excMask and (1 shl i))>0 then
+      Result:=Result+ExceptionType(i)+' ';
 end;
 
 

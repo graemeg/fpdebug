@@ -1,6 +1,6 @@
 unit dbgInfoDwarf;
 
-{$mode objfpc}{$H+}
+{$ifdef fpc}{$mode delphi}{$H+}{$endif}
 
 interface
 
@@ -85,6 +85,9 @@ begin
     inc(c);
   end;
 end;
+
+initialization
+  RegisterDebugInfo(TDbgDwarf3Info);
 
 end.
 

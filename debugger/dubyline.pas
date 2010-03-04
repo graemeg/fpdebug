@@ -32,7 +32,7 @@ uses
   {$ifdef linux},nixDbgTypes{$endif}              // linux debug API
   
   {$ifdef CPUI386},dbgi386{$endif} // i386 CPU routines
-  {$ifdef CPUx64},dbgi386{$endif}  //  x64 CPU routines
+  {$ifdef CPUx86_64},dbgi386{$endif}  //  x64 CPU routines
   ,dbgMain
   ;
 

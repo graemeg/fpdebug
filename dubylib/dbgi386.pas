@@ -60,7 +60,7 @@ begin
 end;
 
 initialization
-  {$ifdef CPUx64}
+  {$ifdef CPUx86_64}
   InstallCPU(TCPUx64.Create);
   {$else}
   InstallCPU(TCPUi386.Create);

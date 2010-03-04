@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Classes, dbgInfoTypes, dbgInfoDwarf,
-  machoDbgSource, PESource;
+  PESource, machoDbgSource;
 
 
 procedure ReadDwarfData(source : TDbgDataSource);
@@ -31,6 +31,7 @@ end;
 
 var
   dbgInfoSrc : TDbgDataSource;
+
 begin
   if Paramcount < 1 then begin
     writeln('please specify dwarf debug-info file name');

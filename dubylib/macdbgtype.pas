@@ -42,6 +42,9 @@ type
     function StartProcess(const ACmdLine: String): Boolean;
   end;
 
+var
+  CanDebug : Boolean = False;
+
 implementation
 
 function TMacDbgTarget.GetThreadsCount(AProcess: TDbgProcessID): Integer;
@@ -177,7 +180,7 @@ function catch_exception_raise (exception_port, thread, task : mach_port_t;
 	exception  : exception_type_t;
 	code       : exception_data_t;
 	codeCnt    : mach_msg_type_number_t
-): kern_return_t; cdecl; [public];
+): kern_return_t; cdecl; [public]; //alias: '_catch_exception_raise';
 begin
   writeln('--- catch_exception_raise called! ---');
   writeln('  exc_port  = ', exception_port);
@@ -404,6 +407,10 @@ end;
 procedure InitMachDebug;
 begin
   DebugProcessStart := @MachDebugProcessStart;
+  CanDebug:=(@catch_exception_raise<>nil) and
+            (@catch_exception_raise_state<>nil) and
+            (@catch_exception_raise_state_identity<>nil);
+  // Smartlinking protection. (functions must not be cut off)
 end;
 
 initialization

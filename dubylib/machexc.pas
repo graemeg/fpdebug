@@ -120,7 +120,6 @@ function  exception_raise_state_identity (
 	var new_stateCnt : mach_msg_type_number_t
 ): kern_return_t; cdecl; external;
 
-
 // catch_exception_* are not implemented in system library
 // they must be implemented by user program.
 // They are "global callbacks"

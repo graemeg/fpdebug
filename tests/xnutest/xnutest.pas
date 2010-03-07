@@ -16,8 +16,11 @@ var
   userid  : TUid;
 begin
   userid:=FpGetuid;
-  if (userid <> 0) then
+  if (userid <> 0) then begin
     writeln('WARNING: you''re launching as non root user. Debugging might fail on OSX 10.5 (and higher)');
+    writeln('press enter to continue');
+    readln;
+  end;
 end;
 
 
@@ -48,6 +51,10 @@ var
   buf : array [0..4095] of byte;
   ret : kern_return_t;
   req : PRequestUnion__exc_subsystem;
+
+  respbuf : array [0..4095] of byte;
+  resp    : pmach_msg_header_t;
+
 begin
   FillChar(buf, sizeof(buf), 0);
   ret := mach_msg( @buf, MACH_RCV_MSG or MACH_RCV_LARGE or MACH_RCV_TIMEOUT,
@@ -62,8 +69,34 @@ begin
   end;
 
   req:=@buf[0];
-  writeln('exception type = ', ExceptionType(req^.req_raise.exception));
+  if req^.req_raise.Head.msgh_id=msgid_exception_raise then begin
+    writeln('EXCEPTION RAISE!');
+    writeln('msgsz:   ', req^.req_raise.Head.msgh_size);
+    writeln('msgsize: ', req^.req_raise.msgh_body.msgh_descriptor_count);
+    writeln('task:    ', req^.req_raise.task.name);
+    writeln('thread:  ', req^.req_raise.thread.name);
+    writeln('exception type = ', ExceptionType(req^.req_raise.exception));
 
+    FillChar(respbuf, sizeof(respbuf), 0);
+    resp:=@respbuf[0];
+
+    writeln('handling the exception (calling exc_server())');
+    //writeln('@catch_exception_raise = ', PtrUInt(@catch_exception_raise));
+    if not exc_server( pmach_msg_header_t(req), resp) then begin
+      writeln('exc_server() failed!');
+      Result:=True;
+      Exit;
+    end;
+
+    ret := mach_msg(resp, MACH_SEND_MSG, resp^.msgh_size, 0,
+                    req^.req_raise.Head.msgh_local_port, 0, MACH_PORT_NULL);
+    if (ret <> KERN_SUCCESS) then
+      writeln('Error sending message to original reply port, ', ret, ' ', HexStr(ret,8));
+  end;
+
+
+
+  Result:=False;
 end;
 
 procedure DebugExe(const ExeFileName: Ansistring);
@@ -120,6 +153,8 @@ begin
 end;
 
 
+
+{$R xnutest.res}
 
 begin
   UserCheck;

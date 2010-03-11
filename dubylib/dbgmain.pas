@@ -1,4 +1,4 @@
-unit dbgMain; 
+unit dbgMain;
 
 {$mode objfpc}{$H+}
 
@@ -21,7 +21,12 @@ type
     fOwner  : TDbgProcess;
     fState  : TDbgThreadState;
   protected
-    function DbgTarget: TDbgTarget; 
+    // process waits for the thread for single step to RESTORE breakpoint
+    // ProcBreakAddr - is the address of breakpoint to be restores
+    ProcWaitStep    : Boolean;
+    ProcBreakAddr   : TDbgPtr;
+
+    function DbgTarget: TDbgTarget;
   public
     constructor Create(AOwner: TDbgProcess; AID: TDbgThreadID);
     function GetThreadRegs(Registers: TDbgDataList): Boolean; 
@@ -63,6 +68,7 @@ type
     fRawEnabled : Boolean;
     Handlers    : array of TDbgBreakPointHandler;
     Count       : Integer;
+
     procedure SetEnabled(AEnabled: Boolean);
     procedure RefreshRaw;
   public
@@ -71,6 +77,7 @@ type
     procedure NotifyHandlers(var NeedToStop: Boolean);
     procedure AddHandler(AHandleEvent: TDbgBreakPointHandler);
     procedure RemoveHandler(AHandleEvent: TDbgBreakPointHandler);
+    function isEnabledOrHandled: Boolean;
     property Addr: TDbgPtr read fAddr;
     property Enabled: Boolean read fEnabled write SetEnabled;
   end;
@@ -85,7 +92,6 @@ type
     fThreads  : TFPObjectList;
     fState    : TDbgProcessState;
     fBreaks   : TFPObjectList;
-
   protected
     function DbgTarget: TDbgTarget;
 
@@ -99,6 +105,8 @@ type
     procedure UninstallBreaks(Addr, Count: TDbgPtr; BPList: TFPList);
     procedure ReinstallBreaks(Addr, Count: TDbgPtr; BPList: TFPList);
 
+    procedure HandleBreakpointEvent(const Event: TDbgEvent; var StartSingleStep: Boolean);
+    procedure HandleManualStep(const Event: TDbgEvent; var ReportToUser: Boolean);
   public
     constructor Create(AOwner: TDbgMain; AProcessID: TDbgProcessID);
     destructor Destroy; override;
@@ -136,6 +144,12 @@ type
     fReadHandlers  : TFPObjectList;
     fWriteHandlers : TFPObjectList;
     fEventHandlers : TFPObjectList;
+
+    //the list of the stepper processes, for multi-process debugging
+    fSteppers   : TFPList;
+    fStepper    : TDbgProcess; // the process that must make a SINGLE step in SINGLE thread
+    fStepThread : TDbgThreadID;
+
   protected
     function DoAddProcess(AProcessID: TDbgProcessID): TDbgProcess;
     procedure DoRemoveProcess(AProcessID: TDbgProcessID);
@@ -144,7 +158,7 @@ type
     function GetProcess(i: Integer): TDbgProcess;
 
     procedure UpdateProcThreadState;
-    procedure DoHandleEvent(Event: TDbgEvent);
+    procedure DoHandleEvent(Event: TDbgEvent; var ReportToUser: Boolean);
 
     procedure AddEventHandler(AHandle: TDbgHandleEvent);
   public
@@ -278,11 +292,15 @@ begin
   end;
 end;
 
-procedure TDbgMain.DoHandleEvent(Event: TDbgEvent);
+procedure TDbgMain.DoHandleEvent(Event: TDbgEvent; var ReportToUser: Boolean);
 var
   proc  : TDbgProcess;
   thr   : TDbgThread;
+
+  DoSingle  : Boolean;
+  i : Integer;
 begin
+  ReportToUser:=True;
   case Event.Kind of
     dek_ProcessStart:
       DoAddProcess(Event.Process).AddThread(Event.Thread);
@@ -295,7 +313,26 @@ begin
       thr:=FindThread(event.Process, event.Thread);
       thr.fState:=dts_Terminating;
     end;
+    dek_BreakPoint: begin
+      proc:=FindProcess(event.Process);
+      proc.HandleBreakpointEvent(Event, DoSingle);
 
+      //Note: if DoSingle step returns "true", then all other threads in the process
+      //MUST BE suspended or other thread my jump through the disabled breakpoint
+      if DoSingle then begin
+        fStepper:=FindProcess(event.Process);
+        fStepThread:=event.Thread;
+      end;
+    end;
+    dek_SingleStep: begin
+      proc:=FindProcess(event.Process);
+      i:=fSteppers.IndexOf(proc);
+      if i>=0 then begin
+        proc.HandleManualStep(event, ReportToUser);
+        fSteppers.Delete(i);
+      end;
+
+    end;
   end;
 end;
 
@@ -328,26 +365,48 @@ var
   hnd      : TDbgHandleObject;
   i        : Integer;
   handled  : THandleState;
+  ReportToUser  : Boolean;
 begin
   UpdateProcThreadState;
+
+  if Assigned(fStepper) then begin
+    if Assigned(fStepper.FindThread(fStepThread)) then begin
+      fSteppers.Add(fStepper);
+      for i:=0 to fStepper.ThreadsCount-1 do begin
+        if fStepper.Thread[i].ID<>fStepThread then
+          //todo: suspend thread
+          {fStepper.Thread[i].Suspend;}
+          ;
+      end;
+    end else
+      // stepping thread wad removed... for some reason?!
+      // can't step the process
+      ;
+    fStepper:=nil;
+  end;
   
   repeat
     Result:=fTarget.WaitNextEvent(Event);
-    if Result then DoHandleEvent(Event);
 
-    loopdone:=True;
-    for i := 0 to fEventHandlers.Count-1 do begin
-      hnd:=TDbgHandleObject(fEventHandlers[i]);
-      handled:=ehs_NotHandled;
-      hnd.CallEvent(Event, handled);
-      case handled of
-        ehs_Handled: 
-          loopdone:=Event.Kind=dek_BreakPoint;
-        ehs_HandledIsBreakPointEvent: begin
-          loopdone:=event.Kind in [dek_SingleStep, dek_BreakPoint];
-          if loopdone then event.Kind:=dek_BreakPoint;
+    if Result then DoHandleEvent(Event, ReportToUser);
+
+    if ReportToUser then begin
+      loopdone:=True;
+      //todo!?
+
+      {for i := 0 to fEventHandlers.Count-1 do begin
+        hnd:=TDbgHandleObject(fEventHandlers[i]);
+        handled:=ehs_NotHandled;
+        hnd.CallEvent(Event, handled);
+        case handled of
+          ehs_Handled:
+            loopdone:=Event.Kind=dek_BreakPoint;
+          ehs_HandledIsBreakPointEvent: begin
+            loopdone:=event.Kind in [dek_SingleStep, dek_BreakPoint];
+            if loopdone then event.Kind:=dek_BreakPoint;
+          end;
         end;
-      end;
+      end;}
     end;
 
   until loopdone;
@@ -481,6 +540,43 @@ begin
     raw.Enable;
   end;
 end;
+
+procedure TDbgProcess.HandleBreakpointEvent(const Event:TDbgEvent; var StartSingleStep: Boolean);
+var
+  brk : TDbgBreakpoint;
+  thr : TDbgThread;
+  rep : Boolean;
+begin
+  thr:=FindThread(Event.Thread);
+  if Assigned(thr) and thr.ProcWaitStep then
+    HandleManualStep(Event, rep);
+
+  brk:=FindBreakpoint(Event.Addr, False);
+  thr:=FindThread(Event.Thread);
+  if Assigned(brk) and Assigned(thr) then begin
+    brk.fRaw.Disable;
+    thr.ProcWaitStep:=True;
+    thr.ProcBreakAddr:=Event.Addr;
+    StartSingleStep:=True;
+  end else
+    StartSingleStep:=False;
+end;
+
+procedure TDbgProcess.HandleManualStep(const Event: TDbgEvent; var ReportToUser: Boolean);
+var
+  thr : TDbgThread;
+  brk : TDbgBreakpoint;
+begin
+  thr:=FindThread(Event.Thread);
+  if thr.ProcWaitStep then begin
+    thr.ProcWaitStep:=False;
+    brk:=FindBreakpoint(thr.ProcBreakAddr, False);
+    if Assigned(brk) and brk.isEnabledOrHandled then brk.fRaw.Enable;
+    ReportToUser:=False;
+  end else
+    ReportToUser:=True;
+end;
+
 
 function TDbgProcess.FindThread(AThreadID: TDbgThreadID): TDbgThread; 
 var
@@ -685,6 +781,11 @@ begin
       Exit;
     end;
   RefreshRaw;
+end;
+
+function TDbgBreakpoint.isEnabledOrHandled:Boolean;
+begin
+  Result:=Enabled or (Count>0);
 end;
 
 end.

@@ -5,7 +5,7 @@ unit dbgMain;
 interface                      
 
 uses
-  Classes, contnrs, dbgTypes, dbgCPU; 
+  Classes, contnrs, dbgTypes, dbgCPU, dbgUtils;
   
 type
   TDbgMain = class;
@@ -174,8 +174,26 @@ type
     property Process[i: Integer]: TDbgProcess read GetProcess;
   end;
   
+// utility function
+function SetThreadExecAddr(athread: TDbgThread; const Addr: TDbgPtr): Boolean;
 
 implementation
+
+function SetThreadExecAddr(athread: TDbgThread; const Addr: TDbgPtr): Boolean;
+var
+  datalist  : TDbgDataBytesList;
+begin
+  datalist:=TDbgDataBytesList.Create;
+  try
+    Result:=Assigned(athread) and (athread.GetThreadRegs(datalist));
+    if Result then begin
+      datalist.Reg[CPUCode.ExecuteRegisterName].DbgPtr:=Addr;
+      Result:=athread.SetThreadRegs(datalist);
+    end;
+  finally
+    datalist.Free;
+  end;
+end;
 
 type
   { TMemAccessObject }
@@ -239,8 +257,10 @@ begin
 end;
 
 procedure TRawCPUBreakpoint.Disable;
+var
+  res : INteger;
 begin
-  fTarget.WriteMem(fProcID, fAddr, CPUCode.BreakPointSize, buf);
+  res:=fTarget.WriteMem(fProcID, fAddr, length(buf), buf);
   SetLength(buf,0);
 end;
 
@@ -559,15 +579,24 @@ begin
   if Assigned(thr) and thr.ProcWaitStep then
     HandleManualStep(Event, rep);
 
+  writeln('process: ', ID, ' handling breakpoint @', HexStr(Event.Addr, sizeof(Event.Addr)*2));
   brk:=FindBreakpoint(Event.Addr, False);
   thr:=FindThread(Event.Thread);
   if Assigned(brk) and Assigned(thr) then begin
+    writeln('break found! disabling');
     brk.fRaw.Disable;
     thr.ProcWaitStep:=True;
     thr.ProcBreakAddr:=Event.Addr;
+
+    writeln('ralling back exection to bp address');
+    if not SetThreadExecAddr(thr, Event.Addr) then
+      writeln('unable to rallback!');
+
     StartSingleStep:=True;
-  end else
+  end else begin
+    writeln('break or thread not found');
     StartSingleStep:=False;
+  end;
 end;
 
 procedure TDbgProcess.HandleManualStep(const Event: TDbgEvent; var ReportToUser: Boolean);
@@ -677,7 +706,7 @@ end;
 
 function TDbgThread.SetThreadRegs(Registers: TDbgDataList): Boolean; 
 begin
-  Result:=DbgTarget.GetThreadRegs(fOwner.ID, fID, Registers);
+  Result:=DbgTarget.SetThreadRegs(fOwner.ID, fID, Registers);
 end;
 
 function TDbgThread.NextSingleStep: Boolean; 

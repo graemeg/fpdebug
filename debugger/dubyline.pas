@@ -15,8 +15,6 @@ uses
   dbgInfoDwarf,  // dwarf debug information
   dbgInfoStabs,  // stabs debug information
   
-  dbgBreakPoints,  // break points manager
-  
   PESource,        // Win (PE), Linux (elf), MacOSX (macho) executable files
   elfdbgsource,    // the implementation is cross-platform, so there's no need
   machoDbgSource,  // to cover them in {$ifdefs}
@@ -24,7 +22,7 @@ uses
   // command line debugger
   commands,
   cmdloop,    // main loop and run commands
-  memviewer,  // view commands
+  cmdmemview, // view commands
   cmddbg      // debug-info commands
   
   {$ifdef mswindows},winDbgTypes{$endif}          // windows debug API

@@ -1,4 +1,4 @@
-unit memviewer;
+unit cmdmemview;
 
 {$ifdef fpc}{$mode delphi}{$H+}{$endif}
 

@@ -70,8 +70,6 @@ begin
   main.Free;
 end;
 
-{$R dubyline.res}
-
 begin
   try
     RunDebugger;

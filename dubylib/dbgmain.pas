@@ -52,7 +52,7 @@ type
     buf     : array of Byte;
   public
     constructor Create(AAddr: TDbgPtr; AProcID: TDbgProcessID; ATarget: TDbgTarget);
-    procedure Enable;
+    function Enable: Boolean;
     procedure Disable;
     function isEnabled: Boolean;
   end;
@@ -79,7 +79,9 @@ type
     procedure RemoveHandler(AHandleEvent: TDbgBreakPointHandler);
     function isEnabledOrHandled: Boolean;
     property Addr: TDbgPtr read fAddr;
-    property Enabled: Boolean read fEnabled write SetEnabled;
+    function Enable: Boolean;
+    procedure Disable;
+    property isEnabled: Boolean read fEnabled;
   end;
 
   { TDbgProcess }
@@ -87,8 +89,7 @@ type
   TDbgProcess  = class(TObject)
   private
     fOwner    : TDbgMain;
-    fID       : Integer;
-    fProcID   : TDbgProcessID;
+    fID       : TDbgProcessID;
     fThreads  : TFPObjectList;
     fState    : TDbgProcessState;
     fBreaks   : TFPObjectList;
@@ -120,7 +121,7 @@ type
     function AddBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent): Boolean;
     procedure RemoveBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent);
 
-    property ID: TDbgProcessID read fProcID;
+    property ID: TDbgProcessID read fID;
     property State: TDbgProcessState read fState;
     property ThreadsCount: Integer read GetThreadsCount;
     property Thread[i: Integer]: TDbgThread read GetThread;
@@ -204,14 +205,16 @@ begin
   fTarget:=ATarget;
 end;
 
-procedure TRawCPUBreakpoint.Enable;
+function TRawCPUBreakpoint.Enable: Boolean;
 var
   temp      : array of byte;
   CodeSize  : Integer;
 begin
-  if length(buf)<>0 then
+  if length(buf)<>0 then begin
     {already enabled!}
+    Result:=True;
     Exit;
+  end;
 
   Codesize:=CPUCode.BreakPointSize;
   SetLength(buf, Codesize);
@@ -220,6 +223,7 @@ begin
   {checking if hard breakpoint is written}
   if CPUCode.IsBreakPoint(buf, 0) then begin
     SetLength(buf, 0);
+    Result:=False;
     Exit;
   end;
 
@@ -229,7 +233,9 @@ begin
   {writing breakpoint code to the buffer}
   CPUcode.WriteBreakPoint(temp, 0);
   {writing break point to process address space}
-  fTarget.WriteMem(fProcID, fAddr, CodeSize, buf);
+  Result:=fTarget.WriteMem(fProcID, fAddr, CodeSize, temp)=CodeSize;
+  if not Result then
+    SetLength(buf, 0);
 end;
 
 procedure TRawCPUBreakpoint.Disable;
@@ -341,6 +347,7 @@ begin
   inherited Create;
   fTarget:=ATarget;
   fProcList:=TFPObjectList.Create;
+  fSteppers:=TFPList.Create;
   
   fReadHandlers  := TFPObjectList.Create(true);
   fWriteHandlers := TFPObjectList.Create(true);
@@ -356,6 +363,7 @@ begin
   fEventHandlers.Free;
   
   fProcList.Free;
+  fSteppers.Free;
   inherited Destroy;  
 end;
 
@@ -454,10 +462,10 @@ begin
   inherited Create;
   
   fOwner:=AOwner;
-  fProcID:=AProcessID;
+  fID := AProcessID;
   fThreads:=TFPObjectList.Create(true);
   fBreaks:=TFPObjectList.Create(true);
-  
+
   {filling existing threads}
   for i:=0 to DbgTarget.GetThreadsCount(fID) - 1 do begin
     thrid:=DbgTarget.GetThreadID(fID, i);
@@ -511,7 +519,7 @@ begin
   Result:=nil;
   if not Assigned(Result) and Forced then begin
     Result:=TDbgBreakpoint.Create(Self, Addr);
-    Result.fRaw:=TRawCPUBreakpoint.Create(Addr, fProcID, fOwner.fTarget);
+    Result.fRaw:=TRawCPUBreakpoint.Create(Addr, fID, fOwner.fTarget);
     fBreaks.Add(Result);
   end;
 end;
@@ -595,11 +603,9 @@ var
   bp    : TFPList;
 begin
   bp:=TFPList.Create;
-  UninstallBreaks(Offset, Count, bp);
-
+  //UninstallBreaks(Offset, Count, bp);
   Result := fOwner.fTarget.ReadMem(fID, Offset, Count, Data);
-
-  ReinstallBreaks(Offset, Count, bp);
+  //ReinstallBreaks(Offset, Count, bp);
   bp.Free;
 end;
 
@@ -608,11 +614,11 @@ var
   bp    : TFPList;
 begin
   bp:=TFPList.Create;
-  UninstallBreaks(Offset, Count, bp);
+  //UninstallBreaks(Offset, Count, bp);
 
   Result := fOwner.fTarget.WriteMem(fID, Offset, Count, Data);
 
-  ReinstallBreaks(Offset, Count, bp);
+  //ReinstallBreaks(Offset, Count, bp);
   bp.Free;
 end;
 
@@ -621,8 +627,7 @@ var
   bp  : TDbgBreakpoint;
 begin
   bp:=FindBreakpoint(Addr, True);
-  bp.Enabled:=True;
-  Result:=True;
+  Result:=Assigned(bp) and (bp.Enable);
 end;
 
 procedure TDbgProcess.DisableBreakpoint(const Addr: TDbgPtr); 
@@ -630,7 +635,7 @@ var
   bp  : TDbgBreakpoint;
 begin
   bp:=FindBreakpoint(Addr, False);
-  if Assigned(bp) then bp.Enabled:=False;
+  if Assigned(bp) then bp.Disable;
 end;
 
 function TDbgProcess.AddBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent): Boolean;
@@ -724,7 +729,10 @@ begin
   WantedRawState := fEnabled or (Count>0);
   if WantedRawState = fRawEnabled then Exit;
   fRawEnabled:=WantedRawState;
-  if fRawEnabled then fRaw.Enable else fRaw.Disable;
+  if fRawEnabled then
+    fRaw.Enable
+  else
+    fRaw.Disable;
 end;
 
 constructor TDbgBreakpoint.Create(AOwner: TDbgProcess; AAddr: TDbgPtr);
@@ -785,7 +793,24 @@ end;
 
 function TDbgBreakpoint.isEnabledOrHandled:Boolean;
 begin
-  Result:=Enabled or (Count>0);
+  Result:=fEnabled or (Count>0);
+end;
+
+function TDbgBreakpoint.Enable:Boolean;
+begin
+  fEnabled:=True;
+  Result:=fRaw.isEnabled;
+  if not Result then begin
+    RefreshRaw;
+    fEnabled:=fRaw.isEnabled;
+  end;
+  Result:=fEnabled;
+end;
+
+procedure TDbgBreakpoint.Disable;
+begin
+  fEnabled:=False;
+  RefreshRaw;
 end;
 
 end.

@@ -6,7 +6,7 @@ interface
 
 uses
   Windows, 
-  SysUtils, //todo: remove sysutils. 
+  SysUtils, //todo: remove sysutils.
   dbgTypes, winDbgProc;
   
 type
@@ -60,8 +60,8 @@ type
     {the root process. If it's terminated the Target is terminated too}
     fMainProc   : TProcessInformation; 
     
-    fProcesses  : THandleList;  
-    fThreads    : THandleList;
+    fProcesses    : THandleList;
+    fThreads      : THandleList;
     fLastEvent    : TDebugEvent;
     fWaiting      : Boolean;
     fWaited       : Boolean;
@@ -126,9 +126,10 @@ var
   hnd : Integer;
 begin
   hnd:=fProcesses.HandleByID(procID);
-  writeln('reading mem: ');
-  if hnd=0 then Result:=-1
-  else Result := ReadProcMem(hnd, Offset, Count, Data);
+  if hnd=0 then
+    Result:=-1
+  else
+    Result := ReadProcMem(hnd, Offset, Count, Data);
 end;
 
 function TWinDbgTarget.WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
@@ -229,18 +230,16 @@ begin
     case fLastEvent.dwDebugEventCode of
       CREATE_PROCESS_DEBUG_EVENT: 
       begin
-        writeln('Win Process Started: ', fLastEvent.dwProcessId);
+        //writeln('Win Process Started: ', fLastEvent.dwProcessId);
         AddProcess(fLastEvent.dwProcessId, fLastEvent.CreateProcessInfo.hProcess);
         AddThread(fLastEvent.dwProcessId, fLastEvent.dwThreadId, fLastEvent.CreateProcessInfo.hThread); 
       end;
       CREATE_THREAD_DEBUG_EVENT:
         AddThread(fLastEvent.dwProcessId, fLastEvent.dwThreadId, fLastEvent.CreateThread.hThread);
-      EXIT_PROCESS_DEBUG_EVENT, EXIT_THREAD_DEBUG_EVENT: 
-      begin
-        if fLastEvent.dwDebugEventCode =  EXIT_PROCESS_DEBUG_EVENT then
-          writeln('Win Process Terminated: ', fLastEvent.dwProcessId);
+      EXIT_PROCESS_DEBUG_EVENT:
+        RemoveThread(fLastEvent.dwProcessId);
+      EXIT_THREAD_DEBUG_EVENT:
         RemoveThread(fLastEvent.dwThreadId);
-      end;
     end;
   
     fTerminated := (Event.Kind = dek_ProcessTerminated) and (fLastEvent.dwProcessId = fMainProc.dwProcessId);

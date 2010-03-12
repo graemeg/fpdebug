@@ -156,10 +156,16 @@ begin
     writeln('please specify valid adress to set breakpoint');
     Exit;
   end;
-{  if Assigned(AddEnabledBreakPoint(addr, Env.Main)) then 
-    writeln('breakpoint added at: ', HexAddr(addr))
-  else
-    writeln('failed to set breakpoint at: ', HexAddr(addr));}
+
+  if Env.Process.isBreakpointEnabled(Addr) then begin
+    Env.Process.DisableBreakpoint(Addr);
+    writeln('disabling breakpoint at ', HexAddr(Addr));
+  end else begin
+    if Env.Process.EnableBreakpoint(Addr) then
+      writeln('breakpoint set at ', HexAddr(Addr))
+    else
+      writeln('unable to set breakpoint at ', HexAddr(Addr));
+  end;
 end;
 
 function TSetBreak.ShortHelp: String;  

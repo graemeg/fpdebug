@@ -106,7 +106,7 @@ type
     procedure UninstallBreaks(Addr, Count: TDbgPtr; BPList: TFPList);
     procedure ReinstallBreaks(Addr, Count: TDbgPtr; BPList: TFPList);
 
-    procedure HandleBreakpointEvent(const Event: TDbgEvent; var StartSingleStep: Boolean);
+    procedure HandleBreakpointEvent(const Event: TDbgEvent; var StartedSingleStep: Boolean);
     procedure HandleManualStep(const Event: TDbgEvent; var ReportToUser: Boolean);
   public
     constructor Create(AOwner: TDbgMain; AProcessID: TDbgProcessID);
@@ -258,7 +258,7 @@ end;
 
 procedure TRawCPUBreakpoint.Disable;
 var
-  res : INteger;
+  res : Integer;
 begin
   res:=fTarget.WriteMem(fProcID, fAddr, length(buf), buf);
   SetLength(buf,0);
@@ -390,52 +390,34 @@ end;
 function TDbgMain.WaitNextEvent(var Event: TDbgEvent): Boolean;  
 var
   loopdone : Boolean;
-  hnd      : TDbgHandleObject;
   i        : Integer;
-  handled  : THandleState;
   ReportToUser  : Boolean;
 begin
-  UpdateProcThreadState;
-
-  if Assigned(fStepper) then begin
-    if Assigned(fStepper.FindThread(fStepThread)) then begin
-      fSteppers.Add(fStepper);
-      for i:=0 to fStepper.ThreadsCount-1 do begin
-        if fStepper.Thread[i].ID<>fStepThread then
-          //todo: suspend thread
-          {fStepper.Thread[i].Suspend;}
-          ;
-      end;
-    end else
-      // stepping thread wad removed... for some reason?!
-      // can't step the process
-      ;
-    fStepper:=nil;
-  end;
-  
   repeat
+    loopdone:=False;
+    UpdateProcThreadState;
+
+    if Assigned(fStepper) then begin
+      if Assigned(fStepper.FindThread(fStepThread)) then begin
+        fSteppers.Add(fStepper);
+        for i:=0 to fStepper.ThreadsCount-1 do begin
+          if fStepper.Thread[i].ID<>fStepThread then
+            //todo: suspend thread
+            {fStepper.Thread[i].Suspend;}
+            ;
+        end;
+      end else
+        // stepping thread wad removed... for some reason?!
+        // can't step the process
+        ;
+      fStepper:=nil;
+    end;
+  
     Result:=fTarget.WaitNextEvent(Event);
 
     if Result then DoHandleEvent(Event, ReportToUser);
 
-    if ReportToUser then begin
-      loopdone:=True;
-      //todo!?
-
-      {for i := 0 to fEventHandlers.Count-1 do begin
-        hnd:=TDbgHandleObject(fEventHandlers[i]);
-        handled:=ehs_NotHandled;
-        hnd.CallEvent(Event, handled);
-        case handled of
-          ehs_Handled:
-            loopdone:=Event.Kind=dek_BreakPoint;
-          ehs_HandledIsBreakPointEvent: begin
-            loopdone:=event.Kind in [dek_SingleStep, dek_BreakPoint];
-            if loopdone then event.Kind:=dek_BreakPoint;
-          end;
-        end;
-      end;}
-    end;
+    if ReportToUser then loopdone:=True;
 
   until loopdone;
 end;
@@ -569,33 +551,30 @@ begin
   end;
 end;
 
-procedure TDbgProcess.HandleBreakpointEvent(const Event:TDbgEvent; var StartSingleStep: Boolean);
+procedure TDbgProcess.HandleBreakpointEvent(const Event:TDbgEvent; var StartedSingleStep: Boolean);
 var
   brk : TDbgBreakpoint;
   thr : TDbgThread;
   rep : Boolean;
 begin
+  StartedSingleStep:=False;
   thr:=FindThread(Event.Thread);
   if Assigned(thr) and thr.ProcWaitStep then
     HandleManualStep(Event, rep);
 
-  writeln('process: ', ID, ' handling breakpoint @', HexStr(Event.Addr, sizeof(Event.Addr)*2));
   brk:=FindBreakpoint(Event.Addr, False);
   thr:=FindThread(Event.Thread);
+
   if Assigned(brk) and Assigned(thr) then begin
-    writeln('break found! disabling');
     brk.fRaw.Disable;
-    thr.ProcWaitStep:=True;
-    thr.ProcBreakAddr:=Event.Addr;
-
-    writeln('ralling back exection to bp address');
     if not SetThreadExecAddr(thr, Event.Addr) then
-      writeln('unable to rallback!');
+      Exit;
 
-    StartSingleStep:=True;
-  end else begin
-    writeln('break or thread not found');
-    StartSingleStep:=False;
+    StartedSingleStep:=thr.NextSingleStep; // trying to single step!
+    if StartedSingleStep then begin
+      thr.ProcWaitStep:=True;
+      thr.ProcBreakAddr:=Event.Addr;
+    end;
   end;
 end;
 
@@ -608,7 +587,8 @@ begin
   if thr.ProcWaitStep then begin
     thr.ProcWaitStep:=False;
     brk:=FindBreakpoint(thr.ProcBreakAddr, False);
-    if Assigned(brk) and brk.isEnabledOrHandled then brk.fRaw.Enable;
+    if Assigned(brk) and brk.isEnabledOrHandled then
+      brk.fRaw.Enable;
     ReportToUser:=False;
   end else
     ReportToUser:=True;

@@ -6,7 +6,7 @@ interface
 
 uses
   Windows, 
-  SysUtils, //todo: remove sysutils.
+  SysUtils,
   dbgTypes, winDbgProc;
   
 type
@@ -191,7 +191,9 @@ begin
   if fWaited and (fLastEvent.dwDebugEventCode = EXCEPTION_DEBUG_EVENT) then begin
     case fLastEvent.Exception.ExceptionRecord.ExceptionCode of
       EXCEPTION_BREAKPOINT, 
-      EXCEPTION_SINGLE_STEP: ContStatus := DBG_CONTINUE
+      EXCEPTION_SINGLE_STEP: begin
+        ContStatus := DBG_CONTINUE
+      end;
     else 
       ContStatus := HandledStatus[fEHandled]
     end;
@@ -298,9 +300,9 @@ begin
 
   hnd:=fThreads.HandleByID(ThreadID);
   if hnd=0 then Exit;
-  if fis32proc then 
+  if fis32proc then  begin
     Result:=DoWriteThreadRegs32(hnd, Regs)
-  else
+  end else
     Result := false;
 end;
 

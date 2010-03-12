@@ -262,10 +262,10 @@ end;
 function ReadProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; var data: array of byte): Integer;
 var
   res : LongWord;
-  err : LongWord;
+  //err : LongWord;
 begin
   if not ReadProcessMemory(dwProc, Pointer(Offset), @data[0], Count, res) then begin
-    err:=GetLastError;
+    //err:=GetLastError;
     Result := -1;
   end else
     Result := res;  

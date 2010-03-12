@@ -28,11 +28,19 @@ function WriteRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
 function ReadRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
 function WriteRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
 
-function ReadRegEIP(pid: Integer; var Addr: TDbgPtr): Boolean;
-function ReadRegRIP(pid: Integer; var Addr: TDbgPtr): Boolean;
+type
+  TCPUState = record
+    InstrAddr     : TDbgPtr; // instruction address
+    isSingleStep  : Boolean; // is SingleStep mode is used
+  end;
+
+// i386 machines
+function ReadRegEIP(pid: Integer; var CPUState: TCPUState): Boolean;
+// amd64 machines
+function ReadRegRIP(pid: Integer; var CPUState: TCPUState): Boolean;
 
 var
-  GetExecInstrAddr: function(pid: Integer; var Addr: TDbgPtr): Boolean = nil;
+  GetExecInstrAddr: function(pid: Integer; var State: TCPUState): Boolean = nil;
   SoftBreakSize   : Integer;
 
 implementation
@@ -273,20 +281,20 @@ begin
   end;
 end;
 
-function ReadRegEIP(pid: Integer; var Addr: TDbgPtr): Boolean;
+function ReadRegEIP(pid: Integer; var CPUState: TCPUState): Boolean;
 var
   reg32 : user_regs_struct_32;
 begin
   Result:=ReadProcMemUser(pid, 0, sizeof(reg32), PByteArray(@reg32)^) = sizeof(reg32);
-  if Result then Addr:=reg32.eip;
+  if Result then CPUState.InstrAddr:=reg32.eip;
 end;
 
-function ReadRegRIP(pid: Integer; var Addr: TDbgPtr): Boolean;
+function ReadRegRIP(pid: Integer; var CPUState: TCPUState): Boolean;
 var
   reg64 : user_regs_struct_64;
 begin
   Result:=ReadProcMemUser(pid, 0, sizeof(reg64), PByteArray(@reg64)^) = sizeof(reg64);
-  if Result then Addr:=reg64.rip;
+  if Result then CPUState.InstrAddr:=reg64.rip;
 end;
 
 
@@ -332,6 +340,8 @@ end;
 
 
 procedure SigInfoToEvent(id: TPid; const siginfo: TSigInfo; var event: TDbgEvent);
+var
+  state : TCPUState;
 begin
   event.debug := event.debug + ' si_code='+IntToStr(siginfo.si_code)+
                                ' si_errno='+IntToStr(siginfo.si_errno);
@@ -339,13 +349,14 @@ begin
     SIGILL, SIGFPE, SIGSEGV, SIGBUS: begin
       event.Kind := dek_SysExc;
       event.Addr := TDbgPtr(siginfo._sifields._sigfault._addr);
-      if (event.Addr=0) and Assigned(GetExecInstrAddr) then
-        GetExecInstrAddr(id, event.Addr);
+      if (event.Addr=0) and Assigned(GetExecInstrAddr) then begin
+        GetExecInstrAddr(id, state);
+        event.Addr:=state.InstrAddr;
+      end;
     end;
 
     SIGTRAP: begin
       //writeln('siginfo.si_code = ', siginfo.si_code);
-
       if (siginfo.si_code = TRAP_TRACE)
         then event.Kind := dek_SingleStep
         else event.Kind := dek_BreakPoint;
@@ -355,8 +366,11 @@ end;
 
 
 function GetBreakAddr(pid: TPid; var CurrentAddr, PrevDelta: TDbgPtr): Boolean;
+var
+  st  : TCPUState;
 begin
-  Result:=GetExecInstrAddr(pid, CurrentAddr);
+  Result:=GetExecInstrAddr(pid, st);
+  CurrentAddr:=st.InstrAddr;
   PrevDelta:=SoftBreakSize;
 end;
 

@@ -118,6 +118,7 @@ type
 
     function EnableBreakpoint(const Addr: TDbgPtr): Boolean;
     procedure DisableBreakpoint(const Addr: TDbgPtr);
+    function isBreakpointEnabled(const Addr: TDbgPtr): Boolean;
     function AddBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent): Boolean;
     procedure RemoveBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent);
 
@@ -570,11 +571,13 @@ begin
     if not SetThreadExecAddr(thr, Event.Addr) then
       Exit;
 
+    writeln('enable single step for : ', PtrUInt(Event.Thread));
     StartedSingleStep:=thr.NextSingleStep; // trying to single step!
     if StartedSingleStep then begin
       thr.ProcWaitStep:=True;
       thr.ProcBreakAddr:=Event.Addr;
-    end;
+    end else
+      writeln('...failed!');
   end;
 end;
 
@@ -584,6 +587,7 @@ var
   brk : TDbgBreakpoint;
 begin
   thr:=FindThread(Event.Thread);
+  writeln('** handling manual step');
   if thr.ProcWaitStep then begin
     thr.ProcWaitStep:=False;
     brk:=FindBreakpoint(thr.ProcBreakAddr, False);
@@ -645,6 +649,14 @@ var
 begin
   bp:=FindBreakpoint(Addr, False);
   if Assigned(bp) then bp.Disable;
+end;
+
+function TDbgProcess.isBreakpointEnabled(const Addr: TDbgPtr): Boolean;
+var
+  bp : TDbgBreakpoint;
+begin
+  bp:=FindBreakpoint(Addr, False);
+  Result:=Assigned(bp) and (bp.isEnabled);
 end;
 
 function TDbgProcess.AddBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent): Boolean;

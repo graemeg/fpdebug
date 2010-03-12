@@ -193,7 +193,6 @@ begin
   end;
 
   fCh := FpWaitPid(fChild, Status, 0);
-
   if fCh < 0 then begin // failed to wait
     Result := false;
     fChild := 0;

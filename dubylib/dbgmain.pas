@@ -23,10 +23,13 @@ type
   protected
     // process waits for the thread for single step to RESTORE breakpoint
     // ProcBreakAddr - is the address of breakpoint to be restores
-    ProcWaitStep    : Boolean;
-    ProcBreakAddr   : TDbgPtr;
+    fStepByUser   : Boolean;
+    ProcWaitStep  : Boolean;
+    ProcBreakAddr : TDbgPtr;
 
     function DbgTarget: TDbgTarget;
+
+    function NextSingleStepInt(ByUser: Boolean): Boolean;
   public
     constructor Create(AOwner: TDbgProcess; AID: TDbgThreadID);
     function GetThreadRegs(Registers: TDbgDataList): Boolean; 
@@ -393,13 +396,17 @@ var
   loopdone : Boolean;
   i        : Integer;
   ReportToUser  : Boolean;
+  stepthr : TDbgThread;
 begin
+
   repeat
+
     loopdone:=False;
     UpdateProcThreadState;
 
     if Assigned(fStepper) then begin
-      if Assigned(fStepper.FindThread(fStepThread)) then begin
+      stepthr:=fStepper.FindThread(fStepThread);
+      if Assigned(stepthr) then begin
         fSteppers.Add(fStepper);
         for i:=0 to fStepper.ThreadsCount-1 do begin
           if fStepper.Thread[i].ID<>fStepThread then
@@ -407,6 +414,10 @@ begin
             {fStepper.Thread[i].Suspend;}
             ;
         end;
+
+        //todo: remove...
+        //writeln('#enabling single step for the 2nd time!');
+        //stepthr.NextSingleStepInt(False);
       end else
         // stepping thread wad removed... for some reason?!
         // can't step the process
@@ -571,14 +582,12 @@ begin
     if not SetThreadExecAddr(thr, Event.Addr) then
       Exit;
 
-    writeln('enable single step for : ', PtrUInt(Event.Thread));
-    StartedSingleStep:=thr.NextSingleStep; // trying to single step!
+    StartedSingleStep:=thr.NextSingleStepInt(False); // trying to single step!
     if StartedSingleStep then begin
       thr.ProcWaitStep:=True;
       thr.ProcBreakAddr:=Event.Addr;
-    end else
-      writeln('...failed!');
-  end;
+    end;
+  end else ;
 end;
 
 procedure TDbgProcess.HandleManualStep(const Event: TDbgEvent; var ReportToUser: Boolean);
@@ -587,7 +596,6 @@ var
   brk : TDbgBreakpoint;
 begin
   thr:=FindThread(Event.Thread);
-  writeln('** handling manual step');
   if thr.ProcWaitStep then begin
     thr.ProcWaitStep:=False;
     brk:=FindBreakpoint(thr.ProcBreakAddr, False);
@@ -691,6 +699,12 @@ begin
   Result:=fOwner.DbgTarget;
 end;
 
+function TDbgThread.NextSingleStepInt(ByUser: Boolean): Boolean;
+begin
+  if not fStepByUser then fStepByUser:=ByUser;
+  Result:=DbgTarget.SetSingleStep(fOwner.ID, fID);
+end;
+
 function TDbgThread.GetThreadRegs(Registers: TDbgDataList): Boolean; 
 begin
   Result:=DbgTarget.GetThreadRegs(fOwner.ID, fID, Registers);
@@ -703,7 +717,7 @@ end;
 
 function TDbgThread.NextSingleStep: Boolean; 
 begin
-  Result:=DbgTarget.SetSingleStep(fOwner.ID, fID);
+  Result:=NextSingleStepInt(True);
 end;
 
 { TMemAccessObject }

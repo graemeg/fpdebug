@@ -9,7 +9,7 @@ interface
 uses
   SysUtils, BaseUnix, Unix,
   nixPtrace, linuxDbgProc,
-  dbgTypes, dbgCPU, dbgUtils;
+  dbgTypes, dbgCPU, dbgUtils, dbgConsts;
 
 type
   TCpuType = (cpi386, cpx64);
@@ -82,7 +82,7 @@ end;
 
 function TLinuxProcess.GetThreadID(procID: TDbgProcessID; AIndex: Integer): TDbgThreadID;
 begin
-  Result := 0;
+  Result := TDbgThreadID(procID);
 end;
 
 function TLinuxProcess.GetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean;
@@ -121,7 +121,10 @@ end;
 
 function TLinuxProcess.SetSingleStep(procID: TDbgProcessID; ThreadID: TDbgThreadID): Boolean;
 begin
-  Result := ptraceSingleStep(ThreadID);
+  //Result := ptraceSingleStep(ThreadID);
+  //writeln('TLinuxProcess.SetSingleStep ', PtrUInt(threadID), ' ', Result);
+  Result:=Assigned(EnableSingleStep);
+  if Result then Result:=EnableSingleStep(ThreadID, True);
 end;
 
 function TLinuxProcess.MainThreadID(procID: TDbgProcessID): TDbgThreadID;
@@ -209,6 +212,11 @@ begin
   end;
 
   Result := WaitStatusToDbgEvent(fChild, fCh, Status, Event);
+
+  if event.Kind = dek_SingleStep then begin
+    if Assigned(EnableSingleStep) then
+      EnableSingleStep(fCh, False);
+  end;
 
   fWaited := Result;
   fTerminated := Event.Kind = dek_ProcessTerminated;

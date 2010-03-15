@@ -22,25 +22,29 @@ function WriteProcMem(pid: Integer; Offset: TDbgPtr; Size: Integer; const Data: 
 function ReadProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
 function WriteProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
 
-function ReadRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
-function WriteRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
-
-function ReadRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
-function WriteRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
-
 type
   TCPUState = record
     InstrAddr     : TDbgPtr; // instruction address
     isSingleStep  : Boolean; // is SingleStep mode is used
   end;
 
-// i386 machines
+{ i386 }
+
+function ReadUser32(pid: Integer; var data: user_32): Boolean;
+function WriteUser32(pid: Integer; const data: user_32): Boolean;
+function ReadRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
+function WriteRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
 function ReadRegEIP(pid: Integer; var CPUState: TCPUState): Boolean;
-// amd64 machines
+
+{ x86_64 (amd64) }
+
+function ReadRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
+function WriteRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
 function ReadRegRIP(pid: Integer; var CPUState: TCPUState): Boolean;
 
 var
   GetExecInstrAddr: function(pid: Integer; var State: TCPUState): Boolean = nil;
+  EnableSingleStep: function(pid: Integer; EnableSingleStep: Boolean): Boolean = nil;
   SoftBreakSize   : Integer;
 
 implementation
@@ -49,11 +53,21 @@ type
   TByteArray = array [word] of byte;
   PByteArray = ^TByteArray;
 
+function ReadUser32(pid: Integer; var data: user_32): Boolean;
+begin
+  Result := ReadProcMemUser(pid, 0, sizeof(data), PByteArray(@data)^) = sizeof(data);
+end;
+
+function WriteUser32(pid: Integer; const data: user_32): Boolean;
+begin
+  Result:=WriteProcMemUser(pid, 0, sizeof(data), PByteArray(@data)^) = sizeof(data);
+end;
+
 function ReadRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
 var
   user    : user_32;
 begin
-  Result := ReadProcMemUser(pid, 0, sizeof(user), PByteArray(@user)^) = sizeof(user);
+  Result:=ReadUser32(pid, user);
   if Result then begin
     with user.regs do begin
       regs[_Edi].UInt32 := edi;
@@ -104,6 +118,28 @@ begin
   Result := res = sizeof(regs32);
 end;
 
+function SetSingleStepi386(pid: Integer; isEnabled: Boolean): Boolean;
+var
+  regs32  : user_32;
+  mask    : LongWord;
+const
+  TF_FLAG = 1 shl 8;
+begin
+  Result:=ReadUser32(pid, regs32);
+  if Result then begin
+    if isEnabled then
+      regs32.regs.eflags:=regs32.regs.eflags or TF_FLAG
+    else
+      regs32.regs.eflags:=regs32.regs.eflags and not (TF_FLAG);
+    Result:=WriteUser32(pid, regs32);
+  end;
+end;
+
+function SetSingleStepx86_64(pid: Integer; isEnabled: Boolean): Boolean;
+begin
+  //todo!
+  Result:=False;
+end;
 
 function ReadRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
 var
@@ -425,10 +461,12 @@ end;
 initialization
   {$ifdef CPUi386}
   GetExecInstrAddr := @ReadRegEIP;
+  EnableSingleStep := @SetSingleStepi386;
   SoftBreakSize := 1;
   {$endif}
   {$ifdef CPUX86_64}
   GetExecInstrAddr := @ReadRegRIP;
+  EnableSingleStep := @SetSingleStepx86_64;
   SoftBreakSize := 1;
   {$endif}
 end.

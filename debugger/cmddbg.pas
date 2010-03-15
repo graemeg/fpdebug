@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, contnrs, 
   dbgTypes, dbgUtils, dbgConsts,
-  dbgInfoTypes, cmdlineutils, dbgBreakPoints, dbgCPU,
+  dbgInfoTypes, cmdlineutils, dbgCPU,
   commands, cmdloop; 
 
 procedure LoadDebugInfo(const FileName: string);

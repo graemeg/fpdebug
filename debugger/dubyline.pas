@@ -23,7 +23,10 @@ uses
   commands,
   cmdloop,    // main loop and run commands
   cmdmemview, // view commands
-  cmddbg      // debug-info commands
+  cmddbg,     // debug-info commands
+
+  // turn the unit off, if you don't want to debug debug-info loading
+  cmdDbgEx
   
   {$ifdef mswindows},winDbgTypes{$endif}          // windows debug API
   {$ifdef darwin},macDbgType{$endif} // macosx debug API

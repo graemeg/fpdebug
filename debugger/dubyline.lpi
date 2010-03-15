@@ -109,6 +109,11 @@
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
       <SrcPath Value="..\dubylib\"/>
     </SearchPaths>
+    <Linking>
+      <Debugging>
+        <GenerateDebugInfo Value="True"/>
+      </Debugging>
+    </Linking>
     <Other>
       <CompilerMessages>
         <IgnoredMessages idx3189="True" idx4055="True" idx4079="True" idx4080="True" idx4081="True" idx5024="True" idx5028="True" idx5029="True" idx5030="True" idx5031="True" idx5057="True" idx5058="True" idx5060="True"/>

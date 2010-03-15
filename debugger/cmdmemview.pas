@@ -70,11 +70,13 @@ var
   ofs : String; 
   hex : String;
   bin : String;
-  i   : Integer;  
+  i   : Integer;
+  res : Integer;
 begin
   FillChar(buf[0], sizeof(buf), 0);
-  if AProcess.ReadMem(Offset, sizeof(buf), buf) < 0 then begin
-    writeln('cannot read proc ', AProcess.ID, ', mem ');
+  res:=AProcess.ReadMem(Offset, sizeof(buf), buf);
+  if res<0 then begin
+    writeln('cannot read proc ', AProcess.ID, ', mem. Result = ', res);
     Exit;
   end;
 
@@ -103,6 +105,7 @@ begin
     end;
   end;
   try
+    writeln('env process ID = ', Env.Process.ID);
     PrintProcessMem(Env.Process, ofs);
     LastReadOfs := ofs + 32*16;
   except

@@ -9,7 +9,7 @@ uses
   dbgTypes, dbgUtils, dbgConsts, dbgMain,
   commands; 
 
-procedure RunLoop(Process: TDbgMain);
+procedure RunLoop(ATarget: TDbgMain);
 
 {type
   TEventHandler = procedure (Process: TDbgTarget; Event : TDbgEvent) of object;
@@ -17,59 +17,43 @@ procedure RunLoop(Process: TDbgMain);
 procedure InstallHandler(AHandler: TEventHandler);
 procedure RemoveHandler(AHandler: TEventHandler);
 procedure HandleEvent(Process: TDbgTarget; Event : TDbgEvent);}
+
+function LastEvent: TDbgEvent;
   
 implementation
 
 var
   LastCommand   : String;
   DbgEvent      : TDbgEvent;
+  Target        : TDbgMain;
 
   Running       : Boolean = False;
   WaitForNext   : Boolean = False;
   StopOnSysCall : Boolean = False;
   
-  EventHandlers : TFPList;  
+ // EventHandlers : TFPList;
   
 type
   TDebugEnvironment=class(TCommandEnvironment)
-  private
-    fMain    : TDbgMain;
-    fProcess : TDbgProcess;
-    fThread  : TDbgThread;
   public
-    constructor Create(AMain: TDbgMain);
-    procedure SetProcess(AProcess: TDbgProcessID; AThread: TDbgThreadID);
     function Main: TDbgMain; override;
     function Process: TDbgProcess; override;
     function Thread: TDbgThread; override;
   end;
 
-constructor TDebugEnvironment.Create(AMain: TDbgMain);
-begin
-  inherited Create;
-  fMain:=AMain;
-end;
-
-procedure TDebugEnvironment.SetProcess(AProcess: TDbgProcessID; AThread: TDbgThreadID);
-begin
-  fProcess:=fMain.FindProcess(AProcess);
-  if Assigned(fProcess) then
-     fThread:=fProcess.FindThread(AThread);
-end;
-
 function TDebugEnvironment.Main: TDbgMain; 
 begin
-  Result:=fMain;
+  Result:=Target;
 end;
 
 function TDebugEnvironment.Process: TDbgProcess; 
 begin
-  Result:=fProcess;
+  Result:=Main.FindProcess( DbgEvent.Process );
 end;
 
 function TDebugEnvironment.Thread: TDbgThread; 
 begin
-  Result:=fThread;
+  Result:=Main.FindThread( DbgEvent.Process, DbgEvent.Thread );
 end;
   
 const
@@ -293,7 +277,7 @@ begin
     writeln('no process to debug (internal error?)');
     Exit;
   end;
-  Env:=TDebugEnvironment.Create(Target);
+  Env:=TDebugEnvironment.Create;
 
   ProcTerm := false;
   StopForUser := true;
@@ -310,8 +294,6 @@ begin
       if not Target.WaitNextEvent(DbgEvent) then begin
         writeln('the process terminated? (type "quit" to quit)');
       end else begin
-        Env.SetProcess(DbgEvent.Process, DbgEvent.Thread);
-
         //HandleEvent( Process, DbgEvent);
         
         case DbgEvent.Kind of
@@ -337,12 +319,33 @@ begin
   end;
 end;
 
-procedure RunLoop(Process: TDbgMain);
+procedure RunLoop(ATarget: TDbgMain);
 begin
   try
-    DoRunLoop(Process);
+    Target:=ATarget;
+    DoRunLoop(ATarget);
   except
   end;
+end;
+
+function LastEvent:TDbgEvent;
+begin
+  Result:=DbgEvent
+end;
+
+function DebugTarget: TDbgMain;
+begin
+  Result:=Target;
+end;
+
+function EventProc: TDbgProcess;
+begin
+  Result:=Target.FindProcess(DbgEvent.Process);
+end;
+
+function EventThread: TDbgThread;
+begin
+  Result:=Target.FindThread(DbgEvent.Process, DbgEvent.Thread);
 end;
 
 

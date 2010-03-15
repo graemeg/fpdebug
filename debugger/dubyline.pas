@@ -18,7 +18,7 @@ uses
   PESource,        // Win (PE), Linux (elf), MacOSX (macho) executable files
   elfdbgsource,    // the implementation is cross-platform, so there's no need
   machoDbgSource,  // to cover them in {$ifdefs}
-  
+
   // command line debugger
   commands,
   cmdloop,    // main loop and run commands
@@ -34,20 +34,33 @@ uses
   ,dbgMain
   ;
 
- 
+function FixFileName(const FileName: string): string;
+begin
+  Result:=FileName;
+  if not FileExists(FileName) then begin
+    Result:=FileName+'.exe';
+    if not FileExists(Result) then
+      Result:=FileName;
+  end;
+end;
+
 procedure RunDebugger;
 var
   dbg  : TDbgTarget;
   main : TDbgMain;
   cmd  : String;
 begin
-  cmd := ParamStr(1);
+  cmd := FixFileName(ParamStr(1));
   if cmd = '' then begin
     writeln('executable is not specified');
     Exit;
   end else
     writeln('debugging process: ', cmd);
 
+  if not FileExists(cmd) then begin
+    writeln('file doesn''t exists or not available: "',cmd,'"');
+    Exit;
+  end;
   LoadDebugInfo(cmd);
 
   dbg:=DebugProcessStart(cmd);

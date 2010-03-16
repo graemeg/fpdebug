@@ -35,18 +35,18 @@ begin
   writeln;
 end;
 
-procedure TestLoop;
+procedure TestLoop(a: Integer);
 var
   i : Integer;
 begin
   for i := 1 to 10 do
-    writeln(i);
+    writeln(i+a);
 end;
 
 begin
   //TestIntelBreak;
   //TestAccessViolation;
-  TestLoop;
+  TestLoop(10);
   ExitCode := 55;
   //writeln('exiting with error code = ', ExitCode);
   //readln;

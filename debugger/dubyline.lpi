@@ -53,7 +53,7 @@
       <Unit3>
         <Filename Value="cmddbg.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="cmddbg"/>
+        <UnitName Value="cmdDbg"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\dubylib\dbginfodwarf.pas"/>

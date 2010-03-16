@@ -1,4 +1,4 @@
-unit cmddbg; 
+unit cmdDbg;
 
 {$mode objfpc}{$H+}
 
@@ -10,18 +10,18 @@ uses
   dbgInfoTypes, cmdlineutils, dbgCPU,
   commands, cmdloop; 
 
+//todo: remove debug info loading to some common units
 procedure LoadDebugInfo(const FileName: string);
 procedure LoadExeDebugInfo(const cmdLine: string);
 
 function GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: Integer): Boolean;
 
-implementation
-
 var
   DbgSources : TFPObjectList;
-  //DbgInfos   : TFPObjectList;
   CommonInfo : TDbgInfo = nil;
-  
+
+implementation
+
 type
   
   { TWhereCommand }

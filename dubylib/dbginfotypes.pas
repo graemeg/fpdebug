@@ -1,6 +1,6 @@
 unit dbgInfoTypes; 
 
-{$mode objfpc}{$H+}
+{$ifdef fpc}{$mode delphi}{$H+}{$endif}
 
 interface
 
@@ -74,9 +74,9 @@ type
     constructor Create(const AName: AnsiString; AParentSym: TDbgSymbol); override;
     destructor Destroy; override;
     procedure AddLineInfo(const Addr: TDbgPtr; const LineNum: Integer);
-    //todo: Strict is ugly! REMOVE IT! (replace by nearest line search).
     function FindLineByAddr(const Addr: TDbgPtr; var LineNum: Integer; Strict: Boolean = false): Boolean;
     function FindAddrByLine(const LineNum: Integer; var Addr: TDbgPtr): Boolean;
+    function GetLinesInfoCount: Integer;
   end;
 
   TDbgSymbolFunc = class(TDbgSymbol)
@@ -119,7 +119,7 @@ type
     function FindSymbol(const SymbolName: AnsiString; Parent: TDbgSymbol; SearchInFiles: Boolean = true): TDbgSymbol;
     function FindInFile(const SymbolName: AnsiString; const FileName: WideString): TDbgSymbol;
     
-    procedure EnumFiles(str: TStrings); //todo: remove!
+    procedure EnumFiles(str: TStrings); //todo: remove?
   end;
 
 function GetDataSource(const FileName: string): TDbgDataSource; overload;
@@ -132,8 +132,8 @@ procedure RegisterDebugInfo(DebugInfo: TDbgInfoReaderClass);
 implementation
 
 var
-  srcclasses  : TFPList;
-  infoclasses : TFPList;
+  SrcClasses  : TFPList;
+  InfoClasses : TFPList;
   
 procedure GetDebugInfos(Source: TDbgDataSource; List: TFPList);
 var
@@ -464,6 +464,11 @@ begin
   node := AddrToLines.FindKey(@LineNum, @CompareWithLine);
   Result := Assigned(node) and Assigned(node.Data);
   if Result then Addr := TDbgLineINfo(node.Data).Addr;
+end;
+
+function TDbgFileInfo.GetLinesInfoCount:Integer;
+begin
+  Result:=AddrToLines.Count;
 end;
 
 initialization

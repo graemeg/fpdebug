@@ -167,8 +167,12 @@ begin
     for i := 0 to SymCount - 1 do
     with Symbols^[i] do begin
       s := SymStr(n_strx);
-      writeln(Format('%s; other = %d; desc = %d; value = %d, %s; str = %s', [StabsTypeToStr(n_type),
-        n_other, n_desc, n_value,  IntToHex(n_value, 8), s]));
+      writeln(
+        StabsTypeToStr(n_type):8,': ',
+        'other = ', n_other,'; ',
+        'desc = ',  n_desc, '; ',
+        'value = ', Integer(n_value),'; ', HexStr(n_value, 8), '; ',
+        s);
     end;
     writeln('Total symbols = ', SymCount);
   end else begin
@@ -272,7 +276,6 @@ begin
     Result := IntToHex(_type, 2);
   end;
 end;
-
 
 initialization
   RegisterDebugInfo(TDbgStabsInfo);

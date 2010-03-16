@@ -2,6 +2,8 @@ unit stabs;
 
 {$mode objfpc}{$H+}
 
+// STABS specification http://www.cygwin.com/stabs.html
+
 interface
 
 const
@@ -124,8 +126,6 @@ type
     n_value : bfd_vma;   { value of symbol }
   end;
 
-// from: http://www.cygwin.com/stabs.html
-
 // The overall format of the string field for most stab types is:
 //  "name:symbol-descriptor type-information"
 
@@ -151,7 +151,7 @@ type
 // repeat `type-number=' more than once if it wants to define several type numbers at once.
 
 procedure ParseStabStr(const str: string; var name, desc: string; var typeNum: Integer; var value: string);
-procedure StabVarStr(const varstr: String; var name, vartype: string);
+procedure StabVarStr(const varstr: String; var name, descr: string; var vartype: Integer);
 procedure StabFuncStr(const funcstr: String; var name: string);
 
 
@@ -316,7 +316,20 @@ function isArrayType(const value: string; index: integer): Boolean;
 function isStructType(const value: string; var StructSize: Integer; var firstElemIndex: Integer): Boolean;
 function GetStructElem(const s: string; index: Integer; var Name, TypeStr: string; var BitsOffset, BitsSize: Integer; var nextElemIndex: Integer): Boolean;
 
+type
+  TStabReadCallback = procedure (AType, Misc: Byte; Desc: Word; Value: LongWord; const StabStr: String) of object;
+
+procedure ReadStabSyms(const StabsBuf, StabStrBuf : array of Byte;
+  StabsCount, StabStrLen: Integer; Callback: TStabReadCallback);
+
+function isRSymProcArgument(const VarDesc: String): Boolean;
+
 implementation
+
+function isRSymProcArgument(const VarDesc: String): Boolean;
+begin
+  Result:=(Pos('R', VarDesc)>0) or (Pos('P', VarDesc)>0)
+end;
 
 const 
   NameSeparator = ':';
@@ -438,6 +451,27 @@ begin
   Result := true;
 end;
 
+procedure ReadStabSyms(const StabsBuf,StabStrBuf: array of Byte; StabsCount,
+  StabStrLen:Integer;Callback:TStabReadCallback);
+type
+  TStabsArray = array [byte] of TStabSym;
+  PStabsArray = ^TStabsArray;
+var
+  stabs : PStabsArray;
+  str   : PChar;
+  cnt   : Integer;
+  i     : Integer;
+begin
+  stabs:=@StabsBuf;
+  for i:=0 to StabsCount-1 do begin
+    Callback(
+      stabs^[i].n_type, stabs^[i].n_other, stabs^[i].n_desc, stabs^[i].n_value,
+      //todo: make check
+      PChar(@StabStrBuf[stabs^[i].n_strx])
+    );
+  end;
+end;
+
 function GetTypeString(const s: String; index: Integer): String;
 begin
   if s[index] in NumbersAndNeg then begin
@@ -494,7 +528,10 @@ begin
 
   name := GetNextName(str, 1);
   j := length(name)+1;
-  if j > length(str) then Exit;
+  if j > length(str) then
+    Exit
+  else if str[j]=NameSeparator then
+    inc(j);
 
   k:=-1;
   for i := j to length(str) do
@@ -511,13 +548,11 @@ begin
   ParseDescr(m, desc, typeNum);
 end;
 
-procedure StabVarStr(const varstr: String; var name, vartype: string);
+procedure StabVarStr(const varstr: String; var name, descr: string; var vartype: Integer);
 var
-  md, value : string;
-  nmd       : Integer;
+  value   : String;
 begin
-  ParseStabStr(varstr, name, md, nmd, value);
-  vartype := ''; //todo:
+  ParseStabStr(varstr, name, descr, varType, value);
 end;
 
 procedure StabFuncStr(const funcstr: String; var name: string);

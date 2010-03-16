@@ -63,10 +63,14 @@ var
   cu64  : PDwarfCUHeader64;
   c     : Integer;
 begin
-  
-  if not fSource.GetSectionInfo('.debug_info', sz) then Exit;
+  if not fSource.GetSectionInfo('.debug_info', sz) then begin
+     writeln('no .debug_info section');
+     Exit;
+  end;
   SetLength(data, sz);
-  fSource.GetSectionData('.debug_info', 0, sz, data);
+  sz:=fSource.GetSectionData('.debug_info', 0, sz, data);
+  writeln('section size = ', sz);
+
   buf := @data[0];
   i := 0;
   c := 1;
@@ -76,10 +80,18 @@ begin
     cu32 := @buf^[i];
     if cu32^.Length = DWARF_HEADER64_SIGNATURE then begin
       cu64 := PDwarfCUHeader64(cu32);
-      writeln('v: ',cu64^.Version, '; addrsize: ', cu64^.AddressSize, '; ofs: ', cu64^.AbbrevOffset, '; len: ', cu64^.Length);
+      writeln('64-bit');
+      writeln('  version   ', cu64^.Version);
+      writelN('  addrsize: ', cu64^.AddressSize);
+      writelN('  offset:   ', cu64^.AbbrevOffset);
+      writeln('  length:   ', cu64^.Length);
       inc(i, sizeof (TDwarfCUHeader64) + cu64^.Length - 12);
     end else begin
-      writeln('v: ',cu32^.Version, '; addrsize: ', cu32^.AddressSize, '; ofs: ', cu32^.AbbrevOffset, '; len: ', cu32^.Length);
+      writeln('32-bit');
+      writelN('  version:  ',cu32^.Version);
+      writeln('  addrsize: ', cu32^.AddressSize);
+      writeln('  offset:   ', cu32^.AbbrevOffset);
+      writeln('  length:   ', cu32^.Length);
       inc(i, sizeof(TDwarfCUHeader32) + cu32^.Length - 4);
     end;
     inc(c);

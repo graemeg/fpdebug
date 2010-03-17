@@ -322,13 +322,81 @@ type
 procedure ReadStabSyms(const StabsBuf, StabStrBuf : array of Byte;
   StabsCount, StabStrLen: Integer; Callback: TStabReadCallback);
 
-function isRSymProcArgument(const VarDesc: String): Boolean;
+function isProcArgument(const VarDesc: String): Boolean;
+
+//range type
+function isSymTypeRange(const typeval: string): Boolean;
+function ParseSymTypeSubRangeVal(const v: String; var TypeNum: Integer; var LowerRange, HighRange: String): Boolean;
+//some simple type (pointer, void, aliases)
+function ParseSymTypeVal(const v: STring; var TypeNum: Integer; var TypeDescr: String): Boolean;
 
 implementation
 
-function isRSymProcArgument(const VarDesc: String): Boolean;
+const
+  NumChars    = ['0'..'9'];
+  SymChars    = ['+','-'];
+  SymNumChars = SymChars+NumChars;
+
+function GetNextNumber(const s: String; var index: Integer; var numStr: string): Boolean;
+var
+  j : Integer;
 begin
-  Result:=(Pos('R', VarDesc)>0) or (Pos('P', VarDesc)>0)
+  Result:=(index>=1) and (index<=length(s)) and (s[index] in SymNumChars);
+  if not Result then Exit;
+  j:=index;
+  if s[j] in SymChars then inc(j);
+  Result:=(j<=length(s)) and (s[j] in NumChars);
+  if not Result then Exit;
+  while (j<=length(s)) and (s[j] in NumChars) do inc(j);
+  numStr:=copy(s, index, j-index);
+  index:=j;
+end;
+
+function isSymTypeRange(const typeval: string): Boolean;
+begin
+  Result:=(length(typeval)>0) and (typeval[1]=SymType_Range);
+end;
+
+function ParseSymTypeSubRangeVal(const v: String; var TypeNum: Integer; var LowerRange, HighRange: String): Boolean;
+var
+  i   : Integer;
+  nm  : String;
+  err : Integer;
+begin
+  i:=2; // skip the first "r"
+  GetNextNumber(v, i, nm);
+  Val(nm, TypeNum, err);
+  Result:=err=0;
+  inc(i); // skip ";"
+
+  Result:=Result and GetNextNumber(v, i, LowerRange);
+  inc(i); // skip ";"
+  Result:=Result and GetNextNumber(v, i, HighRange);
+  inc(i); // skip ";"
+end;
+
+function ParseSymTypeVal(const v: String; var TypeNum: Integer; var TypeDescr: String): Boolean;
+var
+  i   : Integer;
+  err : Integer;
+  nm  : string;
+begin
+  Result:=length(v)>0;
+  i:=1;
+  if not (v[i] in ['-','0'..'9']) then begin
+    TypeDescr:=v[i];
+    inc(i);
+  end else
+    TypeDescr:='';
+  GetNextNumber(v, i, nm);
+  Val(nm, TypeNum, err);
+  Result:=err=0;
+end;
+
+
+function isProcArgument(const VarDesc: String): Boolean;
+begin
+  Result:=(Pos(Sym_ParamInReg, VarDesc)>0) or (Pos(Sym_Parameter, VarDesc)>0)
 end;
 
 const 
@@ -462,14 +530,15 @@ var
   cnt   : Integer;
   i     : Integer;
 begin
+  if not ASsigned(Callback) then Exit;
+
   stabs:=@StabsBuf;
-  for i:=0 to StabsCount-1 do begin
+  for i:=0 to StabsCount-1 do
     Callback(
       stabs^[i].n_type, stabs^[i].n_other, stabs^[i].n_desc, stabs^[i].n_value,
       //todo: make check
       PChar(@StabStrBuf[stabs^[i].n_strx])
     );
-  end;
 end;
 
 function GetTypeString(const s: String; index: Integer): String;

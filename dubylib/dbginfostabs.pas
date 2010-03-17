@@ -50,7 +50,7 @@ type
   public
     constructor Create(AOwner: TDbgStabsInfo; ADebugInfo: TDbgInfo);
     
-    procedure DeclareType(const TypeName: AnsiString); override;
+    procedure DeclareType(StabTypeDescr: TStabTypeDescr); override;
     procedure StartFile(const FileName: AnsiString; FirstAddr: LongWord); override;
     procedure DeclareLocalVar(const Name: AnsiString; Location: TVarLocation; Addr: LongWord); override;
     procedure DeclareGlobalVar(const Name: AnsiString; Addr: LongWord); override;
@@ -63,6 +63,69 @@ type
     procedure AsmSymbol(const SymName: AnsiString; Addr: LongWord); override;
   end;
 
+  { TDbgInfoCallbackLog }
+
+  TDbgInfoCallbackLog = class(TStabsCallback)
+  public
+    procedure DeclareType(AType: TStabTypeDescr); override;
+    procedure StartFile(const FileName: AnsiString; FirstAddr: LongWord); override;
+    procedure DeclareLocalVar(const Name: AnsiString; Location: TVarLocation; Addr: LongWord); override;
+    procedure DeclareGlobalVar(const Name: AnsiString; Addr: LongWord); override;
+
+    procedure CodeLine(LineNum, Addr: LongWord); override;
+
+    procedure StartProc(const Name: AnsiString; const StabParams : array of TStabProcParams; ParamsCount: Integer; LineNum: Integer; Addr: LongWord); override;
+    procedure EndProc(const Name: AnsiString); override;
+
+    procedure AsmSymbol(const SymName: AnsiString; Addr: LongWord); override;
+  end;
+
+{ TDbgInfoCallbackLog }
+
+procedure TDbgInfoCallbackLog.DeclareType(AType: TStabTypeDescr);
+begin
+  writeln('Type: ', AType.Name);
+end;
+
+procedure TDbgInfoCallbackLog.StartFile(const FileName:AnsiString;FirstAddr:
+  LongWord);
+begin
+  writeln('File: ', FileName);
+end;
+
+procedure TDbgInfoCallbackLog.DeclareLocalVar(const Name:AnsiString;Location:
+  TVarLocation;Addr:LongWord);
+begin
+  writeln('Local var: ', Name,' ',Location,' ',Addr);
+end;
+
+procedure TDbgInfoCallbackLog.DeclareGlobalVar(const Name:AnsiString;Addr:
+  LongWord);
+begin
+  writeln('Global var: ', Name,' ',Addr);
+end;
+
+procedure TDbgInfoCallbackLog.CodeLine(LineNum,Addr:LongWord);
+begin
+  //writeln('Line var: ', Name,' ',Location,' ',Addr);
+end;
+
+procedure TDbgInfoCallbackLog.StartProc(const Name:AnsiString;const StabParams:
+  array of TStabProcParams;ParamsCount:Integer;LineNum:Integer;Addr:LongWord);
+begin
+  WritelN('Start proc: ', Name);
+end;
+
+procedure TDbgInfoCallbackLog.EndProc(const Name:AnsiString);
+begin
+  WritelN('End proc: ', Name);
+end;
+
+procedure TDbgInfoCallbackLog.AsmSymbol(const SymName:AnsiString;Addr:LongWord);
+begin
+  WritelN('Asm sym: ', SymName, ' ', HexStr(Addr, sizeof(Addr)*2));
+end;
+
 { TDbgInfoCallback }
 
 constructor TDbgInfoCallback.Create(AOwner: TDbgStabsInfo; ADebugInfo: TDbgInfo);
@@ -72,7 +135,7 @@ begin
   fDebugInfo := ADebugInfo;
 end;
 
-procedure TDbgInfoCallback.DeclareType(const TypeName: AnsiString);  
+procedure TDbgInfoCallback.DeclareType(StabTypeDescr: TStabTypeDescr);
 begin
 end;
 
@@ -137,7 +200,7 @@ var
   Symbols   : PStabSymArray;
   s         : AnsiString;
   
-  callback  : TDbgInfoCallback;
+  callback  : TStabsCallback;
   
   function SymStr(strx: integer): AnsiString;
   begin
@@ -175,6 +238,11 @@ begin
         s);
     end;
     writeln('Total symbols = ', SymCount);
+
+    callback := TDbgInfoCallbackLog.Create;
+    stabsProc.ReadStabs(buf, sz, strbuf, strsz, callback);
+    callback.Free;
+
   end else begin
     callback := TDbgInfoCallback.Create(Self, fInfo);
     stabsProc.ReadStabs(buf, sz, strbuf, strsz, callback);

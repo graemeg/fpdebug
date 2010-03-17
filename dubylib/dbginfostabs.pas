@@ -83,8 +83,14 @@ type
 { TDbgInfoCallbackLog }
 
 procedure TDbgInfoCallbackLog.DeclareType(AType: TStabTypeDescr);
+var
+  i : integer;
 begin
-  writeln('Type: ', AType.Name);
+  writeln('Type: ', AType.Name, ' : ', AType.BaseType);
+  if AType.BaseType=stRecord then begin
+    for i:=0 to AType.Count-1 do
+      writeln('  ', AType.Elements[i].Name,' : ', AType.Elements[i].ElemType.BaseType);
+  end;
 end;
 
 procedure TDbgInfoCallbackLog.StartFile(const FileName:AnsiString;FirstAddr:

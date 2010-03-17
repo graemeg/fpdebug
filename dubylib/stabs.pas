@@ -327,24 +327,41 @@ function isProcArgument(const VarDesc: String): Boolean;
 //array type
 function isSymTypeArray(const typeval: string): Boolean;
 
-// GetArrayIndexTypeRange returns array index range type declaration
-// and the starting index of number elements type.
-// i.e.:
-// input:
-//   arrtypeval: ar7;0;5;6
-// output:
-//   Result:    true
-//   RangeVal:  r7;0;5;
-//   elemIndex: 9 (the index of '6');
-//   isPacked:  false
-// if non array uses non range type for indexes, the function return false!
+// GetArrayIndexTypeRange returns array index range type declaration         //
+// and the starting index of number elements type.                           //
+// i.e.:                                                                     //
+// input:                                                                    //
+//   arrtypeval: ar7;0;5;6                                                   //
+// output:                                                                   //
+//   Result:    true                                                         //
+//   RangeVal:  r7;0;5;                                                      //
+//   elemIndex: 9 (the index of '6');                                        //
+//   isPacked:  false                                                        //
+// if non array uses non range type for indexes, the function return false!  //
 function GetArrayIndexTypeRange(const arrtypeval: string; var RangeVal: string; var elemIndex: Integer; var isPacked: Boolean): Boolean;
 
 //range type
 function isSymTypeRange(const typeval: string): Boolean;
 function ParseSymTypeSubRangeVal(const v: String; var TypeNum: Integer; var LowerRange, HighRange: String): Boolean;
 
-function isSymStructType(const TypeVal: string): Boolean;
+// struct type
+function isSymTypeStruct(const TypeVal: string): Boolean;
+function ParseStructSize(const v: String; var StructBytes: Integer; var FirstElemIndex: Integer): Boolean;
+function NextStructElem(const v: String; Index: Integer; var ElemName : string; var TypeDeclIndex: Integer): Boolean;
+function NextStructElemPos(const v: String; Index: Integer; var BitOfs, BitSize: Integer; var NextElemIndex: Integer): Boolean;
+
+// enum type
+function isSymTypeEnum(const TypeVal: String): Boolean;
+// the function reads the next enumeration declaration.             //
+// note, the input string must not contain 'e' (enum type modifier) //
+// input:                                                           //
+//   s:     E1:0,E2:1,                                              //
+//   index: 1                                                       //
+// output:                                                          //
+//   index: 6                                                       //
+//   Name:  E1                                                      //
+//   Value: 0                                                       //
+function NextEnumVal(const s: string; var index: Integer; var Name, Value: string): Boolean;
 
 //some simple type (pointer, void, aliases)
 function ParseSymTypeVal(const v: STring; var TypeNum: Integer; var TypeDescr: String): Boolean;
@@ -415,9 +432,101 @@ begin
   Result:=(length(typeval)>0) and (typeval[1]=SymType_Range);
 end;
 
-function isSymStructType(const TypeVal: string): Boolean;
+function isSymTypeStruct(const TypeVal: string): Boolean;
 begin
-  Result:=(length(typeval)>0) and (typeval[1]=Sym_StructType);
+  Result:=(length(typeval)>0) and (typeval[1]=SymType_Struct);
+end;
+
+function ParseStructSize(const v: String; var StructBytes: Integer; var FirstElemIndex: Integer): Boolean;
+var
+  i   : Integer;
+  nm  : String;
+  err : Integer;
+begin
+  Result:=isSymTypeStruct(v) and (length(v)>1);
+  if not Result then Exit;
+
+  i:=2;
+  GetNextNumber(v, i, nm);
+  Val(nm, StructBytes, err);
+  Result:=err=0;
+  FirstElemIndex:=i;
+end;
+
+function NextStructElem(const v: String; Index: Integer; var ElemName : string; var TypeDeclIndex: Integer): Boolean;
+var
+  i   : Integer;
+  j   : Integer;
+  nm  : String;
+  err : Integer;
+begin
+  Result:=(Index>=1) and (Index<=length(v));
+  if not Result then Exit;
+  j:=0;
+  for i:=Index to length(v) do
+    if v[i]=':' then begin
+      ElemName:=Copy(v, index, i-index);
+      TypeDeclIndex:=i+1;
+      Result:=True;
+      Exit;
+    end;
+  Result:=False;
+end;
+
+function NextStructElemPos(const v: String; Index: Integer; var BitOfs, BitSize: Integer; var NextElemIndex: Integer): Boolean;
+var
+  i   : Integer;
+  nm  : String;
+  err : Integer;
+begin
+  Result:=(Index>=1) and (Index<=length(v));
+  if not Result then Exit;
+
+  if v[Index]=',' then inc(Index);
+  i:=Index;
+  GetNextNumber(v, i, nm);
+  Val(nm, BitOfs, err);
+  Result:=err=0;
+  if not Result then Exit;
+  inc(i); // skipping ","
+
+  GetNextNumber(v, i, nm);
+  Val(nm, BitSize, err);
+  Result:=err=0;
+  if not Result then Exit;
+  inc(i); // skipping ";"
+
+  NextElemIndex:=i;
+end;
+
+function isSymTypeEnum(const TypeVal: String): Boolean;
+begin
+  Result:=(length(TypeVal)>0) and (typeVal[1]=SymType_Enum);
+end;
+
+function NextEnumVal(const s: string; var index: Integer; var Name, Value: string): Boolean;
+var
+  i,j : Integer;
+begin
+  if (index<=0) or (index>length(s)) or (s[index]=';') then begin
+    Result:=false;
+    Exit;
+  end;
+  j:=index;
+  for i:=index to length(s) do begin
+    if s[i]=':' then begin
+      j:=i+1;
+      Name:=Copy(s, index, i - index);
+    end;
+    if s[i]=',' then begin
+      Value:=Copy(s, j, i - j);
+      Result:=True;
+      index:=i+1;
+      Exit;
+    end;
+  end;
+  Result:=False;
+  index:=length(s)+1;
 end;
 
 function ParseSymTypeSubRangeVal(const v: String; var TypeNum: Integer; var LowerRange, HighRange: String): Boolean;

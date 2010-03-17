@@ -12,7 +12,7 @@ type
   PStabSymArray = ^TStabSymArray;
   
   TStabProcParams = record
-    Name    : String;    
+    Name    : AnsiString;
     SrcLine : LongWord;
   end;
 
@@ -27,7 +27,7 @@ type
     stShortReal, stReal,
     stArray,
     stRecord, stUnion,
-    stElem,
+    stEnum,
     stRange,
     stAlias, stPointer, stVoid
   );
@@ -35,7 +35,7 @@ type
   TRecUnionElement = class;
 
   TEnumValue = record
-    EnumName  : String;
+    EnumName  : AnsiString;
     IntValue  : LongWord;
   end;
 
@@ -46,6 +46,7 @@ type
     fBaseType : TStabType;
   public
     Name      : AnsiString;
+    DeclLine  : Integer;
     Related   : TStabTypeDescr; // array, alias, range, pointer types. destroyed by itself
 
     Count     : Integer;  // count of elements or enumcount.
@@ -55,11 +56,14 @@ type
     ArrIndType : TStabTypeDescr; // array only
     ArrPacked  : Boolean;        // packed array
 
-    LowRange  : String;
-    HighRange : String;
+    RecordSize : Integer;    // sizeof record
+
+    LowRange  : AnsiString;
+    HighRange : AnsiString;
     constructor Create(AType: TStabType);
+    destructor Destroy; override;
     function AddRecUnionElement: TRecUnionElement;
-    function AddEnumElement(const EnumName: String; IntValue: LongWord): Boolean;
+    function AddEnumElement(const EnumName: AnsiString; IntValue: LongWord): Boolean;
     property BaseType: TStabType read fBaseType;
   end;
 
@@ -71,7 +75,8 @@ type
   public
     Name      : AnsiString;
     ElemType  : TStabTypeDescr;
-    Offset    : Integer;
+    BitOffset : Integer;
+    BitSize   : Integer;
     destructor Destroy; override;
     procedure SetType(AType: TStabTypeDescr; AOwnType: Boolean);
   end;
@@ -140,16 +145,16 @@ type
     function PushProc(const Name: AnsiString; Addr: PtrInt): TStabProc;
     procedure PopProc;
 
-    procedure DoReadStabs(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
-    procedure HandleSourceFile(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
+    procedure DoReadStabs(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
+    procedure HandleSourceFile(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
 
-    procedure StabTypeDecl(const TypeName, TypeDec, TypeVal: String; Num: Integer);
-    procedure HandleLSym(AType, Misc: Byte; ADesc: Word; Value: TStabAddr; const AStr: String);
-    procedure HandleFunc(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
-    procedure HandleLine(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
-    procedure HandleAsmSym(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
-    procedure HandleRPSym(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
-    procedure HandleVariable(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
+    function StabTypeDecl(const TypeDec, TypeVal: AnsiString; Num: Integer): TStabTypeDescr;
+    procedure HandleLSym(AType, Misc: Byte; LineNum: Word; Value: TStabAddr; const AStr: AnsiString);
+    procedure HandleFunc(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
+    procedure HandleLine(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
+    procedure HandleAsmSym(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
+    procedure HandleRPSym(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
+    procedure HandleVariable(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
 
     function AddType(ATypeNum: Integer; AStabType: TStabType): TStabTypeDescr;
     function GetType(ATypeNum: Integer): TStabTypeDescr;
@@ -244,7 +249,7 @@ begin
   end;
 end;
 
-procedure TStabsReader.DoReadStabs(AType, Misc: Byte; Desc: Word; Value: LongWord; const AStr: String);
+procedure TStabsReader.DoReadStabs(AType, Misc: Byte; Desc: Word; Value: LongWord; const AStr: AnsiString);
 begin
   case fLastType of
     N_SO:
@@ -272,7 +277,7 @@ begin
   fLastType:=AType;
 end;
 
-procedure TStabsReader.HandleSourceFile(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
+procedure TStabsReader.HandleSourceFile(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
 var
   fileaddr  : LongWord;
   filename  : AnsiString;
@@ -286,7 +291,7 @@ begin
 end;
 
 function isRangeCommonType(ATypeNum, ARangeTypEnum: Integer;
-  const LowRange, HighRange: String; var CommonType: TStabType): Boolean;
+  const LowRange, HighRange: AnsiString; var CommonType: TStabType): Boolean;
 const
   LowMaxInt32  = '-2147483648';
   HighMaxInt32 = '2147483647';
@@ -303,10 +308,10 @@ type
     BitSize : Integer;
   end;
 
-procedure CheckValueForAttr(const TypeVal: String; var CheckedVal: String; var Attr: TStabAttribis);
+procedure CheckValueForAttr(const TypeVal: AnsiString; var CheckedVal: AnsiString; var Attr: TStabAttribis);
 var
   i : Integer;
-  s : string;
+  s : AnsiString;
 begin
   FillChar(Attr, SizeOf(Attr), 0);
   i:=1;
@@ -320,29 +325,56 @@ begin
   else CheckedVal:=Copy(TypeVal, i, length(TypeVal)-i+1);
 end;
 
-procedure TStabsReader.StabTypeDecl(const TypeName,TypeDec,TypeVal:String;
-  Num: Integer);
+const
+  NumChars    = ['0'..'9'];
+  SymChars    = ['+','-'];
+  SymNumChars = SymChars+NumChars;
+
+function GetNextNumber(const s: String; var index: Integer; var numStr: string): Boolean;
+var
+  j : Integer;
+begin
+  Result:=(index>=1) and (index<=length(s)) and (s[index] in SymNumChars);
+  if not Result then Exit;
+  j:=index;
+  if s[j] in SymChars then inc(j);
+  Result:=(j<=length(s)) and (s[j] in NumChars);
+  if not Result then Exit;
+  while (j<=length(s)) and (s[j] in NumChars) do inc(j);
+  numStr:=copy(s, index, j-index);
+  index:=j;
+end;
+
+function TStabsReader.StabTypeDecl(const TypeDec,TypeVal:AnsiString; Num: Integer): TStabTypeDescr;
 var
   typenum   : Integer;
-  lowr      : string;
-  highr     : string;
+  lowr      : AnsiString;
+  highr     : AnsiString;
   st        : TStabType;
   stabt     : TStabTypeDescr;
-  typedesc  : string;
-  rngval    : string;
+  typedesc  : AnsiString;
+  rngval    : AnsiString;
   idx       : Integer;
   isPacked  : Boolean;
+  nm, vl    : AnsiString;
+  v         : AnsiString;
+  LongVal   : LongWord;
+  j, err    : Integer;
+  attribs   : TStabAttribis;
 
-  v           : string;
-  attribs     : TStabAttribis;
+  recSz     : Integer;
+  recElName : String;
+  recElsz   : Integer;
+  recElOfs  : Integer;
+  recElOwn  : Boolean;
+  recElType : TStabTypeDescr;
+  recElem   : TRecUnionElement;
 begin
   v:=TypeVal;
   CheckValueForAttr(TypeVal, v, attribs);
-  writeln('v = ', v);
-
   stabt:=nil;
   if v='' then begin
-    GetType(num).Name:=TypeName;
+    stabt:=GetType(num);
   end else if isSymTypeRange(v) then begin
     ParseSymTypeSubRangeVal(v, typenum, lowr, highr);
     if isRangeCommonType(num, typenum, lowr, highr, st) then begin
@@ -364,7 +396,41 @@ begin
       stabt.Related:=GetType(typenum);
     end else
       {todo: non ranged indexes};
-  end else if isSymStructType(v) then begin
+  end else if isSymTypeEnum(v) then begin
+    idx:=2;
+    stabt:=AddType(num, stEnum);
+    while NextEnumVal(v, idx, nm, vl) do begin
+      Val(vl, LongVal, err);
+      stabt.AddEnumElement(nm, LongVal);
+    end;
+  end else if isSymTypeStruct(v) then begin
+    stabt:=AddType(num, stRecord);
+    ParseStructSize(v, recsz, idx);
+
+    while NextStructElem(v, idx, recElName, idx) do begin
+      recElType:=nil;
+      if (v[idx] in ['0'..'9'])  then begin
+        GetNextNumber(v, idx, nm);
+        Val(nm, j, err);
+        if err=0 then begin
+          recElType:=GetType(j);
+          recElOwn:=not Assigned(recElType);
+        end;
+        //inc(idx, length(nm)+1);
+      end else {todo: parsing declared-in types};
+
+      if not Assigned(recElType) then begin
+        recElOwn:=True;
+        recElType:=TStabTypeDescr.Create(stVoid);
+      end;
+      inc(idx);
+      if not NextStructElemPos(v, idx, recElOfs, recElSz, idx) then Break;
+      recElem:=stabt.AddRecUnionElement;
+      recElem.Name:=recElName;
+      recElem.SetType(recElType, recElOwn);
+      recElem.BitOffset:=recElOfs;
+      recElem.BitSize:=recElSz;
+    end;
 
   end else begin
     if ParseSymTypeVal(v, typenum, typedesc) then begin
@@ -376,31 +442,34 @@ begin
       end
     end;
   end;
-
-  if Assigned(stabt) then begin
-    stabt.Name:=TypeName;
-    if Assigned(stabt) then
-      fCallback.DeclareType(stabt);
-  end;
-
+  Result:=stabt;
 end;
 
-procedure TStabsReader.HandleLSym(AType, Misc: Byte; ADesc: Word; Value: TStabAddr; const AStr: String);
+procedure TStabsReader.HandleLSym(AType, Misc: Byte; LineNum: Word; Value: TStabAddr; const AStr: AnsiString);
 var
-  name, desc, v : string;
+  name, desc, v : AnsiString;
   num       : Integer;
+  typedescr : TStabTypeDescr;
 begin
   ParseStabStr( AStr, name, desc, num, v );
   if desc = '' then Exit;
 
   case desc[1] of
     Sym_TypeName, Sym_StructType:
-      StabTypeDecl(name, desc, v, num);
+    begin
+      typedescr:=StabTypeDecl(desc, v, num);
+      if Assigned(typedescr) then begin
+        typedescr.DeclLine:=LineNum;
+        typedescr.Name:=name;
+        if typedescr.Name<>'' then
+          fCallback.DeclareType(typedescr);
+      end;
+    end;
   end;
 
 end;
 
-procedure TStabsReader.HandleFunc(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
+procedure TStabsReader.HandleFunc(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
 var
   funsym  : TStabSym;
   Params  : array of TStabProcParams;
@@ -421,7 +490,7 @@ begin
 
 end;
 
-procedure TStabsReader.HandleLine(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
+procedure TStabsReader.HandleLine(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
 var
   v : LongWord;
 begin
@@ -433,16 +502,16 @@ begin
   end;
 end;
 
-procedure TStabsReader.HandleAsmSym(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
+procedure TStabsReader.HandleAsmSym(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
 begin
   if Assigned(fCallback) then
     fCallBack.AsmSymbol(AStr, Value);
 end;
 
-procedure TStabsReader.HandleRPSym(AType,Misc:Byte;Desc:Word;Value:TStabAddr; const AStr:String);
+procedure TStabsReader.HandleRPSym(AType,Misc:Byte;Desc:Word;Value:TStabAddr; const AStr:AnsiString);
 var
-  varname : string;
-  vardesc : string;
+  varname : AnsiString;
+  vardesc : AnsiString;
   varType : Integer;
 
   isArg   : Boolean; // is procedure argument
@@ -475,11 +544,11 @@ begin
   end;}
 end;
 
-procedure TStabsReader.HandleVariable(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
+procedure TStabsReader.HandleVariable(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
 var
   global  : Boolean;
-  varname : String;
-  vardesc : String;
+  varname : AnsiString;
+  vardesc : AnsiString;
   vartype : Integer;
 begin
   global := AType = N_LCSYM;
@@ -545,19 +614,44 @@ begin
   fBaseType:=AType;
 end;
 
+destructor TStabTypeDescr.Destroy;
+var
+  i : Integer;
+begin
+  case fBaseType of
+    stRecord:
+      for i:=0 to Count-1 do Elements[i].Free;
+  end;
+
+  inherited Destroy;
+end;
+
 function TStabTypeDescr.AddRecUnionElement:TRecUnionElement;
 begin
   if (fBaseType<>stRecord) then begin
     Result:=nil;
     Exit;
   end;
+  if Count=length(Elements) then begin
+    if Count=0 then SetLength(Elements, 4)
+    else SetLength(Elements, Count*2);
+  end;
+  Result:=TRecUnionElement.Create;
+  Elements[Count]:=Result;
+  inc(Count);
 end;
 
-function TStabTypeDescr.AddEnumElement(const EnumName:String;IntValue:LongWord): Boolean;
+function TStabTypeDescr.AddEnumElement(const EnumName:AnsiString; IntValue:LongWord): Boolean;
 begin
-  Result:=fBaseType=stElem;
+  Result:=fBaseType=stEnum;
   if not Result then Exit;
-  //todo
+  if Count=length(Enum) then begin
+    if Count=0 then SetLength(Enum, 4)
+    else SetLength(Enum, Count*2);
+  end;
+  Enum[Count].EnumName:=EnumName;
+  Enum[Count].IntValue:=IntValue;
+  inc(Count);
 end;
 
 { TRecUnionElement }
@@ -571,6 +665,7 @@ end;
 procedure TRecUnionElement.SetType(AType:TStabTypeDescr; AOwnType: Boolean);
 begin
   if fOwnType then ElemType.Free;
+  writeln('setting a type');
   fOwnType:=AOwnType;
   ElemType:=AType;
 end;

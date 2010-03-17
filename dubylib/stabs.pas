@@ -324,11 +324,37 @@ procedure ReadStabSyms(const StabsBuf, StabStrBuf : array of Byte;
 
 function isProcArgument(const VarDesc: String): Boolean;
 
+//array type
+function isSymTypeArray(const typeval: string): Boolean;
+
+// GetArrayIndexTypeRange returns array index range type declaration
+// and the starting index of number elements type.
+// i.e.:
+// input:
+//   arrtypeval: ar7;0;5;6
+// output:
+//   Result:    true
+//   RangeVal:  r7;0;5;
+//   elemIndex: 9 (the index of '6');
+//   isPacked:  false
+// if non array uses non range type for indexes, the function return false!
+function GetArrayIndexTypeRange(const arrtypeval: string; var RangeVal: string; var elemIndex: Integer; var isPacked: Boolean): Boolean;
+
 //range type
 function isSymTypeRange(const typeval: string): Boolean;
 function ParseSymTypeSubRangeVal(const v: String; var TypeNum: Integer; var LowerRange, HighRange: String): Boolean;
+
+function isSymStructType(const TypeVal: string): Boolean;
+
 //some simple type (pointer, void, aliases)
 function ParseSymTypeVal(const v: STring; var TypeNum: Integer; var TypeDescr: String): Boolean;
+
+// parses for the next value attribute (see The String Field) for
+// Each one starts with `@' and ends with `;'
+function NextValAttr(const v: String; var index: Integer; var attr: String): Boolean;
+// returns the size of bits, set by the attribute.
+// attr string must NOT start with @ symbol
+function GetBitSizeAttr(const attr: string; var BitSize: Integer): Boolean;
 
 implementation
 
@@ -352,9 +378,46 @@ begin
   index:=j;
 end;
 
+function isSymTypeArray(const typeval: string): Boolean;
+begin
+  Result:=(length(typeval)>0) and
+          ((typeval[1]=SymType_Array) or
+          (typeval[1]=SymType_PackedArray));
+end;
+
+function GetArrayIndexTypeRange(const arrtypeval: string; var RangeVal: string; var elemIndex: Integer;
+  var isPacked: Boolean): Boolean;
+var
+  i : Integer;
+  cnt : Integer;
+begin
+  Result:=(length(arrtypeval)>3) and isSymTypeArray(arrtypeval) and (arrtypeval[2]=SymType_Range);
+  if not Result then Exit;
+
+  isPacked:=arrtypeval[1]=SymType_PackedArray;
+  i:=2;
+  cnt:=0;
+  for i:=2 to length(arrtypeval) do
+    if arrtypeval[i]=';' then begin
+      inc(cnt);
+      if cnt=3 then begin
+        elemIndex:=i+1;
+        RangeVal:=Copy(arrtypeval, 2, elemIndex-2);
+        Result:=True;
+        Exit;
+      end;
+    end;
+  Result:=false;
+end;
+
 function isSymTypeRange(const typeval: string): Boolean;
 begin
   Result:=(length(typeval)>0) and (typeval[1]=SymType_Range);
+end;
+
+function isSymStructType(const TypeVal: string): Boolean;
+begin
+  Result:=(length(typeval)>0) and (typeval[1]=Sym_StructType);
 end;
 
 function ParseSymTypeSubRangeVal(const v: String; var TypeNum: Integer; var LowerRange, HighRange: String): Boolean;
@@ -382,6 +445,7 @@ var
   nm  : string;
 begin
   Result:=length(v)>0;
+  if not Result then Exit;
   i:=1;
   if not (v[i] in ['-','0'..'9']) then begin
     TypeDescr:=v[i];
@@ -631,6 +695,38 @@ var
 begin
   ParseStabStr(funcstr, name, md, nmd, value);
 end;
+
+function NextValAttr(const v: String; var index: Integer; var attr: String): Boolean;
+var
+  i : Integer;
+begin
+  Result:=(index>=0) and (index<=length(v)) and (v[index]=SymType_Attribute_AIX);
+  if not Result then Exit;
+  inc(index);
+  for i:=index to length(v) do
+    if (v[i]=SymType_Attribute_AIX) or (v[i]=';') then begin
+      attr:=Copy(v, index, i-index);
+      index:=i;
+      if v[i]=';' then inc(index);
+      Result:=True;
+      Exit;
+    end;
+  attr:=Copy(v, index, length(v)-index+1);
+  index:=length(v)+1;
+  Result:=True;
+end;
+
+function GetBitSizeAttr(const attr: string; var BitSize: Integer): Boolean;
+var
+  err : Integer;
+begin
+  Result:=(length(attr)>=1) and (attr[1]='s');
+  if Result then begin
+    Val(Copy(attr, 2, length(attr)-1), BitSize, err);
+    Result:=err=0;
+  end;
+end;
+
 
 end.
 

@@ -52,6 +52,9 @@ type
     Elements  : array of TRecUnionElement;
     Enum      : array of TEnumValue;
 
+    ArrIndType : TStabTypeDescr; // array only
+    ArrPacked  : Boolean;        // packed array
+
     LowRange  : String;
     HighRange : String;
     constructor Create(AType: TStabType);
@@ -139,6 +142,8 @@ type
 
     procedure DoReadStabs(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
     procedure HandleSourceFile(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
+
+    procedure StabTypeDecl(const TypeName, TypeDec, TypeVal: String; Num: Integer);
     procedure HandleLSym(AType, Misc: Byte; ADesc: Word; Value: TStabAddr; const AStr: String);
     procedure HandleFunc(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
     procedure HandleLine(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: String);
@@ -293,48 +298,104 @@ begin
   end;
 end;
 
-procedure TStabsReader.HandleLSym(AType, Misc: Byte; ADesc: Word; Value: TStabAddr; const AStr: String);
+type
+  TStabAttribis = record
+    BitSize : Integer;
+  end;
+
+procedure CheckValueForAttr(const TypeVal: String; var CheckedVal: String; var Attr: TStabAttribis);
 var
-  name, desc, v : string;
-  num       : Integer;
+  i : Integer;
+  s : string;
+begin
+  FillChar(Attr, SizeOf(Attr), 0);
+  i:=1;
+  while NextValAttr(TypeVal, i, s) do begin
+    if s<>'' then
+      case s[1] of
+        's': GetBitSizeAttr(s, attr.BitSize);
+      end;
+  end;
+  if i=1 then CheckedVal:=TypeVal
+  else CheckedVal:=Copy(TypeVal, i, length(TypeVal)-i+1);
+end;
+
+procedure TStabsReader.StabTypeDecl(const TypeName,TypeDec,TypeVal:String;
+  Num: Integer);
+var
   typenum   : Integer;
   lowr      : string;
   highr     : string;
   st        : TStabType;
   stabt     : TStabTypeDescr;
   typedesc  : string;
+  rngval    : string;
+  idx       : Integer;
+  isPacked  : Boolean;
+
+  v           : string;
+  attribs     : TStabAttribis;
 begin
+  v:=TypeVal;
+  CheckValueForAttr(TypeVal, v, attribs);
+  writeln('v = ', v);
+
   stabt:=nil;
+  if v='' then begin
+    GetType(num).Name:=TypeName;
+  end else if isSymTypeRange(v) then begin
+    ParseSymTypeSubRangeVal(v, typenum, lowr, highr);
+    if isRangeCommonType(num, typenum, lowr, highr, st) then begin
+      stabt:=AddType(num, st)
+    end else begin
+      stabt:=AddType(num, stRange);
+      stabt.Related:=GetType(typenum);
+    end;
+    stabt.LowRange:=lowr;
+    stabt.HighRange:=highr;
+  end else if isSymTypeArray(v) then begin
+    GetArrayIndexTypeRange(v, rngval, idx, isPacked);
+    stabt:=AddType(num, stArray);
+    stabt.ArrPacked:=isPacked;
+    if ParseSymTypeSubRangeVal(rngval, typenum, lowr, highr) then begin
+      stabt.ArrIndType:=TStabTypeDescr.Create(stRange);
+      stabt.LowRange:=Lowr;
+      stabt.HighRange:=highr;
+      stabt.Related:=GetType(typenum);
+    end else
+      {todo: non ranged indexes};
+  end else if isSymStructType(v) then begin
+
+  end else begin
+    if ParseSymTypeVal(v, typenum, typedesc) then begin
+      if typenum=num then
+        stabt:=AddType(num, stVoid)
+      else if typedesc=SymType_Pointer then begin
+        stabt:=AddType(num, stPointer);
+        stabt.Related:=GetType(typeNum);
+      end
+    end;
+  end;
+
+  if Assigned(stabt) then begin
+    stabt.Name:=TypeName;
+    if Assigned(stabt) then
+      fCallback.DeclareType(stabt);
+  end;
+
+end;
+
+procedure TStabsReader.HandleLSym(AType, Misc: Byte; ADesc: Word; Value: TStabAddr; const AStr: String);
+var
+  name, desc, v : string;
+  num       : Integer;
+begin
   ParseStabStr( AStr, name, desc, num, v );
   if desc = '' then Exit;
 
   case desc[1] of
-    Sym_TypeName, Sym_StructType: begin
-      if isSymTypeRange(v) then begin
-        ParseSymTypeSubRangeVal(v, typenum, lowr, highr);
-        if isRangeCommonType(num, typenum, lowr, highr, st) then begin
-          stabt:=AddType(num, st)
-        end else begin
-          stabt:=AddType(num, stRange);
-        end;
-        stabt.LowRange:=lowr;
-        stabt.HighRange:=highr;
-      end else begin
-        ParseSymTypeVal(v, typenum, typedesc);
-        if typenum=num then
-          stabt:=AddType(num, stVoid)
-        else if (typenum<>num) and (typedesc='') then begin
-          stabt:=AddType(num, stAlias);
-          stabt.Related:=GetType(typeNum);
-        end else if typedesc=SymType_Pointer then begin
-          stabt:=AddType(num, stPointer);
-          stabt.Related:=GetType(typeNum);
-        end;
-
-      end;
-      stabt.Name:=name;
-      fCallback.DeclareType(stabt);
-    end;
+    Sym_TypeName, Sym_StructType:
+      StabTypeDecl(name, desc, v, num);
   end;
 
 end;
@@ -462,7 +523,7 @@ end;
 function TStabsReader.AddType(ATypeNum: Integer; AStabType: TStabType): TStabTypeDescr;
 begin
   Result:=TStabTypeDescr.Create(AStabType);
-  if fTypes.Count<ATypeNum then
+  if fTypes.Count<=ATypeNum then
     fTypes.Count:=ATypeNum+1;
   if Assigned(fTypes[ATypeNum]) then TObject(fTypes[ATypeNum]).Free;
   fTypes[ATypeNum]:=Result;

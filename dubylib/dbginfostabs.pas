@@ -57,7 +57,9 @@ type
 
     procedure CodeLine(LineNum, Addr: LongWord); override;
     
-    procedure StartProc(const Name: AnsiString; const StabParams : array of TStabProcParams; ParamsCount: Integer; LineNum: Integer; Addr: LongWord); override;
+    procedure StartProc(const Name: AnsiString; LineNum: Integer;
+      EntryAddr: LongWord; isGlobal: Boolean; const NestedTo: String;
+      ReturnType: TStabTypeDescr); override;
     procedure EndProc(const Name: AnsiString); override;
     
     procedure AsmSymbol(const SymName: AnsiString; Addr: LongWord); override;
@@ -74,7 +76,9 @@ type
 
     procedure CodeLine(LineNum, Addr: LongWord); override;
 
-    procedure StartProc(const Name: AnsiString; const StabParams : array of TStabProcParams; ParamsCount: Integer; LineNum: Integer; Addr: LongWord); override;
+    procedure StartProc(const Name: AnsiString; LineNum: Integer;
+      EntryAddr: LongWord; isGlobal: Boolean; const NestedTo: String;
+      RetType: TStabTypeDescr); override;
     procedure EndProc(const Name: AnsiString); override;
 
     procedure AsmSymbol(const SymName: AnsiString; Addr: LongWord); override;
@@ -116,15 +120,18 @@ begin
   //writeln('Line var: ', Name,' ',Location,' ',Addr);
 end;
 
-procedure TDbgInfoCallbackLog.StartProc(const Name:AnsiString;const StabParams:
-  array of TStabProcParams;ParamsCount:Integer;LineNum:Integer;Addr:LongWord);
+procedure TDbgInfoCallbackLog.StartProc(const Name:AnsiString; LineNum:Integer;
+  EntryAddr: LongWord; isGlobal: Boolean;
+  const NestedTo: String; RetType: TStabTypeDescr);
 begin
-  WritelN('Start proc: ', Name);
+  Write('Proc: ', Name, ' : ', RetType.BaseType);
+  Write(' nested to: ', NestedTo);
+  Writeln;
 end;
 
 procedure TDbgInfoCallbackLog.EndProc(const Name:AnsiString);
 begin
-  WritelN('End proc: ', Name);
+  //WritelN('End proc: ', Name);
 end;
 
 procedure TDbgInfoCallbackLog.AsmSymbol(const SymName:AnsiString;Addr:LongWord);
@@ -170,15 +177,15 @@ begin
     fFileSym.AddLineInfo(Addr, LineNum);
 end;
 
-procedure TDbgInfoCallback.StartProc(const Name: AnsiString;  
-  const StabParams: array of TStabProcParams; ParamsCount: Integer;  
-  LineNum: Integer; Addr: LongWord);  
+procedure TDbgInfoCallback.StartProc(const Name: AnsiString; LineNum: Integer;
+  EntryAddr: LongWord; isGlobal: Boolean; const NestedTo: String;
+  ReturnType: TStabTypeDescr);
 var
   proc  : TDbgSymbolFunc;
 begin
   proc := TDbgSymbolFunc(fOwner.fInfo.AddSymbol(Name, fFileSym, TDbgSymbolFunc));
   if not Assigned(proc) then Exit;
-  proc.EntryPoint := Addr;
+  proc.EntryPoint := EntryAddr;
   fCurrentFunc:=proc;
 end;
 
@@ -190,7 +197,6 @@ end;
 procedure TDbgInfoCallback.AsmSymbol(const SymName: AnsiString; Addr: LongWord);  
 begin
 end;
-
 
 { TDbgStabsInfo }
 

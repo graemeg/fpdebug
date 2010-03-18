@@ -90,7 +90,9 @@ type
 
     procedure CodeLine(LineNum, Addr: LongWord); virtual; abstract;
     
-    procedure StartProc(const Name: AnsiString; const StabParams : array of TStabProcParams; ParamsCount: Integer; LineNum: Integer; Addr: LongWord); virtual; abstract;
+    procedure StartProc(const Name: AnsiString; LineNum: Integer;
+      EntryAddr: LongWord; isGlobal: Boolean; const NestedTo: String;
+      ReturnType: TStabTypeDescr); virtual; abstract;
     procedure EndProc(const Name: AnsiString); virtual; abstract;
     
     procedure AsmSymbol(const SymName: AnsiString; Addr: LongWord); virtual; abstract;
@@ -475,13 +477,17 @@ var
   Params  : array of TStabProcParams;
   i, j    : integer;
   funnm   : AnsiString;
+  isExt   : Boolean;
+  rettype : Integer;
+  descr   : TStabFuncDescr;
 begin
   SetLength(Params, 0);
-  StabFuncStr(AStr, funnm);
+  StabFuncStr(AStr, funnm, descr, rettype);
   if funnm<>'' then begin
-    PushProc(funnm, Value );
+    PushProc(funnm, Value);
     if Assigned(fCallback) then
-      fCallback.StartProc(funnm, Params, j, funsym.n_desc, funsym.n_value );
+      fCallback.StartProc(funnm, funsym.n_desc, funsym.n_value,
+        descr.isGlobal, descr.NestedTo, GetType(rettype));
   end else begin
     if ASsigned(fCallback) then
       fCallback.EndProc( CurrentProcName);

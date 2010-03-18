@@ -126,35 +126,6 @@ type
     n_value : bfd_vma;   { value of symbol }
   end;
 
-// The overall format of the string field for most stab types is:
-//  "name:symbol-descriptor type-information"
-
-// "name" is the name of the symbol represented by the stab; it can contain
-// a pair of colons (see section Defining a Symbol Within Another Type). name
-// can be omitted, which means the stab represents an unnamed object.
-//   For example, `:t10=*2' defines type 10 as a pointer to type 2, but does
-// not give the type a name. GCC sometimes uses a single space as the name
-// instead of omitting the name altogether.
-
-// The "symbol-descriptor" following the `:' is an alphabetic character that
-// tells more specifically what kind of symbol the stab represents. If the symbol-descriptor
-// is omitted, but type information follows, then the stab represents a local variable.
-// For a list of symbol descriptors, see section Table of Symbol Descriptors. The `c' symbol
-// descriptor is an exception in that it is not followed by type information. See section Constants.
-
-// type-information is either a type-number, or `type-number='. A type-number alone is a type reference,
-// referring directly to a type that has already been defined.
-
-// The `type-number=' form is a type definition, where the number represents a new type which
-// is about to be defined. The type definition may refer to other types by number, and those
-// type numbers may be followed by `=' and nested definitions. Also, the Lucid compiler will
-// repeat `type-number=' more than once if it wants to define several type numbers at once.
-
-procedure ParseStabStr(const str: string; var name, desc: string; var typeNum: Integer; var value: string);
-procedure StabVarStr(const varstr: String; var name, descr: string; var vartype: Integer);
-procedure StabFuncStr(const funcstr: String; var name: string);
-
-
 // The symbol descriptor is the character which follows the colon in many stabs,
 // and which tells what kind of stab it is. See section The String Field, for more information about their use.
 
@@ -304,28 +275,70 @@ const
   bitype_UInt64log8 = -33; // logical*8, 64 bit unsigned integral type.
   bitype_SInt64log8 = -34; // integer*8, 64 bit signed integral type.
 
+// The overall format of the string field for most stab types is:
+//  "name:symbol-descriptor type-information"
+
+// "name" is the name of the symbol represented by the stab; it can contain
+// a pair of colons (see section Defining a Symbol Within Another Type). name
+// can be omitted, which means the stab represents an unnamed object.
+//   For example, `:t10=*2' defines type 10 as a pointer to type 2, but does
+// not give the type a name. GCC sometimes uses a single space as the name
+// instead of omitting the name altogether.
+
+// The "symbol-descriptor" following the `:' is an alphabetic character that
+// tells more specifically what kind of symbol the stab represents. If the symbol-descriptor
+// is omitted, but type information follows, then the stab represents a local variable.
+// For a list of symbol descriptors, see section Table of Symbol Descriptors. The `c' symbol
+// descriptor is an exception in that it is not followed by type information. See section Constants.
+
+// type-information is either a type-number, or `type-number='. A type-number alone is a type reference,
+// referring directly to a type that has already been defined.
+
+// The `type-number=' form is a type definition, where the number represents a new type which
+// is about to be defined. The type definition may refer to other types by number, and those
+// type numbers may be followed by `=' and nested definitions. Also, the Lucid compiler will
+// repeat `type-number=' more than once if it wants to define several type numbers at once.
+
+procedure ParseStabStr(const str: AnsiString; var name, desc: AnsiString; var typeNum: Integer; var value: AnsiString);
+procedure StabVarStr(const varstr: AnsiString; var name, descr: AnsiString; var vartype: Integer);
+
+
+type
+  TStabFuncDescr = record
+    isGlobal  : Boolean;
+    NestedTo  : AnsiString;
+  end;
+
+// the function takes a procudure description stab string and parses it      //
+// returning: Name, Declaration (global or not) and Returned type            //
+// input:                                                                    //
+//   functstr:  TESTLOOP:F1                                                  //
+// output:                                                                   //
+//   name:      TESTLOOP                                                     //
+//   isGlobal:  True                                                         //
+//   NestedTo:                                                               //
+//   rettype:   1                                                            //
+// if symbol doesn't have f or F as description the function returns false.  //
+function StabFuncStr(const funcstr: AnsiString; var name: AnsiString;
+  var Descr: TStabFuncDescr; var retType: Integer): Boolean;
+
 
 type
   TStabType = packed record
-    _typestr  : string;
+    _typestr  : AnsiString;
     _typenum  : Integer;
   end;
 
-function isArrayType(const value: string; index: integer): Boolean;
-
-function isStructType(const value: string; var StructSize: Integer; var firstElemIndex: Integer): Boolean;
-function GetStructElem(const s: string; index: Integer; var Name, TypeStr: string; var BitsOffset, BitsSize: Integer; var nextElemIndex: Integer): Boolean;
-
 type
-  TStabReadCallback = procedure (AType, Misc: Byte; Desc: Word; Value: LongWord; const StabStr: String) of object;
+  TStabReadCallback = procedure (AType, Misc: Byte; Desc: Word; Value: LongWord; const StabStr: AnsiString) of object;
 
 procedure ReadStabSyms(const StabsBuf, StabStrBuf : array of Byte;
   StabsCount, StabStrLen: Integer; Callback: TStabReadCallback);
 
-function isProcArgument(const VarDesc: String): Boolean;
+function isProcArgument(const VarDesc: AnsiString): Boolean;
 
 //array type
-function isSymTypeArray(const typeval: string): Boolean;
+function isSymTypeArray(const typeval: AnsiString): Boolean;
 
 // GetArrayIndexTypeRange returns array index range type declaration         //
 // and the starting index of number elements type.                           //
@@ -338,20 +351,20 @@ function isSymTypeArray(const typeval: string): Boolean;
 //   elemIndex: 9 (the index of '6');                                        //
 //   isPacked:  false                                                        //
 // if non array uses non range type for indexes, the function return false!  //
-function GetArrayIndexTypeRange(const arrtypeval: string; var RangeVal: string; var elemIndex: Integer; var isPacked: Boolean): Boolean;
+function GetArrayIndexTypeRange(const arrtypeval: AnsiString; var RangeVal: AnsiString; var elemIndex: Integer; var isPacked: Boolean): Boolean;
 
 //range type
-function isSymTypeRange(const typeval: string): Boolean;
-function ParseSymTypeSubRangeVal(const v: String; var TypeNum: Integer; var LowerRange, HighRange: String): Boolean;
+function isSymTypeRange(const typeval: AnsiString): Boolean;
+function ParseSymTypeSubRangeVal(const v: AnsiString; var TypeNum: Integer; var LowerRange, HighRange: AnsiString): Boolean;
 
 // struct type
-function isSymTypeStruct(const TypeVal: string): Boolean;
-function ParseStructSize(const v: String; var StructBytes: Integer; var FirstElemIndex: Integer): Boolean;
-function NextStructElem(const v: String; Index: Integer; var ElemName : string; var TypeDeclIndex: Integer): Boolean;
-function NextStructElemPos(const v: String; Index: Integer; var BitOfs, BitSize: Integer; var NextElemIndex: Integer): Boolean;
+function isSymTypeStruct(const TypeVal: AnsiString): Boolean;
+function ParseStructSize(const v: AnsiString; var StructBytes: Integer; var FirstElemIndex: Integer): Boolean;
+function NextStructElem(const v: AnsiString; Index: Integer; var ElemName : AnsiString; var TypeDeclIndex: Integer): Boolean;
+function NextStructElemPos(const v: AnsiString; Index: Integer; var BitOfs, BitSize: Integer; var NextElemIndex: Integer): Boolean;
 
 // enum type
-function isSymTypeEnum(const TypeVal: String): Boolean;
+function isSymTypeEnum(const TypeVal: AnsiString): Boolean;
 // the function reads the next enumeration declaration.             //
 // note, the input string must not contain 'e' (enum type modifier) //
 // input:                                                           //
@@ -361,17 +374,17 @@ function isSymTypeEnum(const TypeVal: String): Boolean;
 //   index: 6                                                       //
 //   Name:  E1                                                      //
 //   Value: 0                                                       //
-function NextEnumVal(const s: string; var index: Integer; var Name, Value: string): Boolean;
+function NextEnumVal(const s: AnsiString; var index: Integer; var Name, Value: AnsiString): Boolean;
 
 //some simple type (pointer, void, aliases)
-function ParseSymTypeVal(const v: STring; var TypeNum: Integer; var TypeDescr: String): Boolean;
+function ParseSymTypeVal(const v: AnsiString; var TypeNum: Integer; var TypeDescr: AnsiString): Boolean;
 
 // parses for the next value attribute (see The String Field) for
 // Each one starts with `@' and ends with `;'
-function NextValAttr(const v: String; var index: Integer; var attr: String): Boolean;
+function NextValAttr(const v: AnsiString; var index: Integer; var attr: AnsiString): Boolean;
 // returns the size of bits, set by the attribute.
 // attr string must NOT start with @ symbol
-function GetBitSizeAttr(const attr: string; var BitSize: Integer): Boolean;
+function GetBitSizeAttr(const attr: AnsiString; var BitSize: Integer): Boolean;
 
 implementation
 
@@ -380,7 +393,7 @@ const
   SymChars    = ['+','-'];
   SymNumChars = SymChars+NumChars;
 
-function GetNextNumber(const s: String; var index: Integer; var numStr: string): Boolean;
+function GetNextNumber(const s: String; var index: Integer; var numStr: AnsiString): Boolean;
 var
   j : Integer;
 begin
@@ -395,14 +408,14 @@ begin
   index:=j;
 end;
 
-function isSymTypeArray(const typeval: string): Boolean;
+function isSymTypeArray(const typeval: AnsiString): Boolean;
 begin
   Result:=(length(typeval)>0) and
           ((typeval[1]=SymType_Array) or
           (typeval[1]=SymType_PackedArray));
 end;
 
-function GetArrayIndexTypeRange(const arrtypeval: string; var RangeVal: string; var elemIndex: Integer;
+function GetArrayIndexTypeRange(const arrtypeval: AnsiString; var RangeVal: AnsiString; var elemIndex: Integer;
   var isPacked: Boolean): Boolean;
 var
   i : Integer;
@@ -427,20 +440,20 @@ begin
   Result:=false;
 end;
 
-function isSymTypeRange(const typeval: string): Boolean;
+function isSymTypeRange(const typeval: AnsiString): Boolean;
 begin
   Result:=(length(typeval)>0) and (typeval[1]=SymType_Range);
 end;
 
-function isSymTypeStruct(const TypeVal: string): Boolean;
+function isSymTypeStruct(const TypeVal: AnsiString): Boolean;
 begin
   Result:=(length(typeval)>0) and (typeval[1]=SymType_Struct);
 end;
 
-function ParseStructSize(const v: String; var StructBytes: Integer; var FirstElemIndex: Integer): Boolean;
+function ParseStructSize(const v: AnsiString; var StructBytes: Integer; var FirstElemIndex: Integer): Boolean;
 var
   i   : Integer;
-  nm  : String;
+  nm  : AnsiString;
   err : Integer;
 begin
   Result:=isSymTypeStruct(v) and (length(v)>1);
@@ -453,11 +466,11 @@ begin
   FirstElemIndex:=i;
 end;
 
-function NextStructElem(const v: String; Index: Integer; var ElemName : string; var TypeDeclIndex: Integer): Boolean;
+function NextStructElem(const v: AnsiString; Index: Integer; var ElemName : AnsiString; var TypeDeclIndex: Integer): Boolean;
 var
   i   : Integer;
   j   : Integer;
-  nm  : String;
+  nm  : AnsiString;
   err : Integer;
 begin
   Result:=(Index>=1) and (Index<=length(v));
@@ -473,10 +486,10 @@ begin
   Result:=False;
 end;
 
-function NextStructElemPos(const v: String; Index: Integer; var BitOfs, BitSize: Integer; var NextElemIndex: Integer): Boolean;
+function NextStructElemPos(const v: AnsiString; Index: Integer; var BitOfs, BitSize: Integer; var NextElemIndex: Integer): Boolean;
 var
   i   : Integer;
-  nm  : String;
+  nm  : AnsiString;
   err : Integer;
 begin
   Result:=(Index>=1) and (Index<=length(v));
@@ -499,12 +512,12 @@ begin
   NextElemIndex:=i;
 end;
 
-function isSymTypeEnum(const TypeVal: String): Boolean;
+function isSymTypeEnum(const TypeVal: AnsiString): Boolean;
 begin
   Result:=(length(TypeVal)>0) and (typeVal[1]=SymType_Enum);
 end;
 
-function NextEnumVal(const s: string; var index: Integer; var Name, Value: string): Boolean;
+function NextEnumVal(const s: AnsiString; var index: Integer; var Name, Value: AnsiString): Boolean;
 var
   i,j : Integer;
 begin
@@ -529,10 +542,10 @@ begin
   index:=length(s)+1;
 end;
 
-function ParseSymTypeSubRangeVal(const v: String; var TypeNum: Integer; var LowerRange, HighRange: String): Boolean;
+function ParseSymTypeSubRangeVal(const v: AnsiString; var TypeNum: Integer; var LowerRange, HighRange: AnsiString): Boolean;
 var
   i   : Integer;
-  nm  : String;
+  nm  : AnsiString;
   err : Integer;
 begin
   i:=2; // skip the first "r"
@@ -547,11 +560,11 @@ begin
   inc(i); // skip ";"
 end;
 
-function ParseSymTypeVal(const v: String; var TypeNum: Integer; var TypeDescr: String): Boolean;
+function ParseSymTypeVal(const v: AnsiString; var TypeNum: Integer; var TypeDescr: AnsiString): Boolean;
 var
   i   : Integer;
   err : Integer;
-  nm  : string;
+  nm  : AnsiString;
 begin
   Result:=length(v)>0;
   if not Result then Exit;
@@ -567,7 +580,7 @@ begin
 end;
 
 
-function isProcArgument(const VarDesc: String): Boolean;
+function isProcArgument(const VarDesc: AnsiString): Boolean;
 begin
   Result:=(Pos(Sym_ParamInReg, VarDesc)>0) or (Pos(Sym_Parameter, VarDesc)>0)
 end;
@@ -578,7 +591,7 @@ const
   Numbers       = ['0'..'9'];
   NumbersAndNeg = ['-'] + Numbers;
 
-function GetSubStr(const s: string; Index: Integer; Sep: AnsiChar): string;
+function GetSubStr(const s: AnsiString; Index: Integer; Sep: AnsiChar): AnsiString;
 var
   i : integer;
 begin
@@ -590,106 +603,9 @@ begin
   Result := Copy(s, Index, length(s) - Index+1);
 end;
 
-function GetNextName(const s: string; index: Integer): string; inline;
+function GetNextName(const s: AnsiString; index: Integer): AnsiString; inline;
 begin
   Result := GetSubStr(s, index, NameSeparator);
-end;
-
-function GetNextNumber(const s: string; index: Integer; var Number: Int64; var NumLen: Integer): Boolean; overload;
-var
-  num : string;
-  i   : Integer;
-  err : Integer;
-  numstop : Boolean;
-begin
-  numlen := 0;
-  Number := 0;
-  Result := (s<>'') and (index>=1) and (index<=length(s)) and (s[index] in NumbersAndNeg);
-  if not Result then Exit;
-
-  if s[index] = '-' then begin
-    num := '-';
-    inc(index);
-  end else
-    num := '';
-
-  numstop := false;
-  for i := index to length(s) do
-    if not (s[i] in Numbers) then begin
-      numstop := true;
-      numlen := i - index;
-      num := num + Copy(s, index, numlen);
-      Break;
-    end;
-
-  if not numstop then begin
-    numlen := length(s) - index+1;
-    num := num + Copy(s, index, numlen);
-  end;
-
-  Val(num, Number, err);
-  Result := err <> 0;
-end;
-
-function GetNextNumber(const s: string; index: Integer; var Number: Integer; var NumLen: Integer): Boolean; overload;
-var
-  n   : Int64;
-begin
-  Result := GetNextNumber(s, index, n, NumLen);
-  Number := n;
-end;
-
-function GetTypeString(const s: String; index: Integer): String; forward;
-
-function GetArrayTypeString(const s: string; index: Integer): String;
-var
-  i, j  : integer;
-  semi  : Integer;
-begin
-  Result := '';
-  if not isArrayType(s, index) then Exit;
-  i := index+1;
-  if (s[i] = SymType_PackedArray) or (s[i] = SymType_Range) then begin
-    semi := 3;
-    inc(i);
-  end;
-
-  for i := i to length(s) do
-    if s[i] = ';' then begin
-      dec(semi);
-      j := i+1;
-      Result := Copy(s, index, j - index);
-      if semi = 0 then Break;
-    end;
-  if semi > 0 then
-    Result := Copy(s, index, length(s)-index+1)
-  else begin
-    Result := Result + GetTypeString(s, j);
-  end;
-end;
-
-function GetStructElem(const s: string; index: Integer; var Name, TypeStr: string; var BitsOffset, BitsSize: Integer; var nextElemIndex: Integer): Boolean;
-var
-  len : integer;
-begin
-  Name := GetNextName(s, index);
-  if Name = ';' then Name := '';
-  Result := Name <> '';
-  if not Result then Exit;
-
-  index := index + length(name)+1;
-
-  TypeStr := GetTypeString(s, index);
-  inc(index, length(TypeStr)+1);
-
-  GetNextNumber(s, index, BitsOffset, len);
-  inc(index,len+1);
-
-  GetNextNumber(s, index, BitsSize, len);
-
-  inc(index,len+1);
-  nextElemIndex := index;
-  Result := true;
 end;
 
 procedure ReadStabSyms(const StabsBuf,StabStrBuf: array of Byte; StabsCount,
@@ -714,36 +630,7 @@ begin
     );
 end;
 
-function GetTypeString(const s: String; index: Integer): String;
-begin
-  if s[index] in NumbersAndNeg then begin
-    Result  := GetSubStr(s, index, ',');
-  end else if isArrayType( s, index ) then begin
-    Result := GetArrayTypeString(s, index);
-  end;
-  //todo: ANY OTHER TYPES?
-end;
-
-function isArrayType(const value: string; index: integer): Boolean;
-begin
-  Result := (value<>'') and (index>=1) and (index<=length(value)) and (value[index] = SymType_Array);
-end;
-
-function isStructType(const value: string; var StructSize: Integer; var firstElemIndex: Integer): Boolean;
-var
-  len : Integer;
-  n   : Int64;
-begin
-  Result := (value <> '') and (value[1] = SymType_Struct);
-  if not Result then Exit;
-
-  GetNextNumber(value, 2, n, len);
-  StructSize := n;
-  firstElemIndex := 2+len;
-end;
-
-
-procedure ParseDescr(const descStr: String; var desc: string; var descNum: Integer);
+procedure ParseDescr(const descStr: AnsiString; var desc: AnsiString; var descNum: Integer);
 var
   i   : integer;
   err : integer;
@@ -758,11 +645,11 @@ begin
   desc:=descStr;
 end;
 
-procedure ParseStabStr(const str: string; var name, desc: string; var typeNum: Integer; var value: string);
+procedure ParseStabStr(const str: AnsiString; var name, desc: AnsiString; var typeNum: Integer; var value: AnsiString);
 var
   i, j : integer;
   k    : integer;
-  m    : string;
+  m    : AnsiString;
 begin
   desc := '';
   typeNum := 0;
@@ -790,22 +677,50 @@ begin
   ParseDescr(m, desc, typeNum);
 end;
 
-procedure StabVarStr(const varstr: String; var name, descr: string; var vartype: Integer);
+procedure StabVarStr(const varstr: AnsiString; var name, descr: AnsiString; var vartype: Integer);
 var
-  value   : String;
+  value   : AnsiString;
 begin
   ParseStabStr(varstr, name, descr, varType, value);
 end;
 
-procedure StabFuncStr(const funcstr: String; var name: string);
+function StabFuncStr(const funcstr: AnsiString; var name: AnsiString;
+  var Descr: TStabFuncDescr; var retType: Integer): Boolean;
 var
-  md, value : string;
+  numstr    : AnsiString;
   nmd       : Integer;
+  i, j      : Integer;
+  err       : Integer;
 begin
-  ParseStabStr(funcstr, name, md, nmd, value);
+  descr.NestedTo:='';
+  descr.isGlobal:=True;
+  j:=-1;
+  for i:=1 to length(funcstr) do
+    if funcstr[i]=':' then begin
+      name:=Copy(funcstr, 1, i-1);
+      j:=i+1;
+      break;
+    end;
+  Result:=(j>=0) and (j<=length(funcstr)) and (funcstr[j] in ['f','F']);
+  if not Result then Exit;
+
+  descr.isGlobal:=funcstr[j]='F';
+  inc(j);
+  Result:=GetNextNumber(funcstr, j, numstr);
+  Val(numstr, retType, err);
+
+  Result:=err=0;
+  if j<=length(funcstr) then begin
+    if funcstr[j]=',' then inc(j);
+    for i:=j to length(funcstr) do
+      if funcstr[i] = ',' then begin
+        descr.NestedTo:=Copy(funcstr, i+1, length(funcstr)-i);
+        Exit;
+      end;
+  end;
 end;
 
-function NextValAttr(const v: String; var index: Integer; var attr: String): Boolean;
+function NextValAttr(const v: AnsiString; var index: Integer; var attr: AnsiString): Boolean;
 var
   i : Integer;
 begin
@@ -825,7 +740,7 @@ begin
   Result:=True;
 end;
 
-function GetBitSizeAttr(const attr: string; var BitSize: Integer): Boolean;
+function GetBitSizeAttr(const attr: AnsiString; var BitSize: Integer): Boolean;
 var
   err : Integer;
 begin

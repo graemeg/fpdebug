@@ -6,3 +6,38 @@ Coding convention.
   Objects must always be created. Use an object flag to indicate that object is ready for work or not 
   (to avoid using exception in constructors)
 
+
+
+== how to make a debugged process make a function call ==
+
+The programmer = a person who debugs a program. (The real programmer is 
+                 not the one writing a program, but the one fixing it)
+The target     = the program being debugged by the programmer.
+The debugger   = the utility program, used by the programmer to debug the target. 
+
+Modern debuggers usually allow programmer to make a function call within the context 
+of the target. It's usual way to check the current data state or if the function works 
+correctly with some specified parameters.
+
+It's also used to change values of some complex types. 
+...
+Function call happens whenever target execution stops and the programmer gets 
+the access to target's state (memory, call-stack, etc.). While target is running 
+the programmer is not able to interfere with the execution process successfully, 
+because one's can't be sure about the current state.
+...
+
+The debugger does the following to make a function call:
+1) saves the current registers and call-stack states;
+2) fills the registers and the call-stack of passed parameters;
+2.1) * execution register points to the procedure entry point;
+3) * sets the breakpoint on the function exit point;
+4) starts the execution of the process
+4.1) if any user breakpoints being catched are skipped.
+4.2) * if breakpoint is catched at call exit point and decision is made if call is finished.
+5) call is finished. The result is reported to the used.
+6) register and call-stack states are restored, so the execution may resume at the same point it stopped.
+
+* the actuall implementation needs considiration if procedure is recursive or not.
+
+

@@ -19,15 +19,16 @@ type
   TVarLocation = (vlStack, vlRegister);
 
   TStabType = (
-    stInt8,  stInt16, stInt32,
-    stUInt8, stUInt16, stUInt32,
+    stInt8,  stInt16,  stInt32,  stInt64,
+    stUInt8, stUInt16, stUInt32, stUInt64,
     stBool8, stBool16, stBool32,
     stChar, stWideChar,
-    stSingle, stDouble, stLongDouble,
+    stSingle, stDouble, {stLongDouble, }stExtended,
     stShortReal, stReal,
+    stPChar,
     stArray,
     stRecord, stUnion,
-    stEnum,
+    stEnum, stSet,
     stRange,
     stAlias, stPointer, stVoid
   );
@@ -347,6 +348,63 @@ begin
   index:=j;
 end;
 
+function isNegative(const NumStr: string; var Num: Integer): Boolean;
+var
+  err : Integer;
+  idx : Integer;
+  nm  : String;
+begin
+  idx:=1;
+  GetNextNumber(NumStr, idx, nm);
+  Val(nm, Num, err);
+  Result:=(err=0) and (Num<0);
+end;
+
+function NegStdStabType(idx: Integer): TStabType;
+begin
+  case idx of
+    bitype_SInt32int   : Result:=stInt32;
+    bitype_SInt8char   : Result:=stInt8;
+    bitype_SInt16      : Result:=stInt16;
+    bitype_SInt32long  : Result:=stInt32;
+    bitype_UInt8       : Result:=stUInt8;
+    bitype_SInt8       : Result:=stInt8;
+    bitype_UInt16      : Result:=stUInt16;
+    bitype_UInt32int   : Result:=stUInt32;
+    bitype_UInt32      : Result:=stUInt32;
+    bitype_UInt32long  : Result:=stUInt32;
+    bitype_Void        : Result:=stVoid;
+    bitype_Single      : Result:=stSingle;
+    bitype_Double      : Result:=stDouble;
+    bitype_Extended    : Result:=stExtended;
+
+    bitype_SInt32integer : Result:=stInt32;
+    bitype_Boolean32     : Result:=stBool32;
+    bitype_ShortReal     : Result:=stShortReal;
+    bitype_Real          : Result:=stReal;
+    bitype_StringPtr     : Result:=stPChar;
+    bitype_Character     : Result:=stChar;
+
+    bitype_Logic8        : Result:=stBool8;
+    bitype_Logic16       : Result:=stBool16;
+    bitype_Logic32       : Result:=stBool32;
+    bitype_Logic32Fort   : Result:=stBool32;
+
+    bitype_2Singles      : Result:=stSingle;
+    bitype_2Doubles      : Result:=stDouble;
+    bitype_SInt8int1     : Result:=stInt8;
+    bitype_SInt16int2    : Result:=stInt16;
+    bitype_SInt32int4    : Result:=stInt32;
+    bitype_wchar         : Result:=stWideChar;
+    bitype_SInt64        : Result:=stInt64;
+    bitype_UInt64        : Result:=stUInt64;
+    bitype_UInt64log8    : Result:=stUInt64;
+    bitype_SInt64log8    : Result:=stInt64;
+  else
+    Result:=stVoid;
+  end;
+end;
+
 function TStabsReader.StabTypeDecl(const TypeDec,TypeVal:AnsiString; Num: Integer): TStabTypeDescr;
 var
   typenum   : Integer;
@@ -377,6 +435,8 @@ begin
   stabt:=nil;
   if v='' then begin
     stabt:=GetType(num);
+  end else if isNegative(v, idx) then begin
+    stabt:=AddType(Num, NegStdStabType(idx));
   end else if isSymTypeRange(v) then begin
     ParseSymTypeSubRangeVal(v, typenum, lowr, highr);
     if isRangeCommonType(num, typenum, lowr, highr, st) then begin
@@ -433,7 +493,10 @@ begin
       recElem.BitOffset:=recElOfs;
       recElem.BitSize:=recElSz;
     end;
-
+  end else if isSymTypeSet(v) then begin
+    stabt:=AddType(num, stSet);
+    ParseSetType(v, typeNum);
+    stabt.Related:=GetType(typeNum);
   end else begin
     if ParseSymTypeVal(v, typenum, typedesc) then begin
       if typenum=num then
@@ -482,18 +545,21 @@ var
   descr   : TStabFuncDescr;
 begin
   SetLength(Params, 0);
-  StabFuncStr(AStr, funnm, descr, rettype);
-  if funnm<>'' then begin
-    PushProc(funnm, Value);
-    if Assigned(fCallback) then
-      fCallback.StartProc(funnm, funsym.n_desc, funsym.n_value,
-        descr.isGlobal, descr.NestedTo, GetType(rettype));
-  end else begin
-    if ASsigned(fCallback) then
-      fCallback.EndProc( CurrentProcName);
-    PopProc;
-  end;
+  // is function
+  if StabFuncStr(AStr, funnm, descr, rettype) then begin
+    if funnm<>'' then begin
+      PushProc(funnm, Value);
+      if Assigned(fCallback) then
+        fCallback.StartProc(funnm, funsym.n_desc, funsym.n_value,
+          descr.isGlobal, descr.NestedTo, GetType(rettype));
+    end else begin
+      if ASsigned(fCallback) then
+        fCallback.EndProc( CurrentProcName);
+      PopProc;
+    end;
+  end else begin //todo: static variable
 
+  end;
 end;
 
 procedure TStabsReader.HandleLine(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
@@ -532,22 +598,6 @@ begin
     else
       CurrentProc.AddLocal.Name:=varname;
   end;
-
-//  writeln('name: ', varname);
-//  writeln('type: ', vartype);
-{  i := index;
-  j := 0;
-  for i := index to StabsCnt - 1 do begin
-    if (Stabs^[i].n_type = N_PSYM) then begin
-      if j = length(Params) then begin
-        if j = 0 then SetLength(Params, 4)
-        else SetLength(Params, j * 4);
-      end;
-      StabFuncStr( StabStr(Stabs^[index].n_strx), Params[j].Name);
-      inc(j);
-    end else
-      Break;
-  end;}
 end;
 
 procedure TStabsReader.HandleVariable(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
@@ -671,7 +721,6 @@ end;
 procedure TRecUnionElement.SetType(AType:TStabTypeDescr; AOwnType: Boolean);
 begin
   if fOwnType then ElemType.Free;
-  writeln('setting a type');
   fOwnType:=AOwnType;
   ElemType:=AType;
 end;

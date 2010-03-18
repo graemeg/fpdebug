@@ -7,10 +7,12 @@ interface
 uses
   Classes, SysUtils, contnrs, dbgTypes, dbgInfoTypes, stabs, stabsProc, AVL_Tree;
 
+const
+  DebugDumpStabs  = False;
+  DebugParseStabs = True;
+
 type
-
   { TDbgStabsInfo }
-
   TDbgStabsInfo = class(TDbgInfoReader)
   private
     fSource     : TDbgDataSource;
@@ -91,10 +93,6 @@ var
   i : integer;
 begin
   writeln('Type: ', AType.Name, ' : ', AType.BaseType);
-  if AType.BaseType=stRecord then begin
-    for i:=0 to AType.Count-1 do
-      writeln('  ', AType.Elements[i].Name,' : ', AType.Elements[i].ElemType.BaseType);
-  end;
 end;
 
 procedure TDbgInfoCallbackLog.StartFile(const FileName:AnsiString;FirstAddr:
@@ -125,7 +123,7 @@ procedure TDbgInfoCallbackLog.StartProc(const Name:AnsiString; LineNum:Integer;
   const NestedTo: String; RetType: TStabTypeDescr);
 begin
   Write('Proc: ', Name, ' : ', RetType.BaseType);
-  Write(' nested to: ', NestedTo);
+  if NestedTo<>'' then Write(' nested to: ', NestedTo);
   Writeln;
 end;
 
@@ -238,22 +236,28 @@ begin
 
   if debugdump then begin
     SymCount := sz div sizeof(TStabSym);
-    Symbols := PStabSymArray(@buf[0]);
-    for i := 0 to SymCount - 1 do
-    with Symbols^[i] do begin
-      s := SymStr(n_strx);
-      writeln(
-        StabsTypeToStr(n_type):8,': ',
-        'other = ', n_other,'; ',
-        'desc = ',  n_desc, '; ',
-        'value = ', Integer(n_value),'; ', HexStr(n_value, 8), '; ',
-        s);
+
+    if DebugDumpStabs then begin
+      Symbols := PStabSymArray(@buf[0]);
+      for i := 0 to SymCount - 1 do
+      with Symbols^[i] do begin
+        s := SymStr(n_strx);
+        writeln(
+          StabsTypeToStr(n_type):8,': ',
+          'other = ', n_other,'; ',
+          'desc = ',  n_desc, '; ',
+          'value = ', Integer(n_value),'; ', HexStr(n_value, 8), '; ',
+          s);
+      end;
     end;
+
     writeln('Total symbols = ', SymCount);
 
-    callback := TDbgInfoCallbackLog.Create;
-    stabsProc.ReadStabs(buf, sz, strbuf, strsz, callback);
-    callback.Free;
+    if DebugParseStabs then begin
+      callback := TDbgInfoCallbackLog.Create;
+      stabsProc.ReadStabs(buf, sz , strbuf, strsz, callback);
+      callback.Free;
+    end;
 
   end else begin
     callback := TDbgInfoCallback.Create(Self, fInfo);

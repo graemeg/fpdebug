@@ -258,12 +258,12 @@ const
   bitype_ShortReal     = -17; // short real. IEEE single precision.
   bitype_Real          = -18; // real. IEEE double precision.
   bitype_StringPtr     = -19; // stringptr. See section Strings.
-  bitype_Charcter      = -20; // character, 8 bit unsigned character type.
-{-21; // logical*1, 8 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
--22; // logical*2, 16 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
--23; // logical*4, 32 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
--24; // logical, 32 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
-}
+  bitype_Character     = -20; // character, 8 bit unsigned character type.
+  bitype_Logic8        = -21; // logical*1, 8 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
+  bitype_Logic16       = -22; // logical*2, 16 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
+  bitype_Logic32       = -23; // logical*4, 32 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
+  bitype_Logic32Fort   = -24; // logical, 32 bit type. This Fortran type has a split personality in that it is used for boolean variables, but can also be used for unsigned integers. 0 is false, 1 is true, and other values are non-boolean.
+
   bitype_2Singles   = -25; // complex. A complex type consisting of two IEEE single-precision floating point values.
   bitype_2Doubles   = -26; // complex. A complex type consisting of two IEEE double-precision floating point values.
   bitype_SInt8int1  = -27; // integer*1, 8 bit signed integral type.
@@ -363,6 +363,10 @@ function ParseStructSize(const v: AnsiString; var StructBytes: Integer; var Firs
 function NextStructElem(const v: AnsiString; Index: Integer; var ElemName : AnsiString; var TypeDeclIndex: Integer): Boolean;
 function NextStructElemPos(const v: AnsiString; Index: Integer; var BitOfs, BitSize: Integer; var NextElemIndex: Integer): Boolean;
 
+// set type
+function isSymTypeSet(const TypeVal: AnsiString): Boolean;
+function ParseSetType(const v: AnsiString; var EnumType: Integer): Boolean;
+
 // enum type
 function isSymTypeEnum(const TypeVal: AnsiString): Boolean;
 // the function reads the next enumeration declaration.             //
@@ -448,6 +452,25 @@ end;
 function isSymTypeStruct(const TypeVal: AnsiString): Boolean;
 begin
   Result:=(length(typeval)>0) and (typeval[1]=SymType_Struct);
+end;
+
+function isSymTypeSet(const TypeVal: AnsiString): Boolean;
+begin
+  Result:=(length(typeVal)>0) and (typeVal[1]=SymType_Set);
+end;
+
+function ParseSetType(const v: AnsiString; var EnumType: Integer): Boolean;
+var
+  idx : Integer;
+  err : Integer;
+  num : AnsiString;
+begin
+  Result:=isSymTypeSet(v);
+  if not Result then Exit;
+  idx:=2;
+  GetNextNumber(v, idx, num);
+  Val(num, EnumType, err);
+  Result:=err=0;
 end;
 
 function ParseStructSize(const v: AnsiString; var StructBytes: Integer; var FirstElemIndex: Integer): Boolean;
@@ -692,6 +715,7 @@ var
   i, j      : Integer;
   err       : Integer;
 begin
+  //writeln('funcstr = ', funcstr);
   descr.NestedTo:='';
   descr.isGlobal:=True;
   j:=-1;

@@ -29,7 +29,7 @@ because one's can't be sure about the current state.
 
 The debugger does the following to make a function call:
 1) saves the current registers and call-stack states;
-2) fills the registers and the call-stack of passed parameters;
+2) fills the registers and the call-stack of passed parameters (calling convention);
 2.1) * execution register points to the procedure entry point;
 3) * sets the breakpoint on the function exit point;
 4) starts the execution of the process

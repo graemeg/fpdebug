@@ -141,6 +141,8 @@ type
     fLastType       : Byte;
 
     fTypes          : TFPList;
+
+    OnlySourceDeclTypes : Boolean;
     
     function CurrentProcName: AnsiString;
     function CurrentProcAddr: PtrInt;
@@ -526,7 +528,7 @@ begin
       if Assigned(typedescr) then begin
         typedescr.DeclLine:=LineNum;
         typedescr.Name:=name;
-        if typedescr.Name<>'' then
+        if (typedescr.Name<>'') and ((not OnlySourceDeclTypes) or (LineNum>0)) then
           fCallback.DeclareType(typedescr);
       end;
     end;
@@ -619,6 +621,7 @@ constructor TStabsReader.Create;
 begin
   fProcStack:=TFPList.Create;
   fTypes:=TFPList.Create;
+  OnlySourceDeclTypes:=True;
 end;
 
 destructor TStabsReader.Destroy;

@@ -3,7 +3,8 @@ program stabsreader;
 {$mode objfpc}{$H+}
 
 uses
-  Classes, dbgInfoTypes, dbgInfoStabs, stabs,
+  SysUtils, Classes,
+  dbgInfoTypes, dbgInfoStabs, stabs,
   elfDbgSource,
   machoDbgSource, PESource, stabsproc;
 
@@ -42,11 +43,30 @@ var
 
 {$R *.res}
 
+procedure HandleParams;
+var
+  i : Integer;
+  s : string;
+begin
+  for i:=1 to ParamCount do begin
+    s:=AnsiLowerCase(ParamStr(i));
+    if s='-str' then begin
+      DebugDumpStabs:=True
+    end else if s='-noparse' then begin
+      DebugParseStabs:=False;
+    end;
+  end;
+
+end;
+
 begin
   if Paramcount < 1 then begin
     writeln('please specify stabs debug-info file name');
     Exit;
   end;
+
+  HandleParams;
+
   dbgInfoSrc := GetDataSource(ParamStr(1));
   if not Assigned(dbgInfoSrc) then begin
     writeln('file '+ ParamStr(1)+ ' is of unknow format');

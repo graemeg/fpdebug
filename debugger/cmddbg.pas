@@ -114,11 +114,46 @@ end;
 function GetAddr(CmdParams: TStrings; var Addr: TDbgPtr): Boolean;
 var
   err : Integer;
+  i   : Integer;
+  nm  : AnsiString;
+  fname   : AnsiString;
+  full    : AnsiString;
+  linenum : AnsiString;
+  ln      : Integer;
+
 begin
   Result := CmdParams.Count > 1;
   if not Result then Exit;
-  Val( CmdPArams[1], Addr, err);
+  Val( CmdParams[1], Addr, err);
   Result:=err=0;
+
+  // try to get file name
+  if not Result then begin
+    nm:=CmdParams[1];
+    for i:=length(nm) downto 1 do
+      if nm[i]=':' then begin
+        fname:=Copy(nm, 1, i-1);
+        linenum:=Copy(nm, i+1, length(nm)-1);
+        Val(linenum, ln, err);
+        Result:=(err=0);
+        if Result then begin
+          full:=FindSourceFileName(CommonInfo, fname);
+          if full='' then begin
+            WriteLn('unable to find full file name of "', fname,'"');
+            Result:=False;
+          end else begin
+            Result:=FindLineAddr(CommonInfo, full, ln, Addr);
+            if not Result then
+              Writeln('unable to find an addr for: ', full,' ', ln);
+          end;
+        end else
+          Writeln('bad line number: ', ln);
+        if Result then
+          writeln(full,':',ln);
+        Exit;
+      end;
+  end;
+
 end;
   
 { TRemoveBreak }
@@ -230,6 +265,7 @@ begin
     FileName := Copy( Str, 1, i-1);
 end;
 
+
 function GetFullFileName(info: TDbgInfo; const ShortName: AnsiString): AnsiString;
 var
   st  : TStringList;
@@ -240,7 +276,7 @@ begin
   l := AnsiLowerCase(ShortName);
   st := TStringList.Create;
   try
-    info.EnumFiles(st);
+    info.EnumSourceFiles(st);
     for i := 0 to st.Count - 1 do begin
       if AnsiLowerCase( ExtractFileName( st[i] ) ) = l then begin
         Result := st[i];
@@ -463,7 +499,7 @@ var
   st  : TStringList;
 begin
   st := TStringList.Create;
-  CommonInfo.EnumFiles(st);
+  CommonInfo.EnumSourceFiles(st);
   for i := 0 to st.Count - 1 do  begin
     f := CommonInfo.FindFile(st[i]); 
     Result := Assigned(f) and f.FindLineByAddr(Addr, LineNum);

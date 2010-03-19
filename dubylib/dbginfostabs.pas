@@ -7,9 +7,9 @@ interface
 uses
   Classes, SysUtils, contnrs, dbgTypes, dbgInfoTypes, stabs, stabsProc, AVL_Tree;
 
-const
-  DebugDumpStabs  = False;
-  DebugParseStabs = True;
+var
+  DebugDumpStabs  : Boolean = False;
+  DebugParseStabs : Boolean = True;
 
 type
   { TDbgStabsInfo }
@@ -115,7 +115,7 @@ end;
 
 procedure TDbgInfoCallbackLog.CodeLine(LineNum,Addr:LongWord);
 begin
-  //writeln('Line var: ', Name,' ',Location,' ',Addr);
+  writeln('#', LineNum, '; Addr: $',HexStr(Addr,8));
 end;
 
 procedure TDbgInfoCallbackLog.StartProc(const Name:AnsiString; LineNum:Integer;

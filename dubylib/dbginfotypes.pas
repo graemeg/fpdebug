@@ -119,7 +119,7 @@ type
     function FindSymbol(const SymbolName: AnsiString; Parent: TDbgSymbol; SearchInFiles: Boolean = true): TDbgSymbol;
     function FindInFile(const SymbolName: AnsiString; const FileName: WideString): TDbgSymbol;
     
-    procedure EnumFiles(str: TStrings); //todo: remove?
+    procedure EnumSourceFiles(str: TStrings);
   end;
 
 function GetDataSource(const FileName: string): TDbgDataSource; overload;
@@ -128,6 +128,9 @@ procedure RegisterDataSource(DataSource: TDbgDataSourceClass);
 
 procedure GetDebugInfos(Source: TDbgDataSource; List: TFPList);
 procedure RegisterDebugInfo(DebugInfo: TDbgInfoReaderClass);
+
+function FindSourceFileName(info: TDbgInfo; const ShortName: AnsiString; IgnoreCase: Boolean=True): AnsiString;
+function FindLineAddr(info: TDbgInfo; const FullFileName: AnsiString; LineNum: Integer; var addr: TDbgPtr): Boolean;
 
 implementation
 
@@ -340,7 +343,7 @@ begin
     Result := FindSymbol(SymbolName, parent);
 end;
 
-procedure TDbgInfo.EnumFiles(str: TStrings); 
+procedure TDbgInfo.EnumSourceFiles(str: TStrings);
 var
   i : integer;
 begin
@@ -469,6 +472,68 @@ end;
 function TDbgFileInfo.GetLinesInfoCount:Integer;
 begin
   Result:=AddrToLines.Count;
+end;
+
+function isStrTail(const TailStr, Str: AnsiSTring): Boolean;
+var
+  tail :string;
+begin
+  tail:=Copy(Str, length(Str)-length(TailStr)+1, length(TailStr));
+  Result:=tail=TailStr;
+end;
+
+function FixSlashes(const s: AnsiString): String;
+var
+  i : Integer;
+begin
+  Result:=s;
+  for i:=1 to length(Result) do
+    if Result[i] in ['/','\'] then
+      Result[i]:=DirectorySeparator;
+end;
+
+function FindSourceFileName(info: TDbgInfo; const ShortName: AnsiString; IgnoreCase: Boolean): AnsiString;
+var
+  i   : Integer;
+  st  : TStringList;
+  chk : AnsiString;
+  fn  : AnsiString;
+begin
+  Result:='';
+  if not Assigned(info) or (ShortName='') then Exit;
+
+  if IgnoreCase then chk:=AnsiLowerCase(ShortName)
+  else chk:=ShortName;
+
+  st := TStringList.Create;
+  try
+    info.EnumSourceFiles(st);
+    for i:=0 to st.Count-1 do begin
+      fn:=st[i];
+      if IgnoreCase then fn:=AnsiLowerCase(fn);
+      fn:=FixSlashes(fn);
+      if (length(fn)>=length(chk)) and ((ExtractFileName(fn)=chk) or isStrTail(ShortName, fn)) then begin
+        Result:=st[i];
+        Exit;
+      end;
+    end;
+  finally
+    st.Free;
+  end;
+end;
+
+function FindLineAddr(info: TDbgInfo; const FullFileName: AnsiString; LineNum: Integer; var addr: TDbgPtr): Boolean;
+var
+  dfile : TDbgFileInfo;
+begin
+  Result:=False;
+  if (FullFileName='') then Exit;
+
+  dfile:=info.FindFile(FullFileName);
+  Result:=Assigned(dfile);
+  if not Result then Exit;
+
+ Result:= dfile.FindAddrByLine(LineNum, addr);
 end;
 
 initialization

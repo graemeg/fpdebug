@@ -63,7 +63,7 @@ var
 begin
   l := TStringList.Create;
   try
-    CommonInfo.EnumFiles(l);
+    CommonInfo.EnumSourceFiles(l);
     writeln('source files:');
     for i:=0 to l.Count-1 do
       writeln('  ', l[i]);
@@ -111,7 +111,7 @@ begin
   end;
   fn:=CmdParams[1];
   t:=TStringList.Create;
-  CommonInfo.EnumFiles(t);
+  CommonInfo.EnumSourceFiles(t);
   for i:=0 to t.Count-1 do begin
     if not isFileNameMatch(t[i], fn) then Continue;
     info:=CommonInfo.FindFile(t[i]);

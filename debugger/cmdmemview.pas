@@ -26,6 +26,12 @@ type
     function ShortHelp: String; override;
   end;
 
+  { TStackView }
+  TStackView  = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
 procedure PrintI386Regs(list: TDbgDataList);
   
 implementation
@@ -187,9 +193,55 @@ begin
   Result:='prints main thread''s registers';
 end;
 
+{ TStackView }
+
+procedure TStackView.Execute(CmdParams:TStrings;Env:TCommandEnvironment);
+var
+  regs  : TDbgDataBytesList;
+  esp   : TDbgPtr;
+  i     : Integer;
+
+  eval  : LongWord;
+  addr  : LongWord;
+  buf   : array [0..4] of byte;
+begin
+  regs := TDbgDataBytesList.Create;
+  Env.Thread.GetThreadRegs(regs);
+  esp:=regs[_Esp].DbgPtr;
+  for i:=0 to 40 do begin
+    write('esp: ', HexStr(esp,8),' ');
+    Env.Process.ReadMem(esp, 4, PByteArray(@addr)^);
+    write('add1: ', HexStr(addr,8),' ');
+    dec(addr, 5);
+    write('addr: ', HexStr(addr,8),' ');
+    Env.Process.ReadMem(addr, sizeof(buf), buf);
+    if (buf[0]=$e8) then
+      writeln(' zero call from ', HexStr(addr,8))
+    else if (buf[4]=$e8) then
+      writeln(' last call from ', HexStr(addr,8))
+    else
+      writeln;
+
+    inc(esp, 4);
+  end;
+
+  {writeln('eip = ', HexStr(regs[_Eip].DbgPtr,8));
+  writeln('esp = ', HexStr(regs[_Esp].DbgPtr,8));
+  writeln('ebp = ', HexStr(regs[_Ebp].DbgPtr,8));}
+  regs.Free;
+end;
+
+function TStackView.ShortHelp:String;
+begin
+  Result:='Show callstack';
+end;
+
 initialization
   RegisterCommand(['view','v'], TViewMemCommand.Create);
   RegisterCommand(['reg','g'], TRegistersView.Create);
+  {$ifdef cpui386}
+  RegisterCommand(['unwind','stack','st'], TStackView.Create);
+  {$endif}
 
 end.
 

@@ -38,10 +38,21 @@ end;
 procedure TestLoop(a: Integer);
 var
   i : Integer;
+type
+  TMySubType = record
+    a,z : integer;
+    b   : array [1..10] of record b, c : Integer; end;
+  end;
 begin
   for i := 1 to 10 do
     writeln(i+a);
 end;
+
+type
+  TMyType = record
+    mt	: Integer;
+    olo : PInteger;
+  end;
 
 begin
   //TestIntelBreak;

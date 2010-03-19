@@ -1,18 +1,29 @@
-unit macDbgProc; 
+unit macDbgProc;
+
+//todo: better ForkAndRun code
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  BaseUnix,
+  BaseUnix, Unix,
   Classes, SysUtils,
   machapi, machexc, mach_port, macPtrace;
 
 // == utility functions ==
 
 // running the process
-function ForkAndRun(const CommandLine: String; var ChildId: TPid; var ChildTask: mach_port_t; SuspendSelf: Boolean): Boolean;
+function ForkAndRun(const CommandLine: String; var ChildId: TPid; var ChildTask: mach_port_t; SuspendChild: Boolean): Boolean;
+
+// the function sleeps for TimeOut millisecconds for the child to come
+// into suspended state. negative TimeOut value means - inifinite
+// WARNING: if child is not to suspend itself the function might fail!
+function WaitForChildSuspend(atask: mach_port_t; TimeOut: Integer): Boolean;
+
+// returns true if task task is correct and the state can be read
+// returns false overwise.
+function isTaskSuspended(atask: mach_port_t; var Suspended: Boolean): Boolean;
 
 // mach-port allocation routines
 function MachAllocPortForSelf: mach_port_name_t;
@@ -192,7 +203,7 @@ begin
   end;
 end;
 
-function ForkAndRun(const CommandLine: String; var ChildId: TPid; var ChildTask: mach_port_t; SuspendSelf: Boolean): Boolean;
+function ForkAndRun(const CommandLine: String; var ChildId: TPid; var ChildTask: mach_port_t; SuspendChild: Boolean): Boolean;
 var
   res   : Integer;
   pname : mach_port_name_t;
@@ -203,13 +214,12 @@ begin
   if childid < 0 then Exit;
 
   if childid = 0 then begin
-    task_suspend(mach_task_self);
+    // todo: better ForkAndRun code
+    // suspending self. the debugger must unsuspend, after installed exception ports.
+    if SuspendChild then task_suspend(mach_task_self);
 
     ptraceme;
-    //todo: ptrace_sig_as_exc, what needs to be initialized after going from signals to exceptions?
     ptrace_sig_as_exc;
-
-
 
     res := FpExecV(CommandLine, nil);
     if res < 0 then begin
@@ -425,6 +435,57 @@ begin
       Result:=Result+ExceptionType(i)+' ';
 end;
 
+function isTaskSuspended(atask: mach_port_t; var Suspended: Boolean): Boolean;
+var
+  ret   : kern_return_t;
+  info  : task_basic_info;
+  cnt   : Integer;
+begin
+  Result:=false;
+  FillChar(info, sizeof(info), 0);
+  cnt := TASK_BASIC_INFO_32_COUNT;
+  ret:=task_info(atask, TASK_BASIC_INFO_32, @info, cnt);
+  Result:=ret=KERN_SUCCESS;
+  if Result then Suspended:=info.suspend_count>0;
+end;
+
+function GetMls: Integer;
+var
+  p : timeval;
+begin
+  FillChar(p, sizeof(p),0);
+  fpgettimeofday(@p, nil);
+  Result:=(p.tv_sec*1000)+(p.tv_usec div 10000000);
+end;
+
+function WaitForChildSuspend(atask: mach_port_t; TimeOut: Integer): Boolean;
+var
+  i     : Integer;
+  susp  : Boolean;
+begin
+  Result:=False;
+  susp:=False;
+  if TimeOut>0 then begin
+    i:=GetMls;
+    repeat
+      if not isTaskSuspended(atask, susp) then
+        Exit;
+      if susp then Sleep(100);
+    until (not susp) or (GetMls-i>=TimeOut);
+
+    if susp then isTaskSuspended(atask, susp);
+    Result:=susp;
+
+  end else
+    while True do begin
+      if not isTaskSuspended(atask, susp) then Exit;
+      if susp then begin
+        Result:=True;
+        Exit;
+      end;
+      Sleep(100);
+    end;
+end;
 
 end.
 

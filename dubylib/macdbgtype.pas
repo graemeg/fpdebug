@@ -127,26 +127,25 @@ begin
   res := task_get_exception_ports(task_t(mach_task_self), EXC_MASK_ALL,
     @ports.masks,
     ports.maskCount, @ports.handlers, @ports.behaviors, @ports.flavors);
-  writeln('ports.maskCount = ', ports.maskCount);
 
-  writeln('[setting process exceptions handlers]');
+  writeln('[mach: setting process exceptions handlers]');
 
   catchport := MachAllocPortForSelf;
-  writelN('catch port = ', catchport);
-  
+  writelN('[mach: catch port = ', catchport,']');
+
   debugout_kret(
     mach_port_insert_right(task_t(mach_task_self), catchport, catchport,
        MACH_MSG_TYPE_MAKE_SEND),
     'mach_port_insert_right'
     );
   
-  writeln('setting exception port');
+  writeln('[mach: setting exception ports]');
   res := debugout_kret(
 //  task_set_exception_ports( child, EXC_MASK_ALL, catchport, EXCEPTION_DEFAULT, 0),
     task_set_exception_ports( child, EXC_MASK_ALL, catchport, EXCEPTION_DEFAULT, 0),
       'task_set_exception_ports' );
 
-  writeln('[setting process exceptions handlers. done]');
+  writeln('[mach: setting process exceptions handlers. done]');
 end;
 
 procedure TMacDbgTarget.Terminate;
@@ -325,70 +324,23 @@ begin
   Result := true;
 end;
 
-(*
-
-// unix code
-var
-  st  : Integer;
-  sig : integer;
-  res : Integer;
-begin
-  Event.Debug := '';
-  if fchildpid = 0 then begin
-    Result := false;
-    Exit;
-  end;
-
-  FillChar(Event, SizeOf(Event), 0);
-  if waited then begin
-    if waitedsig = 5 then
-      sig := 0
-    else
-      sig := waitedsig;
-    ptrace_cont(fchildpid, CONT_STOP_ADDR, sig)
-  end;
-
-  waited := false;
-  res := FpWaitpid(fchildpid, st, 0);
-  Result := res >= 0;
-  if not Result then begin
-    writeln('waitpid = ', res);
-    Exit;
-  end;
-  waited := true;
-
-  if res = 0 then
-    Event.Kind := dek_ProcessTerminated
-  else begin
-    with Event do begin
-      Debug := 'wait st = ' + IntToStr(st) + '; ';
-      if WIFSTOPPED(st) then begin
-        waitedsig := wstopsig(st);
-
-        if waitedsig = SIGTRAP
-          then Event.Kind := dek_BreakPoint
-          else Event.Kind := dek_Other;
-
-        Debug := Debug + ' stop sig = ' + IntToStr(waitedsig) + ' ' + GetSigStr(waitedsig) ;
-
-      end else if wifsignaled(st) then Debug := Debug + ' term sig = ' + IntToStr(wtermsig(st))
-      else if wifexited(st) then begin
-        Event.Kind := dek_ProcessTerminated;
-        Debug := Debug + ' exitcode = ' + IntToStr(wexitStatus(st))
-      end else
-        Debug := Debug + ' unknown state?';
-      Debug := Debug + '; ';
-    end;
-
-    RecvMessage(catchport);
-  end;
-end;
-*)
-
 function TMacDbgTarget.StartProcess(const ACmdLine: String): Boolean;
 begin
   Result := ForkAndRun(ACmdLine, fchildpid, fchildtask, True);
+  //setting up the child's exception port
+  writeln('[mach: installing exception ports]');
   SetupChildTask(fchildtask);
+
+  // waiting for the child to suspend itself
+  writeln('[mach: waiting the child to suspend]');
+  if not WaitForChildSuspend(fchildtask, -1) then begin
+    writeln('cannot start the process');
+    Result:=False;
+    Exit;
+  end;
+
+  writeln('[mach: the next message should "initial" break]');
+  Result:=task_resume(fchildtask)=KERN_SUCCESS;
 end;
 
 function MachDebugProcessStart(const ACmdLine: String): TDbgTarget;

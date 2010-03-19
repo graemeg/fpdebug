@@ -29,12 +29,10 @@ function isTaskSuspended(atask: mach_port_t; var Suspended: Boolean): Boolean;
 function MachAllocPortForSelf: mach_port_name_t;
 function MachAllocPortForTask(atask: task_t): mach_port_name_t;
 
-// ???
-procedure RecvMessage(port: port_t);//todo: remove?
-
 // reads tasks memory
 
 function ReadTaskMem(task: task_t; const Offset, Size: Qword; var data: array of byte; var BytesRead: Qword): kern_return_t;
+function WriteTaskMem(task: task_t; const Offset, Size: Qword; const data: array of byte; var BytesWritten: Qword): kern_return_t;
 
 // == debugging functions ==
 
@@ -58,7 +56,73 @@ function MachTimeStr(t: time_value): string;
 function ThRunStateStr(run_state: Integer): string;
 function ThFlagStr(flags: Integer): string;
 
+
+type
+  // the structure conatains structure of all possible messages
+  // that debugger should handle
+  TRecvDebugMessage = record
+  // following messages are expected by the debugger
+  case byte of
+    0:   (head                : mach_msg_header_t); // each message starts with the header
+    1:   (exc_raise           : __Request__exception_raise_t);
+    2:   (exc_raise_state     : __Request__exception_raise_state_t);
+  	3:   (exc_raise_identity  : __Request__exception_raise_state_identity_t);
+    255: (raw: array [0..1024*2-1] of byte); // for the bigger size; remove?
+  end;
+
+// waits for the messages for TimeOut mls (infinite if negative)
+// returns True if success, False overwise
+function WaitForDebugMsg(port: mach_port_t; var Msg: TRecvDebugMessage; TimeOut: Integer): Boolean;
+procedure HandleException(const Msg: TRecvDebugMessage);
+
+
+// returns the first thread from task's thread list or zero, if threads cannot be read
+function GetAnyTaskThread(task: task_t): thread_t;
+
 implementation
+
+function GetAnyTaskThread(task: task_t): thread_t;
+var
+  cnt   : Integer;
+  list  : thread_act_array_t;
+begin
+  list:=nil;
+  cnt:=0;
+  if (task_threads(task, list, cnt)=KERN_SUCCESS) and (cnt>0) then
+    Result:=list^[0]
+  else
+    Result:=0;
+end;
+
+function WaitForDebugMsg(port: mach_port_t; var Msg: TRecvDebugMessage; TimeOut: Integer): Boolean;
+var
+  flags : Integer;
+  tm    : mach_msg_timeout_t;
+begin
+  FillChar(Msg.head, sizeof(Msg.head), 0);
+  Msg.head.msgh_local_port:=port;
+  Msg.head.msgh_size:=sizeof(Msg);
+
+  flags:=MACH_RCV_MSG or MACH_RCV_LARGE;
+  if TimeOut>=0 then begin
+    flags:=flags or MACH_SEND_TIMEOUT;
+    tm:=TimeOut;
+  end else
+    tm:=MACH_MSG_TIMEOUT_NONE;
+  Result:=mach_msg(@msg.head, flags, 0, sizeof(Msg), port, tm, MACH_PORT_NULL)=KERN_SUCCESS;
+end;
+
+procedure HandleException(const Msg: TRecvDebugMessage);
+begin
+  case Msg.head.msgh_id of
+    msgid_exception_raise,
+    msgid_exception_raise_state,
+    msgid_exception_raise_state_identity: {don't exit};
+  else
+    Exit;
+  end;
+
+end;
 
 function MachTimeStr(t: time_value): string;
 begin
@@ -249,8 +313,7 @@ var
   portname: mach_port_name_t;
 begin
   if debugout_kret(
-    mach_port_allocate( ipc_space_t(atask), MACH_PORT_RIGHT_RECEIVE, portname)
-    ,'mach_port_allocate') = 0 then
+    mach_port_allocate(ipc_space_t(atask), MACH_PORT_RIGHT_RECEIVE, portname),'mach_port_allocate') = 0 then
     Result := portname
   else
     Result := 0;
@@ -258,10 +321,30 @@ end;
 
 function ReadTaskMem(task: task_t; const Offset, Size: Qword; var data: array of byte; var BytesRead: Qword): kern_return_t;
 begin
-  Result := 0;
-  BytesRead := 0;
+  Result:=mach_vm_read_overwrite(task, Offset, Size, mach_vm_address_t(@data[0]), BytesRead);
 end;
 
+function WriteTaskMem(task: task_t; const Offset, Size: Qword; const data: array of byte; var BytesWritten: Qword): kern_return_t;
+var
+  d   : LongWord;
+  sz  : mach_vm_size_t;
+begin
+  if Size>0 then begin
+    BytesWritten:=Size;
+    mach_vm_read_overwrite(task, Offset, sizeof(d), mach_vm_address_t(@d), sz);
+    writelN('d = ', HexStr(d, 8));
+    Move(data, d, 1);
+    //Result:=mach_vm_write(task, Offset, mach_vm_address_t(@data[0]), BytesWritten);
+    BytesWritten:=sizeoF(d);
+    writelN('d = ', HexStr(d, 8));
+    writeln('bw = ', BytesWritten);
+    Result:=mach_vm_write(task, Offset, mach_vm_address_t(@d), BytesWritten);
+    writelN('mach_vm_write = ', Result);
+  end else begin
+    Result:=0;
+    BytesWritten:=0;
+  end;
+end;
 
 function kern_err_str(err: INteger): string;
 begin
@@ -361,11 +444,6 @@ function debugout_kret(err: kern_return_t; const comment: AnsiString): kern_retu
 begin
   if err <> 0 then writeln(comment, ': ', err, ' ', IntToHex(err, 8), ' ', kern_err_str(err));
   Result := err;
-end;
-
-procedure RecvMessage(port: port_t);
-begin
- 
 end;
 
 function GetSigStr(sig: integer): String;

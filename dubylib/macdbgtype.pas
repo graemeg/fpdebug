@@ -10,6 +10,8 @@ uses
   dbgTypes, macPtrace, macDbgProc;
 
 type
+  TMacDebugState = (mdsStartProc, mdsStartThread, mdsNormal, mdsTerminated);
+
   { TMacDbgTarget }
 
   TMacDbgTarget = class(TDbgTarget)
@@ -19,11 +21,16 @@ type
 
     catchport   : mach_port_t;
   protected
-    waited      : Boolean;
+    fState      : TMacDebugState;
     waitedsig   : Integer;
+
+    recvMsg     : TRecvDebugMessage;
+    eventTask   : task_t;
+    eventThread : thread_t;
 
     procedure SetupChildTask(child: task_t);
 
+    procedure HandleMachMsg;
   public
     procedure Terminate; override;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
@@ -46,6 +53,10 @@ var
   CanDebug : Boolean = False;
 
 implementation
+
+var
+  catchedthread : Integer;
+
 
 function TMacDbgTarget.GetThreadsCount(AProcess: TDbgProcessID): Integer;
 var
@@ -93,17 +104,29 @@ end;
 
 function TMacDbgTarget.ReadMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
 var
-  r : QWord;
+  r   : QWord;
+  res : kern_return_t;
 begin
-  if ReadTaskMem(fchildtask, Offset, Count, Data, r) <> 0 then
+  res:=ReadTaskMem(fchildtask, Offset, Count, Data, r);
+  if res <> 0 then begin
     Result := -1
-  else
+  end else
     Result := r;
 end;
 
 function TMacDbgTarget.WriteMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
+var
+  res : kern_return_t;
+  r   : QWord;
 begin
-  Result := -1;
+  writeln('proc = ', PtrUInt(AProcess));
+  res:=WriteTaskMem(AProcess, Offset, Count, Data, r);
+  writeln('WriteTaskMem = ', res,' ',hexStr(res, sizeof(res)*2) );
+  writeln('r =', r);
+  if res<>0 then
+    Result := -1
+  else
+    Result := r;
 end;
 
 procedure TMacDbgTarget.SetupChildTask(child: task_t);
@@ -141,11 +164,51 @@ begin
   
   writeln('[mach: setting exception ports]');
   res := debugout_kret(
-//  task_set_exception_ports( child, EXC_MASK_ALL, catchport, EXCEPTION_DEFAULT, 0),
     task_set_exception_ports( child, EXC_MASK_ALL, catchport, EXCEPTION_DEFAULT, 0),
       'task_set_exception_ports' );
 
   writeln('[mach: setting process exceptions handlers. done]');
+end;
+
+procedure TMacDbgTarget.HandleMachMsg;
+var
+  buf     : array [0..4095] of byte;
+  reqbuf  : array [0..4095] of byte;
+  ret     : mach_msg_return_t;
+  mrep    : PReplyUnion__exc_subsystem;
+  b       : boolean_t;
+  i       : Integer;
+  res : Boolean;
+begin
+  FillChar(buf, sizeof(buf), 0);
+  try
+    mrep := @buf;
+    b := exc_server(@recvmsg.exc_raise, @buf);
+  except
+    writeln('failure in exc_server');
+    halt;
+  end;
+  writelN('exc_server = ', b);
+  if not b then Exit;
+
+
+  i := ptrace(PT_THUPDATE, fchildpid, catchedthread, 0);
+  writeln('ptrace = ', i);
+
+  writeln('sending msg...');
+  writeln('mrep = ', PtrUInt(mrep));
+  writeln('mrep^.rep_raise.Head.msgh_size = ', mrep^.rep_raise.Head.msgh_size);
+  writeln('mrep^.rep_raise.Head.msgh_id   = ', mrep^.rep_raise.Head.msgh_id);
+  writeln('mrep^.rep_raise.RetCode        = ', mrep^.rep_raise.RetCode);
+  ret := mach_msg(@buf,        // message
+                  MACH_SEND_MSG,           // options
+                  mrep^.rep_raise.Head.msgh_size, // send size
+                  0,                       // receive limit (irrelevant here)
+                  MACH_PORT_NULL,          // port for receiving (none)
+                  MACH_MSG_TIMEOUT_NONE,   // no timeout
+                  MACH_PORT_NULL);         // notify port (we don't want one)
+  debugout_kret(ret, 'mach_msg');
+  if ret = KERN_SUCCESS then writeln('message sent');
 end;
 
 procedure TMacDbgTarget.Terminate;
@@ -172,9 +235,6 @@ begin
 end;
 
 
-var
-  hackthread : Integer;
-
 function catch_exception_raise (exception_port, thread, task : mach_port_t;
 	exception  : exception_type_t;
 	code       : exception_data_t;
@@ -189,8 +249,7 @@ begin
   // for i := 0 to codeCnt - 1 do  writeln('code[',i,'] = ', code[i]);
   if (exception = EXC_SOFTWARE) and (CodeCnt = 2) and (code[0] = EXC_SOFT_SIGNAL) then begin
     writeln('unix signal! ', GetSigStr(code[1]));
-    hackthread := thread;
-    //hacksig := code[1];
+    catchedthread := thread;
   end;
   Result := KERN_SUCCESS;
 end;
@@ -230,101 +289,66 @@ begin
 end;
 
 
-function TMacDbgTarget.WaitNextEvent(var Event: TDbgEvent): Boolean;
-var
-  buf     : array [0..4095] of byte;
-  reqbuf  : array [0..4095] of byte;
-  ret     : mach_msg_return_t;
-  mreq    : PRequestUnion__exc_subsystem;
-  mrep    : PReplyUnion__exc_subsystem;
-  b       : boolean_t;
-  i       : Integer;
-begin
-  Result := True;
-  //if waited then  ptrace_cont(fchildpid, 1, 0);
+//todo: WaitNextEvent is quite ugly in its implementation, please change!
 
- { waited := false;
-  writeln('**** waiting for the next event ***');
-  pidres := FpWaitpid(fchildpid, st, 0);
-  writeln('pidres   = ', pidres);
-  writeln('childres = ', fchildpid);
-  if pidres < 0 then begin
-    writeln('error ', fpgeterrno);
+function TMacDbgTarget.WaitNextEvent(var Event: TDbgEvent): Boolean;
+begin
+  //todo!!!!
+  eventTask:=fchildtask;
+  eventThread:=GetAnyTaskThread(eventTask);
+
+  if fState=mdsTerminated then begin
+    Result:=False;
     Exit;
   end;
-  waited := true;}
+  writeln('[mach: recieving message from catchport...]');
 
-  //writeln('st = ', st, '; if Stopped = ',WIFSTOPPED(st), '; WSTOPSIG = ', wstopsig(st)) ;
-  //writeln('is Exited   = ', wifexited(st) ) ;
-  //writeln('is Signaled = ', wifsignaled(st), ' WTERMSIG = ', wtermsig(st), ' ', GetSigStr(wtermsig(st)));
+  case fState of
+    mdsStartThread: begin
+      Event.Kind:=dek_ThreadStart;
+      Event.Addr:=0;
+      Result:=True;
+      fState:=mdsNormal;
+      Exit;
+    end;
+    mdsNormal: HandleMachMsg;
+  end;
 
-  //debugout_kret(task_resume(fchildtask),'task_resume');
 
-  FillChar(reqbuf, sizeof(reqbuf), 0);
-  mreq := @reqbuf;
-  mreq^.req_raise.head.msgh_local_port := catchport;
-  mreq^.req_raise.head.msgh_size := sizeof(reqbuf);
+  Result:=WaitForDebugMsg(catchport, recvMsg, -1);
+  if not Result then begin
+    // terminated?
+    fState:=mdsTerminated;
+    Exit;
+  end;
 
-  writeln('recieving message from catchport...');
-  // replacment for FPWaitPid
-  ret := mach_msg(
-    @reqbuf,
-    MACH_RCV_MSG or MACH_RCV_LARGE or MACH_SEND_TIMEOUT,
-    sizeof(reqbuf),
-    sizeof(reqbuf),
-    catchport,
-    MACH_MSG_TIMEOUT_NONE,
-    MACH_PORT_NULL
-   );
+  Event.Process:=TDbgProcessID(eventTask);
+  Event.Thread:=TDbgThreadID(eventThread);
+
+  case fState of
+    mdsStartProc: begin
+      Event.Kind:=dek_ProcessStart;
+      Event.Addr:=0;
+      fState:=mdsStartThread;
+    end;
+  else
+    Event.Kind:=dek_Other;
+  end;
+  Exit;
 
   //debugout_kret(ret, 'mach_msg');
 
-  writeln('id = ', mreq^.req_raise.Head.msgh_id);
-  if mreq^.req_raise.Head.msgh_id = msgid_exception_raise then begin
+  writeln('id = ', recvmsg.head.msgh_id);
+  if recvmsg.head.msgh_id = msgid_exception_raise then begin
     writeln('exception raise');
-    DebugExptMsg(mreq^.req_raise);
+    DebugExptMsg(recvmsg.exc_raise);
   end;
 
-  FillChar(buf, sizeof(buf), 0);
-  try
-    mrep := @buf;
-    b := exc_server(@mreq^.req_raise.Head, @buf);
-  except
-    writeln('failure in exc_server');
-    halt;
-  end;
-  writelN('exc_server = ', b);
-  if not b then Exit;
-
-
-  i := ptrace(PT_THUPDATE, fchildpid, hackthread, 0);
-  writeln('ptrace = ', i);
-
-  writeln('sending msg...');
-  writeln('mrep = ', PtrUInt(mrep));
-  writeln('mrep^.rep_raise.Head.msgh_size = ', mrep^.rep_raise.Head.msgh_size);
-  writeln('mrep^.rep_raise.Head.msgh_id   = ', mrep^.rep_raise.Head.msgh_id);
-  writeln('mrep^.rep_raise.RetCode        = ', mrep^.rep_raise.RetCode);
-  ret := mach_msg(@buf,        // message
-                  MACH_SEND_MSG,           // options
-                  mrep^.rep_raise.Head.msgh_size, // send size
-                  0,                       // receive limit (irrelevant here)
-                  MACH_PORT_NULL,          // port for receiving (none)
-                  MACH_MSG_TIMEOUT_NONE,   // no timeout
-                  MACH_PORT_NULL);         // notify port (we don't want one)
-  debugout_kret(ret, 'mach_msg');
-  if ret = KERN_SUCCESS then writeln('message sent');
-
-
-
-  Event.Addr := 0;
-  Event.Debug := '';
-  Event.Kind := dek_Other;
-  Event.Thread := nil;
-  Result := true;
 end;
 
 function TMacDbgTarget.StartProcess(const ACmdLine: String): Boolean;
+var
+  susp: Boolean;
 begin
   Result := ForkAndRun(ACmdLine, fchildpid, fchildtask, True);
   //setting up the child's exception port
@@ -341,6 +365,10 @@ begin
 
   writeln('[mach: the next message should "initial" break]');
   Result:=task_resume(fchildtask)=KERN_SUCCESS;
+
+
+
+  fState:=mdsStartProc;
 end;
 
 function MachDebugProcessStart(const ACmdLine: String): TDbgTarget;

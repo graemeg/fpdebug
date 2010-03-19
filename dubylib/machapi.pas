@@ -1,6 +1,11 @@
 unit machapi;
 // mach_vm_size_t processor dependant!?
 
+// Mach man pages
+// http://www.opensource.apple.com/source/xnu/
+// http://web.mit.edu/darwin/src/modules/xnu/osfmk/man/
+
+
 {$ifdef fpc}{$mode delphi}{$H+}{$endif}
 
 interface
@@ -3118,7 +3123,7 @@ function mach_vm_read_list(target_task: vm_map_t;	data_list: mach_vm_read_entry_
  *	protection on the specified range must permit writing.]
 *}
 
-function mach_vm_write(target_task: vm_map_t;	address: mach_vm_address_t;	data: vm_offset_t;
+function mach_vm_write(target_task: vm_map_t;	address: mach_vm_address_t;	data: mach_vm_address_t;
 	dataCnt: mach_msg_type_number_t): kern_return_t; cdecl; external;
 
 {* Routine mach_vm_copy

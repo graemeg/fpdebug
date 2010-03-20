@@ -59,17 +59,28 @@ begin
 
 end;
 
+var
+  nm : string;
 begin
   if Paramcount < 1 then begin
-    writeln('please specify stabs debug-info file name');
+    writeln('please specify executable file name');
+    writeln;
+    writeln('  stabsreader [switches] executable_file_name');
+    writeln;
+    writeln;
+    writeln('optional switches:');
+    writeln('  -str     - writes out stab strings before parsed information.');
+    writeln('  -noparse - doesn''t write parsed stabs information');
     Exit;
   end;
 
   HandleParams;
 
-  dbgInfoSrc := GetDataSource(ParamStr(1));
+  nm:=ParamStr(ParamCount);
+
+  dbgInfoSrc := GetDataSource(nm);
   if not Assigned(dbgInfoSrc) then begin
-    writeln('file '+ ParamStr(1)+ ' is of unknow format');
+    writeln('file '+ nm + ' is of unknown format');
     Exit;
   end;
   writeln('File format: ', dbgInfoSrc.UserName);

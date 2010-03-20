@@ -84,11 +84,11 @@ type
     EntryPoint : TDbgPtr;
   end;
 
-  TVariableType = (vt_Local, vt_Global, vt_Param, vt_ParamByRef);
+  //TVariableVisibility = (vt_Local, vt_Param, vt_ParamByRef);
 
-  TDbgVariable = class(TDbgSymbol)
+  TDbgSymbolVar = class(TDbgSymbol)
   public
-    vartype : TVariableType;
+    //vis     : TVariableVisibility;
     addr    : TDbgPtr;
   end;
 

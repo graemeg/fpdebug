@@ -16,7 +16,15 @@ type
     SrcLine : LongWord;
   end;
 
-  TVarLocation = (vlStack, vlRegister);
+  TStabVarLocation = (svlStack, svlRegister);
+
+  TStabVarVisibility = (
+    svvLocal,         // local variable
+    svvGlobal,        // global variable
+    svvParam,         // proc parameter
+    svvParamByRef,    // var param :)
+    svvLocalFromParam // parameter that becomes local variable
+  );
 
   TStabType = (
     stInt8,  stInt16,  stInt32,  stInt64,
@@ -81,19 +89,22 @@ type
     destructor Destroy; override;
     procedure SetType(AType: TStabTypeDescr; AOwnType: Boolean);
   end;
-  
+
+  { TStabsCallback }
+
   TStabsCallback = class(TObject)
   public
     procedure DeclareType(StabTypeDescr: TStabTypeDescr); virtual; abstract;
     procedure StartFile(const FileName: AnsiString; FirstAddr: LongWord); virtual; abstract;
-    procedure DeclareLocalVar(const Name: AnsiString; Location: TVarLocation; Addr: LongWord); virtual; abstract;
-    procedure DeclareGlobalVar(const Name: AnsiString; Addr: LongWord); virtual; abstract;
-
     procedure CodeLine(LineNum, Addr: LongWord); virtual; abstract;
     
     procedure StartProc(const Name: AnsiString; LineNum: Integer;
       EntryAddr: LongWord; isGlobal: Boolean; const NestedTo: String;
       ReturnType: TStabTypeDescr); virtual; abstract;
+    procedure AddVar(const Name: AnsiString; OfType: TStabTypeDescr;
+      Visiblity: TStabVarVisibility; MemLocation: TStabVarLocation;
+      MemPos: Integer); virtual; abstract;
+
     procedure EndProc(const Name: AnsiString); virtual; abstract;
     
     procedure AsmSymbol(const SymName: AnsiString; Addr: LongWord); virtual; abstract;
@@ -111,7 +122,8 @@ type
 
   TStabVar = class(TObject)
     Name      : AnsiString;
-    Location  : TVarLocation;
+    Location  : TStabVarLocation;
+    LocNumber : Integer;
   end;
 
   { TStabProc }
@@ -119,12 +131,9 @@ type
   TStabProc = class(TObject)
     Name      : AnsiString;
     Addr      : TStabAddr;
-    Params    : TFPList;
-    Locals    : TFPList;
+    Params    : TStringList;
     constructor Create;
     destructor Destroy; override;
-    function AddLocal: TStabVar;
-    function AddParam: TStabVar;
   end;
 
   TStabsReader = class(TObject)
@@ -173,36 +182,18 @@ type
       const StabStrBuf: array of byte; StabStrLen: Integer; Callback: TStabsCallback);
   end;
 
-{ TStabFunction }
-
 constructor TStabProc.Create;
 begin
-  Params:=TFPList.Create;
-  Locals:=TFPList.Create;
+  inherited Create;
+  Params:=TStringList.Create;
 end;
 
 destructor TStabProc.Destroy;
-var
-  i : Integer;
 begin
-  for i:=0 to Params.Count-1 do TObject(Params[i]).Free;
   Params.Free;
-  for i:=0 to Locals.Count-1 do TObject(Locals[i]).Free;
-  Locals.Free;
   inherited Destroy;
 end;
 
-function TStabProc.AddLocal:TStabVar;
-begin
-  Result:=TStabVar.Create;
-  Locals.Add(Result);
-end;
-
-function TStabProc.AddParam: TStabVar;
-begin
-  Result:=TStabVar.Create;
-  Params.Add(Result);
-end;
 
 procedure ReadStabs(const StabsBuf : array of Byte; StabsLen: Integer; 
   const StabStrBuf: array of byte; StabStrLen: Integer; Callback: TStabsCallback);
@@ -589,17 +580,25 @@ var
   varType : Integer;
 
   isArg   : Boolean; // is procedure argument
+  v       : TStabVar;
+
+  vis     : TStabVarVisibility;
+  loc     : TStabVarLocation;
 begin
+  if not Assigned(fCallback) or not Assigned(CurrentProc) then Exit;
+
   StabVarStr(AStr, varname, vardesc, vartype);
 
-  if Assigned(CurrentProc) then begin
-    isArg := (AType=N_RSYM) and isProcArgument(vardesc);
-
-    if isArg then
-      CurrentProc.AddParam.Name:=varname
-    else
-      CurrentProc.AddLocal.Name:=varname;
+  isArg := (AType=N_RSYM) and isProcArgument(vardesc);
+  if AType=N_RSYM then loc:=svlRegister else loc:=svlStack;
+  if isArg then begin
+    vis:=svvParam;
+    CurrentProc.Params.Add(varName);
+  end else begin
+    if (CurrentProc.Params.IndexOf(varname)>=0) then vis:=svvLocalFromParam
+    else vis:=svvLocal;
   end;
+  fCallback.AddVar(varname, GetType(vartype), vis, loc, Value);
 end;
 
 procedure TStabsReader.HandleVariable(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
@@ -609,12 +608,14 @@ var
   vardesc : AnsiString;
   vartype : Integer;
 begin
+  if not Assigned(fCallback) then Exit;
+
   global := AType = N_LCSYM;
   StabVarStr( AStr, varname, vardesc, vartype );
   if global then
-    fCallback.DeclareGlobalVar(varname, Value )
+    fCallback.AddVar(varname, GetType(vartype), svvGlobal, svlStack, Value)
   else
-    fCallback.DeclareLocalVar(varname, vlRegister, Value );
+    fCallback.AddVar(varname, GetType(vartype), svvLocal, svlStack, Value);
 end;
 
 constructor TStabsReader.Create; 

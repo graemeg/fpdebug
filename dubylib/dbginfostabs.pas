@@ -54,8 +54,9 @@ type
     
     procedure DeclareType(StabTypeDescr: TStabTypeDescr); override;
     procedure StartFile(const FileName: AnsiString; FirstAddr: LongWord); override;
-    procedure DeclareLocalVar(const Name: AnsiString; Location: TVarLocation; Addr: LongWord); override;
-    procedure DeclareGlobalVar(const Name: AnsiString; Addr: LongWord); override;
+    procedure AddVar(const Name: AnsiString; OfType: TStabTypeDescr;
+      Visiblity: TStabVarVisibility; MemLocation: TStabVarLocation;
+      MemPos: Integer); override;
 
     procedure CodeLine(LineNum, Addr: LongWord); override;
     
@@ -73,14 +74,17 @@ type
   public
     procedure DeclareType(AType: TStabTypeDescr); override;
     procedure StartFile(const FileName: AnsiString; FirstAddr: LongWord); override;
-    procedure DeclareLocalVar(const Name: AnsiString; Location: TVarLocation; Addr: LongWord); override;
-    procedure DeclareGlobalVar(const Name: AnsiString; Addr: LongWord); override;
 
     procedure CodeLine(LineNum, Addr: LongWord); override;
 
     procedure StartProc(const Name: AnsiString; LineNum: Integer;
       EntryAddr: LongWord; isGlobal: Boolean; const NestedTo: String;
       RetType: TStabTypeDescr); override;
+
+    procedure AddVar(const Name: AnsiString; OfType: TStabTypeDescr;
+      Visiblity: TStabVarVisibility; MemLocation: TStabVarLocation;
+      MemPos: Integer); override;
+
     procedure EndProc(const Name: AnsiString); override;
 
     procedure AsmSymbol(const SymName: AnsiString; Addr: LongWord); override;
@@ -101,16 +105,11 @@ begin
   writeln('File: ', FileName);
 end;
 
-procedure TDbgInfoCallbackLog.DeclareLocalVar(const Name:AnsiString;Location:
-  TVarLocation;Addr:LongWord);
+procedure AddVar(const Name: AnsiString; OfType: TStabTypeDescr;
+  Visiblity: TStabVarVisibility; MemLocation: TStabVarLocation;
+  MemPos: Integer);
 begin
-  writeln('Local var: ', Name,' ',Location,' ',Addr);
-end;
-
-procedure TDbgInfoCallbackLog.DeclareGlobalVar(const Name:AnsiString;Addr:
-  LongWord);
-begin
-  writeln('Global var: ', Name,' ',Addr);
+  writeln('var: ', Name,': ', OfType.Name, ' ', Visiblity, ' ',MemLocation, ' ', MemPos);
 end;
 
 procedure TDbgInfoCallbackLog.CodeLine(LineNum,Addr:LongWord);
@@ -125,6 +124,13 @@ begin
   Write('Proc: ', Name, ' : ', RetType.BaseType);
   if NestedTo<>'' then Write(' nested to: ', NestedTo);
   Writeln;
+end;
+
+procedure TDbgInfoCallbackLog.AddVar(const Name: AnsiString;
+  OfType: TStabTypeDescr; Visiblity: TStabVarVisibility;
+  MemLocation: TStabVarLocation; MemPos: Integer);
+begin
+  writeln('Var: ', Name, ' ', OFType.Name,' ', Visiblity, ' ',MemLocation, ' ',MemPos);
 end;
 
 procedure TDbgInfoCallbackLog.EndProc(const Name:AnsiString);
@@ -155,18 +161,28 @@ begin
   fFileSym := fDebugInfo.AddFile(FileName);
 end;
 
-procedure TDbgInfoCallback.DeclareLocalVar(const Name: AnsiString; Location: TVarLocation; Addr: LongWord);
+procedure TDbgInfoCallback.AddVar(const Name: AnsiString;
+  OfType: TStabTypeDescr; Visiblity: TStabVarVisibility;
+  MemLocation: TStabVarLocation; MemPos: Integer);
+var
+  parent  : TDbgSymbol;
+  v  : TDbgSymbolVar;
 begin
-end;
-
-procedure TDbgInfoCallback.DeclareGlobalVar(const Name: AnsiString; Addr: LongWord);
-var 
-  v : TDbgVariable;
-begin
-  if Assigned(fFileSym) then begin
-    v := fDebugInfo.AddSymbol(Name, fFileSym, TDbgVariable ) as TDbgVariable;
-    v.addr := Addr;
+  case Visiblity of
+    svvGlobal:
+      parent:=fFileSym;
+    svvParam, svvParamByRef, svvLocalFromParam:
+      parent:=fCurrentFunc;
+    svvLocal:
+      if Assigned(fCurrentFunc) then parent:=fCurrentFunc
+      else parent:=fFileSym;
+  else
+    parent:=nil;
   end;
+
+  v:=fDebugInfo.AddSymbol(Name, parent, TDbgSymbolVar) as TDbgSymbolVar;
+{  function AddSymbol(const SymbolName: AnsiString; ParentSymbol: TDbgSymbol;
+    SymbolClass: TDbgSymbolClass): TDbgSymbol; virtual; overload;}
 end;
 
 procedure TDbgInfoCallback.CodeLine(LineNum, Addr: LongWord);  

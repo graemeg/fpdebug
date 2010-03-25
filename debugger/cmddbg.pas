@@ -93,8 +93,8 @@ begin
   val(name, addr, err);
   if err > 0 then begin
     sym := CommonInfo.FindSymbol(name, nil);
-    if Assigned(sym) and (sym is TDbgVariable) then
-      addr := TDbgVariable(sym).addr
+    if Assigned(sym) and (sym is TDbgSymbolVar) then
+      addr := TDbgSymbolVar(sym).addr
     else  begin
       writeln('symbol not found or cannot be read');
       Exit;
@@ -320,8 +320,8 @@ begin
   name := CmdParams[1];
   sym := CommonInfo.FindSymbol(name, nil);
   if Assigned(sym) then begin
-    if sym is TDbgVariable then
-      writeln('variable ', name, ' addr: $', HexAddr(TDbgVariable(sym).addr) )
+    if sym is TDbgSymbolVar then
+      writeln('variable ', name, ' addr: $', HexAddr(TDbgSymbolVar(sym).addr) )
     else 
       writeln('symbol found: ', sym.ClassName)
   end else if GetLineNumber(CmdParams[1], FileName, LineNum) then begin

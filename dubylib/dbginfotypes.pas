@@ -35,7 +35,7 @@ type
   end;
   TDbgInfoReaderClass = class of TDbgInfoReader;
 
-  { TDbgFileSymbol }
+  TDbgSymbolVisiblity = (svGlobal, svExport, svLocal);
 
   { TDbgSymbol }
 
@@ -45,12 +45,14 @@ type
     fParent : TDbgSymbol;
     subList : TFPObjectList;
     subHash : TFPObjectHashTable;
+    fVisibility : TDbgSymbolVisiblity;
   protected
     function GetCount: Integer;
     function GetSymbol(index: Integer): TDbgSymbol;
   public
     constructor Create(const AName: AnsiString; AParentSym: TDbgSymbol); virtual;
     destructor Destroy; override;
+    property Visibility: TDbgSymbolVisiblity read fVisibility write fVisibility;
     property Name: AnsiString read fName;
     property Parent: TDbgSymbol read fParent;
     property Count: integer read GetCount;
@@ -64,6 +66,8 @@ type
     LineNum : Integer;
     Addr    : TDbgPtr;
   end;
+
+  { TDbgFileInfo }
 
   TDbgFileInfo = class(TDbgSymbol)
   private
@@ -79,17 +83,31 @@ type
     function GetLinesInfoCount: Integer;
   end;
 
+  { TDbgSymbolFunc }
+
   TDbgSymbolFunc = class(TDbgSymbol)
   public
     EntryPoint : TDbgPtr;
   end;
 
-  //TVariableVisibility = (vt_Local, vt_Param, vt_ParamByRef);
+  { TDbgSymbolTypeDescr }
+
+  TDbgSymbolTypeDescr = class(TDbgSymbol)
+  end;
+
+  TDbgSimpleType = (dstInteger, dstUnsigned, dstSingle,
+    dstDouble, dstReal, dstPointer, dstChar, dstWideChar);
+
+  TDbgSymbolSimpleDescr = class(TDbgSymbolTypeDescr)
+    SymType : TDbgSimpleType;
+  end;
+
+  { TDbgSymbolVar }
 
   TDbgSymbolVar = class(TDbgSymbol)
   public
-    //vis     : TVariableVisibility;
     addr    : TDbgPtr;
+    vartype : TDbgSymbolTypeDescr;
   end;
 
   { TDbgInfo }

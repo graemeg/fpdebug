@@ -5,7 +5,8 @@ unit dbgInfoStabs;
 interface
 
 uses
-  Classes, SysUtils, contnrs, dbgTypes, dbgInfoTypes, stabs, stabsProc, AVL_Tree;
+  Classes, SysUtils, contnrs, dbgTypes, dbgInfoTypes,
+  stabs, stabsProc;
 
 var
   DebugDumpStabs  : Boolean = False;
@@ -24,8 +25,11 @@ type
     FilesList   : TFPObjectList;
 
     fInfo       : TDbgInfo;
+
+    fReadDebugMode  : Boolean;
   protected
-    procedure ReadSymbols(debugdump: Boolean = false);
+    procedure DoReadSymbols;
+    function AllocCallback: TStabsCallback;
   public
     constructor Create(ASource: TDbgDataSource); override;
     destructor Destroy; override;
@@ -41,11 +45,11 @@ implementation
 
 type
   
-  { TDbgInfoCallback }
+  { TStabsToDebugInfo }
 
-  TDbgInfoCallback = class(TStabsCallback)
+  TStabsToDebugInfo = class(TStabsCallback)
   private 
-    fOwner        : TDbgStabsInfo;
+    fOwner        : TDbgStabsInfo; //todo: remove. not required!
     fFileSym      : TDbgSymFile;
     fDebugInfo    : TDbgInfo;
     fCurrentFunc  : TDbgSymFunc;
@@ -68,9 +72,9 @@ type
     procedure AsmSymbol(const SymName: AnsiString; Addr: LongWord); override;
   end;
 
-  { TDbgInfoCallbackLog }
+  { TStabsCallbackLogging }
 
-  TDbgInfoCallbackLog = class(TStabsCallback)
+  TStabsCallbackLogging = class(TStabsCallback)
   public
     procedure DeclareType(AType: TStabTypeDescr); override;
     procedure StartFile(const FileName: AnsiString; FirstAddr: LongWord); override;
@@ -90,14 +94,14 @@ type
     procedure AsmSymbol(const SymName: AnsiString; Addr: LongWord); override;
   end;
 
-{ TDbgInfoCallbackLog }
+{ TStabsCallbackLogging }
 
-procedure TDbgInfoCallbackLog.DeclareType(AType: TStabTypeDescr);
+procedure TStabsCallbackLogging.DeclareType(AType: TStabTypeDescr);
 begin
   writeln('Type: ', AType.Name, ' : ', AType.BaseType);
 end;
 
-procedure TDbgInfoCallbackLog.StartFile(const FileName:AnsiString;FirstAddr:
+procedure TStabsCallbackLogging.StartFile(const FileName:AnsiString;FirstAddr:
   LongWord);
 begin
   writeln('File: ', FileName);
@@ -110,12 +114,12 @@ begin
   writeln('var: ', Name,': ', OfType.Name, ' ', Visiblity, ' ',MemLocation, ' ', MemPos);
 end;
 
-procedure TDbgInfoCallbackLog.CodeLine(LineNum,Addr:LongWord);
+procedure TStabsCallbackLogging.CodeLine(LineNum,Addr:LongWord);
 begin
   writeln('#', LineNum, '; Addr: $',HexStr(Addr,8));
 end;
 
-procedure TDbgInfoCallbackLog.StartProc(const Name:AnsiString; LineNum:Integer;
+procedure TStabsCallbackLogging.StartProc(const Name:AnsiString; LineNum:Integer;
   EntryAddr: LongWord; isGlobal: Boolean;
   const NestedTo: String; RetType: TStabTypeDescr);
 begin
@@ -124,42 +128,42 @@ begin
   Writeln;
 end;
 
-procedure TDbgInfoCallbackLog.AddVar(const Name: AnsiString;
+procedure TStabsCallbackLogging.AddVar(const Name: AnsiString;
   OfType: TStabTypeDescr; Visiblity: TStabVarVisibility;
   MemLocation: TStabVarLocation; MemPos: Integer);
 begin
   writeln('Var: ', Name, ' ', OFType.Name,' ', Visiblity, ' ',MemLocation, ' ',MemPos);
 end;
 
-procedure TDbgInfoCallbackLog.EndProc(const Name:AnsiString);
+procedure TStabsCallbackLogging.EndProc(const Name:AnsiString);
 begin
   //WritelN('End proc: ', Name);
 end;
 
-procedure TDbgInfoCallbackLog.AsmSymbol(const SymName:AnsiString;Addr:LongWord);
+procedure TStabsCallbackLogging.AsmSymbol(const SymName:AnsiString;Addr:LongWord);
 begin
   WritelN('Asm sym: ', SymName, ' ', HexStr(Addr, sizeof(Addr)*2));
 end;
 
-{ TDbgInfoCallback }
+{ TStabsToDebugInfo }
 
-constructor TDbgInfoCallback.Create(AOwner: TDbgStabsInfo; ADebugInfo: TDbgInfo);
+constructor TStabsToDebugInfo.Create(AOwner: TDbgStabsInfo; ADebugInfo: TDbgInfo);
 begin
   inherited Create;
   fOwner := AOwner;
   fDebugInfo := ADebugInfo;
 end;
 
-procedure TDbgInfoCallback.DeclareType(StabTypeDescr: TStabTypeDescr);
+procedure TStabsToDebugInfo.DeclareType(StabTypeDescr: TStabTypeDescr);
 begin
 end;
 
-procedure TDbgInfoCallback.StartFile(const FileName: AnsiString; FirstAddr: LongWord);  
+procedure TStabsToDebugInfo.StartFile(const FileName: AnsiString; FirstAddr: LongWord);
 begin
   fFileSym := fDebugInfo.AddFile(FileName);
 end;
 
-procedure TDbgInfoCallback.AddVar(const Name: AnsiString;
+procedure TStabsToDebugInfo.AddVar(const Name: AnsiString;
   OfType: TStabTypeDescr; Visiblity: TStabVarVisibility;
   MemLocation: TStabVarLocation; MemPos: Integer);
 var
@@ -183,13 +187,13 @@ begin
     SymbolClass: TDbgSymbolClass): TDbgSymbol; virtual; overload;}
 end;
 
-procedure TDbgInfoCallback.CodeLine(LineNum, Addr: LongWord);  
+procedure TStabsToDebugInfo.CodeLine(LineNum, Addr: LongWord);
 begin
   if Assigned(fFileSym) then
     fFileSym.AddLineInfo(Addr, LineNum);
 end;
 
-procedure TDbgInfoCallback.StartProc(const Name: AnsiString; LineNum: Integer;
+procedure TStabsToDebugInfo.StartProc(const Name: AnsiString; LineNum: Integer;
   EntryAddr: LongWord; isGlobal: Boolean; const NestedTo: String;
   ReturnType: TStabTypeDescr);
 var
@@ -201,18 +205,18 @@ begin
   fCurrentFunc:=proc;
 end;
 
-procedure TDbgInfoCallback.EndProc(const Name: AnsiString);  
+procedure TStabsToDebugInfo.EndProc(const Name: AnsiString);
 begin
   fCurrentFunc:=nil;
 end;
 
-procedure TDbgInfoCallback.AsmSymbol(const SymName: AnsiString; Addr: LongWord);  
+procedure TStabsToDebugInfo.AsmSymbol(const SymName: AnsiString; Addr: LongWord);
 begin
 end;
 
 { TDbgStabsInfo }
 
-procedure TDbgStabsInfo.ReadSymbols(debugdump: Boolean);
+procedure TDbgStabsInfo.DoReadSymbols;
 var
   sz        : Int64;
   buf       : array of byte;
@@ -248,7 +252,7 @@ begin
     strbuf := nil
   end;
 
-  if debugdump then begin
+  if fReadDebugMode then begin
     SymCount := sz div sizeof(TStabSym);
 
     if DebugDumpStabs then begin
@@ -264,20 +268,20 @@ begin
           s);
       end;
     end;
-
     writeln('Total symbols = ', SymCount);
+  end;
 
-    if DebugParseStabs then begin
-      callback := TDbgInfoCallbackLog.Create;
-      stabsProc.ReadStabs(buf, sz , strbuf, strsz, callback);
-      callback.Free;
-    end;
-
-  end else begin
-    callback := TDbgInfoCallback.Create(Self, fInfo);
+  callback:=AllocCallback;
+  if Assigned(callback) then begin
     stabsProc.ReadStabs(buf, sz, strbuf, strsz, callback);
     callback.Free;
   end;
+end;
+
+function TDbgStabsInfo.AllocCallback:TStabsCallback;
+begin
+  if fReadDebugMode then Result:=TStabsCallbackLogging.Create
+  else Result:=TStabsToDebugInfo.Create(Self, fInfo);
 end;
 
 class function TDbgStabsInfo.isPresent(ASource: TDbgDataSource): Boolean;
@@ -291,7 +295,7 @@ function TDbgStabsInfo.ReadDebugInfo(ASource: TDbgDataSource; AInfo: TDbgInfo): 
 begin
   try
     fInfo := AInfo;
-    ReadSymbols;
+    DoReadSymbols;
     Result := true;
   except
     Result := false;
@@ -319,7 +323,8 @@ end;
 
 procedure TDbgStabsInfo.dump_symbols;
 begin
-  ReadSymbols(true);
+  fReadDebugMode:=True;
+  DoReadSymbols;
 end;
 
 function StabsTypeToStr(_type: Byte): string;

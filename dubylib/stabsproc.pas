@@ -154,7 +154,7 @@ type
     OnlySourceDeclTypes : Boolean;
     
     function CurrentProcName: AnsiString;
-    function CurrentProcAddr: PtrInt;
+    function CurrentProcAddr: PtrUInt;
     function CurrentProc: TStabProc;
     function PushProc(const Name: AnsiString; Addr: PtrInt): TStabProc;
     procedure PopProc;
@@ -217,7 +217,7 @@ begin
   else Result:='';
 end;
 
-function TStabsReader.CurrentProcAddr: PtrInt;
+function TStabsReader.CurrentProcAddr: PtrUInt;
 begin
   if Assigned(CurrentProc) then Result:=CurrentProc.Addr
   else Result:=0;
@@ -274,9 +274,6 @@ begin
 end;
 
 procedure TStabsReader.HandleSourceFile(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
-var
-  fileaddr  : LongWord;
-  filename  : AnsiString;
 begin
   if fSourceAddr=Value then
     fSourceFileName:=fSourceFileName+AStr
@@ -529,11 +526,9 @@ end;
 
 procedure TStabsReader.HandleFunc(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
 var
-  funsym  : TStabSym;
+//  funsym  : TStabSym;
   Params  : array of TStabProcParams;
-  i, j    : integer;
   funnm   : AnsiString;
-  isExt   : Boolean;
   rettype : Integer;
   descr   : TStabFuncDescr;
 begin
@@ -543,7 +538,7 @@ begin
     if funnm<>'' then begin
       PushProc(funnm, Value);
       if Assigned(fCallback) then
-        fCallback.StartProc(funnm, funsym.n_desc, funsym.n_value,
+        fCallback.StartProc(funnm, desc, value,
           descr.isGlobal, descr.NestedTo, GetType(rettype));
     end else begin
       if ASsigned(fCallback) then
@@ -580,8 +575,6 @@ var
   varType : Integer;
 
   isArg   : Boolean; // is procedure argument
-  v       : TStabVar;
-
   vis     : TStabVarVisibility;
   loc     : TStabVarLocation;
 begin

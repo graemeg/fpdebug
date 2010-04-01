@@ -492,13 +492,9 @@ end;
 function NextStructElem(const v: AnsiString; Index: Integer; var ElemName : AnsiString; var TypeDeclIndex: Integer): Boolean;
 var
   i   : Integer;
-  j   : Integer;
-  nm  : AnsiString;
-  err : Integer;
 begin
   Result:=(Index>=1) and (Index<=length(v));
   if not Result then Exit;
-  j:=0;
   for i:=Index to length(v) do
     if v[i]=':' then begin
       ElemName:=Copy(v, index, i-index);
@@ -638,8 +634,6 @@ type
   PStabsArray = ^TStabsArray;
 var
   stabs : PStabsArray;
-  str   : PChar;
-  cnt   : Integer;
   i     : Integer;
 begin
   if not ASsigned(Callback) then Exit;
@@ -711,7 +705,6 @@ function StabFuncStr(const funcstr: AnsiString; var name: AnsiString;
   var Descr: TStabFuncDescr; var retType: Integer): Boolean;
 var
   numstr    : AnsiString;
-  nmd       : Integer;
   i, j      : Integer;
   err       : Integer;
 begin

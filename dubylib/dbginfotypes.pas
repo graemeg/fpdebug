@@ -60,6 +60,8 @@ type
   end;
   TDbgSymbolClass = class of TDbgSymbol;
 
+  TDbgSymbolTypeDescr = class(TDbgSymbol);
+
   { TDbgFileInfo }
 
   TDbgLineInfo = class(TObject)
@@ -87,13 +89,11 @@ type
 
   TDbgSymbolFunc = class(TDbgSymbol)
   public
-    EntryPoint : TDbgPtr;
+    EntryPoint  : TDbgPtr;
+    ReturnType  : TDbgSymbolTypeDescr;
   end;
 
   { TDbgSymbolTypeDescr }
-
-  TDbgSymbolTypeDescr = class(TDbgSymbol)
-  end;
 
   TDbgSimpleType = (dstInteger, dstUnsigned, dstSingle,
     dstDouble, dstReal, dstPointer, dstChar, dstWideChar);
@@ -454,11 +454,9 @@ end;
 function TDbgFileInfo.FindLineByAddr(const Addr: TDbgPtr; var LineNum: Integer; Strict: Boolean = false): Boolean;
 var
   node  : TAVLTreeNode;
-  cnt   : integer;
   i     : Integer;
   a     : TDbgPtr;
 begin
-  if Strict then cnt := 0 else cnt := 8;
   for i := 0 to 7 do begin
     a := Addr - i;
     node := AddrToLines.FindKey(@a, @CompareWithAddr);

@@ -261,10 +261,8 @@ begin
 end;
 
 procedure TRawCPUBreakpoint.Disable;
-var
-  res : Integer;
 begin
-  res:=fTarget.WriteMem(fProcID, fAddr, length(buf), buf);
+  fTarget.WriteMem(fProcID, fAddr, length(buf), buf);
   SetLength(buf,0);
 end;
 

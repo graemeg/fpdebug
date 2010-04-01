@@ -69,8 +69,8 @@ begin
 
 
   sz := hdr.e_shetsize * hdr.e_shnum;
-  if sz > length(sect)*sizeof(Elf32_shdr) then
-    sz := length(sect)*sizeof(Elf32_shdr);
+  if sz > LongWord(length(sect)*sizeof(Elf32_shdr)) then
+    sz := LongWord(length(sect)*sizeof(Elf32_shdr));
   Stream.Read(sect[0], sz);
 
   i := sect[hdr.e_shstrndx].sh_offset;

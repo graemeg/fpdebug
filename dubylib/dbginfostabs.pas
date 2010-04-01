@@ -93,8 +93,6 @@ type
 { TDbgInfoCallbackLog }
 
 procedure TDbgInfoCallbackLog.DeclareType(AType: TStabTypeDescr);
-var
-  i : integer;
 begin
   writeln('Type: ', AType.Name, ' : ', AType.BaseType);
 end;
@@ -166,7 +164,6 @@ procedure TDbgInfoCallback.AddVar(const Name: AnsiString;
   MemLocation: TStabVarLocation; MemPos: Integer);
 var
   parent  : TDbgSymbol;
-  v  : TDbgSymbolVar;
 begin
   case Visiblity of
     svvGlobal:
@@ -180,7 +177,8 @@ begin
     parent:=nil;
   end;
 
-  v:=fDebugInfo.AddSymbol(Name, parent, TDbgSymbolVar) as TDbgSymbolVar;
+  //todo:
+  fDebugInfo.AddSymbol(Name, parent, TDbgSymbolVar);// as TDbgSymbolVar;
 {  function AddSymbol(const SymbolName: AnsiString; ParentSymbol: TDbgSymbol;
     SymbolClass: TDbgSymbolClass): TDbgSymbol; virtual; overload;}
 end;

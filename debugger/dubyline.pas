@@ -12,6 +12,7 @@ uses
   dbgTypes,
 
   dbgInfoTypes,
+  dbgInfoPascal,
   //dbgInfoDwarf,  // dwarf debug information
   dbgInfoStabs,  // stabs debug information
   

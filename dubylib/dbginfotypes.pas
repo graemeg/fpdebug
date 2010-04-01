@@ -7,6 +7,9 @@ interface
 uses
   contnrs, SysUtils, Classes, dbgTypes, AVL_Tree;
 
+const
+  RootSymbol = nil;
+
 type
   { TDbgDataSource }
 
@@ -58,9 +61,14 @@ type
     property Count: integer read GetCount;
     property Child[i: integer]: TDbgSymbol read GetSymbol; default;
   end;
-  TDbgSymbolClass = class of TDbgSymbol;
+  TDbgSymClass = class of TDbgSymbol;
 
-  TDbgSymbolTypeDescr = class(TDbgSymbol);
+  TDbgSymType = class(TDbgSymbol);
+
+  TDbgSymAlias = class(TDbgSymbol)
+  public
+    Original : TDbgSymbol;
+  end;
 
   { TDbgFileInfo }
 
@@ -69,9 +77,9 @@ type
     Addr    : TDbgPtr;
   end;
 
-  { TDbgFileInfo }
+  { TDbgSymSourceFile }
 
-  TDbgFileInfo = class(TDbgSymbol)
+  TDbgSymFile = class(TDbgSymbol)
   private
     AddrToLines : TAVLTree;
     LinesToAddr : TAVLTree;
@@ -85,29 +93,33 @@ type
     function GetLinesInfoCount: Integer;
   end;
 
-  { TDbgSymbolFunc }
+  { TDbgSymFunc }
 
-  TDbgSymbolFunc = class(TDbgSymbol)
+  TDbgSymFunc = class(TDbgSymbol)
   public
     EntryPoint  : TDbgPtr;
-    ReturnType  : TDbgSymbolTypeDescr;
+    ReturnType  : TDbgSymType;
   end;
 
   { TDbgSymbolTypeDescr }
 
-  TDbgSimpleType = (dstInteger, dstUnsigned, dstSingle,
-    dstDouble, dstReal, dstPointer, dstChar, dstWideChar);
+  TDbgSimpleType = (
+    dstSInt8,   dstSInt16,  dstSInt32, dstSInt64,
+    dstUInt8,   dstUInt16,  dstUInt32, dstUInt64,
+    dstFloat32, dstFloat48, dstFloat64,
+    dstChar8,   dstChar16
+  );
 
-  TDbgSymbolSimpleDescr = class(TDbgSymbolTypeDescr)
+  TDbgSymSimpleType = class(TDbgSymType)
     SymType : TDbgSimpleType;
   end;
 
-  { TDbgSymbolVar }
+  { TDbgSymVar }
 
-  TDbgSymbolVar = class(TDbgSymbol)
+  TDbgSymVar = class(TDbgSymbol)
   public
     addr    : TDbgPtr;
-    vartype : TDbgSymbolTypeDescr;
+    vartype : TDbgSymType;
   end;
 
   { TDbgInfo }
@@ -120,19 +132,23 @@ type
   protected
     function GetFileSymbolName(const FileName: WideString): AnsiString;
     function FindInGlobal(const SymName: AnsiString): TDbgSymbol;
-    function AddGlobalSymbol(const SymName: AnsiString; symClass: TDbgSymbolClass): TDbgSymbol;
+    function AddGlobalSymbol(const SymName: AnsiString; symClass: TDbgSymClass): TDbgSymbol;
   public
     Reader  : TDbgInfoReader;
+    Root    : TDbgSymbol;
     constructor Create;
     destructor Destroy; override;
 
-    function AddFile(const FileName: WideString): TDbgFileInfo; virtual;
-    function FindFile(const FileName: WideString): TDbgFileInfo; virtual;
+    function AddFile(const FileName: WideString): TDbgSymFile; virtual;
+    function FindFile(const FileName: WideString): TDbgSymFile; virtual;
 
     function AddSymbol(const SymbolName: AnsiString; ParentSymbol: TDbgSymbol;
-      SymbolClass: TDbgSymbolClass): TDbgSymbol; virtual; overload;
+      SymbolClass: TDbgSymClass): TDbgSymbol; virtual; overload;
+    function AddSymbolVar(const VarName: AnsiString; ParentSymbol: TDbgSymbol): TDbgSymVar;
+    function AddSymbolFunc(const FuncName: AnsiString; ParentSymbol: TDbgSymbol): TDbgSymFunc;
+
     function AddFileSymbol(const SymbolName: AnsiString; const FileName: WideString;
-      const SymbolClass: TDbgSymbolClass): TDbgSymbol;
+      const SymbolClass: TDbgSymClass): TDbgSymbol;
 
     function FindSymbol(const SymbolName: AnsiString; Parent: TDbgSymbol; SearchInFiles: Boolean = true): TDbgSymbol;
     function FindInFile(const SymbolName: AnsiString; const FileName: WideString): TDbgSymbol;
@@ -150,11 +166,26 @@ procedure RegisterDebugInfo(DebugInfo: TDbgInfoReaderClass);
 function FindSourceFileName(info: TDbgInfo; const ShortName: AnsiString; IgnoreCase: Boolean=True): AnsiString;
 function FindLineAddr(info: TDbgInfo; const FullFileName: AnsiString; LineNum: Integer; var addr: TDbgPtr): Boolean;
 
+function AddAliasToSymbol(info: TDbgInfo; const AliasName: String; AliasParent, AOriginalSymbol: TDbgSymbol): TDbgSymAlias;
+function AddGlobalSimpleType(info: TDbgInfo; const TypeName: String; AType : TDbgSimpleType): TDbgSymSimpleType;
+
 implementation
 
 var
   SrcClasses  : TFPList;
   InfoClasses : TFPList;
+
+function AddAliasToSymbol(info: TDbgInfo; const AliasName: String; AliasParent, AOriginalSymbol: TDbgSymbol): TDbgSymAlias;
+begin
+  Result := info.AddSymbol(AliasName, AliasParent, TDbgSymAlias) as TDbgSymAlias;
+  Result.Original:=AOriginalSymbol;
+end;
+
+function AddGlobalSimpleType(info: TDbgInfo; const TypeName: String; AType : TDbgSimpleType): TDbgSymSimpleType;
+begin
+  Result:=info.AddSymbol( TypeName, nil, TDbgSymSimpleType) as TDbgSymSimpleType;
+  Result.SymType:=AType;
+end;
   
 procedure GetDebugInfos(Source: TDbgDataSource; List: TFPList);
 var
@@ -272,39 +303,42 @@ begin
   inherited Create;
   fGlobalList := TFPObjectList.Create(true);
   fGlobalHash := TFPObjectHashTable.Create(false);
+  Root:=TDbgSymbol.Create('', nil);
 end;
 
 destructor TDbgInfo.Destroy;
 begin
+  Root.Free;
   fGlobalList.Free;
   fGlobalHash.Free;
   inherited Destroy;
 end;
 
-function TDbgInfo.AddFile(const FileName: WideString): TDbgFileInfo;
+function TDbgInfo.AddFile(const FileName: WideString): TDbgSymFile;
 begin
   Result := FindFile(FileName);
   if Assigned(Result) then Exit;
 
-  Result := AddGlobalSymbol( GetFileSymbolName(FileName), TDbgFileInfo ) as TDbgFileInfo;
+  Result := AddGlobalSymbol( GetFileSymbolName(FileName), TDbgSymFile ) as TDbgSymFile;
   Result.FileName := FileName;
 end;
 
-function TDbgInfo.FindFile(const FileName: WideString): TDbgFileInfo;
+function TDbgInfo.FindFile(const FileName: WideString): TDbgSymFile;
 var
   res     : TDbgSymbol;
 begin
   res := FindInGlobal( GetFileSymbolName(FileName));
-  if Assigned(res) and (res is TDbgFileInfo) then
-    Result := TDbgFileInfo(res)
+  if Assigned(res) and (res is TDbgSymFile) then
+    Result := TDbgSymFile(res)
   else
     Result := nil;
 end;
 
 function TDbgInfo.AddSymbol(const SymbolName: AnsiString;
-  ParentSymbol: TDbgSymbol; SymbolClass: TDbgSymbolClass): TDbgSymbol;
+  ParentSymbol: TDbgSymbol; SymbolClass: TDbgSymClass): TDbgSymbol;
 begin
-  if SymbolClass.InheritsFrom(TDbgFileInfo) then begin
+  if ParentSymbol=nil then ParentSymbol:=Root;
+  if SymbolClass.InheritsFrom(TDbgSymFile) then begin
     Result := nil;
     Exit;
   end;
@@ -315,8 +349,18 @@ begin
     Result := AddGlobalSymbol(SymbolName, SymbolClass)
 end;
 
+function TDbgInfo.AddSymbolVar(const VarName:AnsiSTring;ParentSymbol:TDbgSymbol):TDbgSymVar;
+begin
+  Result:=AddSymbol(VarName, ParentSymbol, TDbgSymVar) as TDbgSymVar;
+end;
+
+function TDbgInfo.AddSymbolFunc(const FuncName: AnsiString; ParentSymbol: TDbgSymbol): TDbgSymFunc;
+begin
+  Result:=AddSymbol(FuncName, ParentSymbol, TDbgSymFunc)  as TDbgSymFunc;
+end;
+
 function TDbgInfo.AddGlobalSymbol(const SymName: AnsiString;
-  symClass: TDbgSymbolClass): TDbgSymbol;
+  symClass: TDbgSymClass): TDbgSymbol;
 begin
   Result := symClass.Create(SymName, nil);
   fGlobalHash.Add(SymName, Result);
@@ -324,7 +368,7 @@ begin
 end;
 
 function TDbgInfo.AddFileSymbol(const SymbolName: AnsiString; const FileName: WideString;
-  const SymbolClass: TDbgSymbolClass): TDbgSymbol;
+  const SymbolClass: TDbgSymClass): TDbgSymbol;
 begin
   Result := AddSymbol(SymbolName, AddFile(FileName), SymbolClass);
 end;
@@ -340,7 +384,7 @@ begin
 
     for i := 0 to fGlobalList.Count - 1 do begin
       sym := TDbgSymbol(fGlobalList[i]);
-      if sym is TDbgFileInfo then begin
+      if sym is TDbgSymFile then begin
         Result := FindSymbol(SymbolName, sym, false);
         if Assigned(Result) then Exit;
       end;
@@ -366,8 +410,8 @@ var
   i : integer;
 begin
   for i := 0 to fGlobalList.Count - 1 do
-    if TDbgSymbol(fGlobalList[i]) is TDbgFileInfo then 
-      str.Add( TDbgFileInfo(fGlobalList[i]).FileName);
+    if TDbgSymbol(fGlobalList[i]) is TDbgSymFile then
+      str.Add( TDbgSymFile(fGlobalList[i]).FileName);
 end;
 
 { TDbgSymbol }
@@ -392,7 +436,7 @@ begin
 
   if Assigned(fParent) then begin
     fParent.subHash.Items[AName]:=Self;
-    fPArent.subList.Add(Self);
+    fParent.subList.Add(Self);
   end;
 end;
 
@@ -403,7 +447,7 @@ begin
   inherited Destroy;
 end;
 
-{ TDbgFileInfo }
+{ TDbgSymFile }
 
 function OnLinesCompareAddr(Item1, Item2: Pointer): Integer;
 begin
@@ -419,21 +463,21 @@ begin
   else Result := 1;
 end;
 
-constructor TDbgFileInfo.Create(const AName: AnsiString; AParentSym: TDbgSymbol);
+constructor TDbgSymFile.Create(const AName: AnsiString; AParentSym: TDbgSymbol);
 begin
   AddrToLines := TAVLTree.Create(@OnLinesCompareAddr);
   LinesToAddr := TAVLTree.Create(@OnLinesCompareLine);
   inherited Create(AName, AParentSym);
 end;
 
-destructor TDbgFileInfo.Destroy;
+destructor TDbgSymFile.Destroy;
 begin
   AddrToLines.Free;
   LinesToAddr.Free;
   inherited Destroy;
 end;
 
-procedure TDbgFileInfo.AddLineInfo(const Addr: TDbgPtr; const LineNum: Integer);
+procedure TDbgSymFile.AddLineInfo(const Addr: TDbgPtr; const LineNum: Integer);
 var
   info  : TDbgLineInfo;
 begin
@@ -451,7 +495,7 @@ begin
   else Result := 1;
 end;
 
-function TDbgFileInfo.FindLineByAddr(const Addr: TDbgPtr; var LineNum: Integer; Strict: Boolean = false): Boolean;
+function TDbgSymFile.FindLineByAddr(const Addr: TDbgPtr; var LineNum: Integer; Strict: Boolean = false): Boolean;
 var
   node  : TAVLTreeNode;
   i     : Integer;
@@ -476,7 +520,7 @@ begin
   else Result := 1;
 end;
 
-function TDbgFileInfo.FindAddrByLine(const LineNum: Integer; var Addr: TDbgPtr): Boolean;
+function TDbgSymFile.FindAddrByLine(const LineNum: Integer; var Addr: TDbgPtr): Boolean;
 var
   node  : TAVLTreeNode;
 begin
@@ -485,7 +529,7 @@ begin
   if Result then Addr := TDbgLineINfo(node.Data).Addr;
 end;
 
-function TDbgFileInfo.GetLinesInfoCount:Integer;
+function TDbgSymFile.GetLinesInfoCount:Integer;
 begin
   Result:=AddrToLines.Count;
 end;
@@ -540,7 +584,7 @@ end;
 
 function FindLineAddr(info: TDbgInfo; const FullFileName: AnsiString; LineNum: Integer; var addr: TDbgPtr): Boolean;
 var
-  dfile : TDbgFileInfo;
+  dfile : TDbgSymFile;
 begin
   Result:=False;
   if (FullFileName='') then Exit;

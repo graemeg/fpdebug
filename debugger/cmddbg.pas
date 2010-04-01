@@ -93,8 +93,8 @@ begin
   val(name, addr, err);
   if err > 0 then begin
     sym := CommonInfo.FindSymbol(name, nil);
-    if Assigned(sym) and (sym is TDbgSymbolVar) then
-      addr := TDbgSymbolVar(sym).addr
+    if Assigned(sym) and (sym is TDbgSymVar) then
+      addr := TDbgSymVar(sym).addr
     else  begin
       writeln('symbol not found or cannot be read');
       Exit;
@@ -288,7 +288,7 @@ begin
   end;
 end;
 
-function GetFileSymbol(info: TDbgInfo; const ShortName: AnsiString): TDbgFileInfo;
+function GetFileSymbol(info: TDbgInfo; const ShortName: AnsiString): TDbgSymFile;
 var
   nm  : AnsiString;
 begin
@@ -302,7 +302,7 @@ procedure TAddrOf.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   name      : String;
   sym       : TDbgSymbol;
-  fsym      : TDbgFileInfo;
+  fsym      : TDbgSymFile;
   FileName  : string;
   addr      : TDbgPtr;
   LineNum   : Integer;
@@ -320,8 +320,8 @@ begin
   name := CmdParams[1];
   sym := CommonInfo.FindSymbol(name, nil);
   if Assigned(sym) then begin
-    if sym is TDbgSymbolVar then
-      writeln('variable ', name, ' addr: $', HexAddr(TDbgSymbolVar(sym).addr) )
+    if sym is TDbgSymVar then
+      writeln('variable ', name, ' addr: $', HexAddr(TDbgSymVar(sym).addr) )
     else 
       writeln('symbol found: ', sym.ClassName)
   end else if GetLineNumber(CmdParams[1], FileName, LineNum) then begin
@@ -494,7 +494,7 @@ end;
 
 function GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: Integer): Boolean;
 var
-  f   : TDbgFileInfo;
+  f   : TDbgSymFile;
   i   : integer;
   st  : TStringList;
 begin

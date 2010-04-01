@@ -46,9 +46,9 @@ type
   TDbgInfoCallback = class(TStabsCallback)
   private 
     fOwner        : TDbgStabsInfo;
-    fFileSym      : TDbgFileInfo;
+    fFileSym      : TDbgSymFile;
     fDebugInfo    : TDbgInfo;
-    fCurrentFunc  : TDbgSymbolFunc;
+    fCurrentFunc  : TDbgSymFunc;
   public
     constructor Create(AOwner: TDbgStabsInfo; ADebugInfo: TDbgInfo);
     
@@ -178,7 +178,7 @@ begin
   end;
 
   //todo:
-  fDebugInfo.AddSymbol(Name, parent, TDbgSymbolVar);// as TDbgSymbolVar;
+  fDebugInfo.AddSymbol(Name, parent, TDbgSymFile);// as TDbgSymbolVar;
 {  function AddSymbol(const SymbolName: AnsiString; ParentSymbol: TDbgSymbol;
     SymbolClass: TDbgSymbolClass): TDbgSymbol; virtual; overload;}
 end;
@@ -193,9 +193,9 @@ procedure TDbgInfoCallback.StartProc(const Name: AnsiString; LineNum: Integer;
   EntryAddr: LongWord; isGlobal: Boolean; const NestedTo: String;
   ReturnType: TStabTypeDescr);
 var
-  proc  : TDbgSymbolFunc;
+  proc  : TDbgSymFunc;
 begin
-  proc := TDbgSymbolFunc(fOwner.fInfo.AddSymbol(Name, fFileSym, TDbgSymbolFunc));
+  proc := fOwner.fInfo.AddSymbolFunc(Name, fFileSym);
   if not Assigned(proc) then Exit;
   proc.EntryPoint := EntryAddr;
   fCurrentFunc:=proc;

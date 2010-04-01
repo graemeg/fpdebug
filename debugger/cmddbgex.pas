@@ -103,7 +103,7 @@ var
   i     : Integer;
   fn    : string;
   t     : TStringList;
-  info  : TDbgFileInfo;
+  info  : TDbgSymFile;
 begin
   if CmdParams.Count<=1 then begin
     writeln('please specify file name');

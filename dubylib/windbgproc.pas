@@ -173,8 +173,8 @@ begin
   end;
 
   Result := SetThreadContext(ThreadHandle, PContext(@ctx32)^);
-  if not Result then 
-    WriteLn('SetThreadContext = ', GetLastError);
+  //if not Result then
+  //  WriteLn('SetThreadContext = ', GetLastError);
 end;
 
 function SetThread32SingleStep(ThreadHandle: THandle): Boolean;

@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, contnrs, 
   dbgTypes, dbgUtils, dbgConsts,
-  dbgInfoTypes, cmdlineutils, dbgCPU,
+  dbgInfoTypes, dbgInfoUtils, cmdlineutils, dbgCPU,
   commands, cmdloop; 
 
 //todo: remove debug info loading to some common units
@@ -93,9 +93,9 @@ begin
   val(name, addr, err);
   if err > 0 then begin
     sym := CommonInfo.FindSymbol(name, nil);
-    if Assigned(sym) and (sym is TDbgSymVar) then
-      addr := TDbgSymVar(sym).addr
-    else  begin
+    if Assigned(sym) and (sym is TDbgSymVar) then begin
+      addr:=GetVarAddr( TDbgSymVar(sym), Env.Thread);
+    end else  begin
       writeln('symbol not found or cannot be read');
       Exit;
     end;
@@ -320,9 +320,10 @@ begin
   name := CmdParams[1];
   sym := CommonInfo.FindSymbol(name, nil);
   if Assigned(sym) then begin
-    if sym is TDbgSymVar then
-      writeln('variable ', name, ' addr: $', HexAddr(TDbgSymVar(sym).addr) )
-    else 
+    addr:=GetVarAddr( TDbgSymVar(sym), Env.Thread);
+    if sym is TDbgSymVar then begin
+      writeln('variable ', name, ' addr: $', HexAddr(Addr) );
+    end else
       writeln('symbol found: ', sym.ClassName)
   end else if GetLineNumber(CmdParams[1], FileName, LineNum) then begin
     fsym := GetFileSymbol(CommonInfo, FileName);
@@ -339,7 +340,7 @@ end;
 
 function TAddrOf.ShortHelp: String;  
 begin
-  Result:='returns address of a symbol by it''s name';
+  Result:='returns address of a symbol by it''s name, or address of the line of code';
 end;
   
 procedure PrintFileString(const Name: WideString; LineNum: Integer);
@@ -397,16 +398,6 @@ end;
 function TWhereCommand.ShortHelp: String;  
 begin
   Result:='returns current execution address of main thread (if possible: filename and line number/line)';
-end;
-
-procedure InitDebugCommands;
-begin
-  DbgSources := TFPObjectList.Create(true);
-  
-  RegisterCommand(['where',  'w'], TWhereCommand.Create);
-  RegisterCommand(['addrof', 'a'], TAddrOf.Create);
-  RegisterCommand(['value', 'l'], TIntValue.Create);
-  //RegisterCommand(['listsym'], TListSymbols.Create);
 end;
 
 procedure ReleaseDebugCommands;
@@ -509,6 +500,14 @@ begin
     end;
   end;
   Result := false;
+end;
+
+procedure InitDebugCommands;
+begin
+  DbgSources := TFPObjectList.Create(true);
+  RegisterCommand(['where',  'w'], TWhereCommand.Create);
+  RegisterCommand(['addr', '@'], TAddrOf.Create);
+  RegisterCommand(['value', 'l'], TIntValue.Create);
 end;
 
 initialization

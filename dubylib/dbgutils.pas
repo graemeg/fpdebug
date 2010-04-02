@@ -25,7 +25,7 @@ type
     function BitSize: Integer; override;
   end;
 
-  TDbgDataBytesList = class(TDbgDataList)
+  TDbgDataBytesList = class(TDbgDataList) //todo: move the implementation to TDbgDataList
   private
     fItems   : TStringList;
   protected

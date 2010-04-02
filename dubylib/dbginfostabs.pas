@@ -5,7 +5,7 @@ unit dbgInfoStabs;
 interface
 
 uses
-  Classes, SysUtils, contnrs, dbgTypes, dbgInfoTypes,
+  Classes, SysUtils, dbgTypes, dbgInfoTypes,
   stabs, stabsProc;
 
 var
@@ -16,23 +16,15 @@ type
   { TDbgStabsInfo }
   TDbgStabsInfo = class(TDbgInfoReader)
   private
-    fSource     : TDbgDataSource;
-    StabsRead   : Boolean;
-    
-    SymTable    : TFPObjectHashTable;
-    SymList     : TFPObjectList;
-    SrcFiles    : TFPObjectHashTable;
-    FilesList   : TFPObjectList;
-
-    fInfo       : TDbgInfo;
-
+    fSource         : TDbgDataSource;
+    fInfo           : TDbgInfo;
+    StabsRead       : Boolean;
     fReadDebugMode  : Boolean;
   protected
     procedure DoReadSymbols;
     function AllocCallback: TStabsCallback;
   public
     constructor Create(ASource: TDbgDataSource); override;
-    destructor Destroy; override;
 
     class function isPresent(ASource: TDbgDataSource): Boolean; override;
     function ReadDebugInfo(ASource: TDbgDataSource; AInfo: TDbgInfo): Boolean; override;
@@ -49,14 +41,15 @@ type
 
   TStabsToDebugInfo = class(TStabsCallback)
   private 
-    fOwner        : TDbgStabsInfo; //todo: remove. not required!
     fFileSym      : TDbgSymFile;
-    fDebugInfo    : TDbgInfo;
+    DebugInfo     : TDbgInfo;
     fCurrentFunc  : TDbgSymFunc;
   public
-    constructor Create(AOwner: TDbgStabsInfo; ADebugInfo: TDbgInfo);
-    
-    procedure DeclareType(StabTypeDescr: TStabTypeDescr); override;
+    constructor Create(ADebugInfo: TDbgInfo);
+
+    function StabMemPosToRegName(MemPos: Integer): AnsiString; // todo: StabMemPosToRegName
+
+    procedure DeclareType(TypeDescr: TStabTypeDescr); override;
     procedure StartFile(const FileName: AnsiString; FirstAddr: LongWord); override;
     procedure AddVar(const Name: AnsiString; OfType: TStabTypeDescr;
       Visiblity: TStabVarVisibility; MemLocation: TStabVarLocation;
@@ -147,20 +140,84 @@ end;
 
 { TStabsToDebugInfo }
 
-constructor TStabsToDebugInfo.Create(AOwner: TDbgStabsInfo; ADebugInfo: TDbgInfo);
+constructor TStabsToDebugInfo.Create(ADebugInfo: TDbgInfo);
 begin
   inherited Create;
-  fOwner := AOwner;
-  fDebugInfo := ADebugInfo;
+  DebugInfo := ADebugInfo;
 end;
 
-procedure TStabsToDebugInfo.DeclareType(StabTypeDescr: TStabTypeDescr);
+function TStabsToDebugInfo.StabMemPosToRegName(MemPos:Integer):AnsiString;
 begin
+  Result:=''; //todo!
+end;
+
+function isSimpleType(AStabType: TStabType): Boolean;
+const
+  SimpleTypes  = [
+    stInt8,  stInt16,  stInt32,  stInt64,
+    stUInt8, stUInt16, stUInt32, stUInt64,
+    stBool8, stBool16, stBool32,
+    stChar, stWideChar,
+    stSingle, stDouble, stExtended, stShortReal, stReal ];
+begin
+  Result:=AStabType in SimpleTypes;
+end;
+
+function StabToDbgSimple(AStabType: TStabType): TDbgSimpleType;
+begin
+  case AStabType of
+    stInt8      : Result:=dstSInt8;
+    stInt16     : Result:=dstSInt16;
+    stInt32     : Result:=dstSInt32;
+    stInt64     : Result:=dstSInt64;
+    stUInt8     : Result:=dstUInt8;
+    stUInt16    : Result:=dstUInt16;
+    stUInt32    : Result:=dstUInt32;
+    stUInt64    : Result:=dstUInt64;
+    stBool8     : Result:=dstBool8;
+    stBool16    : Result:=dstBool16;
+    stBool32    : Result:=dstBool32;
+    stChar      : Result:=dstChar8;
+    stWideChar  : Result:=dstChar16;
+    stSingle    : Result:=dstFloat32;
+    stDouble    : Result:=dstFloat64;
+    stExtended  : Result:=dstFloat64;
+    stShortReal : Result:=dstFloat48; //todo: find the size of short real
+    stReal      : Result:=dstFloat48;
+  else
+    Result:=dstUInt32; // sizeof(PtrUInt)
+  end;
+end;
+
+procedure TStabsToDebugInfo.DeclareType(TypeDescr: TStabTypeDescr);
+var
+  parent  : TDbgSymbol;
+  simple  : TDbgSymSimpleType;
+begin
+  if isSimpleType(TypeDescr.BaseType) then begin
+    {if TypeDescr.DeclLine=0 then parent:=RootSymbol
+    else //todo: find the proper parent file }
+    if TypeDescr.Name='' then Exit;//todo: remove type name check!
+    parent:=RootSymbol;
+    simple:=DebugInfo.AddSymbol(TypeDescr.Name, parent, TDbgSymSimpleType)as TDbgSymSimpleType;
+    simple.Simple:=StabToDbgSimple(TypeDescr.BaseType);
+
+  end else begin
+
+  end;
 end;
 
 procedure TStabsToDebugInfo.StartFile(const FileName: AnsiString; FirstAddr: LongWord);
 begin
-  fFileSym := fDebugInfo.AddFile(FileName);
+  fFileSym := DebugInfo.AddFile(FileName);
+end;
+
+function StabToDbgLocation(sl: TStabVarLocation): TDbgDataLocation;
+begin
+  if sl=svlStack then
+    Result:=ddlFrameRel
+  else
+    Result:=ddlRegister
 end;
 
 procedure TStabsToDebugInfo.AddVar(const Name: AnsiString;
@@ -168,6 +225,8 @@ procedure TStabsToDebugInfo.AddVar(const Name: AnsiString;
   MemLocation: TStabVarLocation; MemPos: Integer);
 var
   parent  : TDbgSymbol;
+  vartype : TDbgSymType;
+  varinfo : TDbgSymVar;
 begin
   case Visiblity of
     svvGlobal:
@@ -182,9 +241,17 @@ begin
   end;
 
   //todo:
-  fDebugInfo.AddSymbol(Name, parent, TDbgSymFile);// as TDbgSymbolVar;
-{  function AddSymbol(const SymbolName: AnsiString; ParentSymbol: TDbgSymbol;
-    SymbolClass: TDbgSymbolClass): TDbgSymbol; virtual; overload;}
+  if Assigned(OfType) then
+    vartype:=DebugInfo.FindSymbol(OfType.Name, RootSymbol, TDbgSymType) as TDbgSymType
+  else
+    vartype:=nil; //variable of no type? error is stabs (or stabs parsing)?
+
+  varinfo:=DebugInfo.AddSymbol(Name, parent, TDbgSymVar) as TDbgSymVar;
+  varinfo.vartype:=vartype;
+  varinfo.DataPos.Location:=StabToDbgLocation(MemLocation);
+  varinfo.DataPos.Addr:=MemPos;
+  if varinfo.DataPos.Location=ddlRegister then
+    varinfo.DataPos.RegName:=StabMemPosToRegName(MemPos);
 end;
 
 procedure TStabsToDebugInfo.CodeLine(LineNum, Addr: LongWord);
@@ -199,7 +266,7 @@ procedure TStabsToDebugInfo.StartProc(const Name: AnsiString; LineNum: Integer;
 var
   proc  : TDbgSymFunc;
 begin
-  proc := fOwner.fInfo.AddSymbolFunc(Name, fFileSym);
+  proc := DebugInfo.AddSymbolFunc(Name, fFileSym);
   if not Assigned(proc) then Exit;
   proc.EntryPoint := EntryAddr;
   fCurrentFunc:=proc;
@@ -281,7 +348,7 @@ end;
 function TDbgStabsInfo.AllocCallback:TStabsCallback;
 begin
   if fReadDebugMode then Result:=TStabsCallbackLogging.Create
-  else Result:=TStabsToDebugInfo.Create(Self, fInfo);
+  else Result:=TStabsToDebugInfo.Create(fInfo);
 end;
 
 class function TDbgStabsInfo.isPresent(ASource: TDbgDataSource): Boolean;
@@ -290,6 +357,7 @@ var
 begin
   Result := ASource.GetSectionInfo(_stab, sz);
 end;
+
 
 function TDbgStabsInfo.ReadDebugInfo(ASource: TDbgDataSource; AInfo: TDbgInfo): Boolean;
 begin
@@ -306,19 +374,6 @@ constructor TDbgStabsInfo.Create(ASource: TDbgDataSource);
 begin
   inherited Create(ASource);
   fSource := ASource;
-  SymTable := TFPObjectHashTable.Create(true);
-  SrcFiles := TFPObjectHashTable.Create(true);
-  SymList := TFPObjectList.Create(false);  
-  FilesList := TFPObjectList.Create(false);
-end;
-
-destructor TDbgStabsInfo.Destroy;
-begin
-  FilesList.Free;
-  SrcFiles.Free;
-  SymTable.Free;
-  SymList.Free;
-  inherited Destroy;
 end;
 
 procedure TDbgStabsInfo.dump_symbols;

@@ -40,6 +40,14 @@ type
 
   TDbgSymbolVisiblity = (svGlobal, svExport, svLocal);
 
+  TDbgDataLocation = (ddlAbsolute, ddlFrameRel, ddlRegister);
+
+  TDbgDataPos = record
+    Location : TDbgDataLocation;
+    Addr     : TDbgPtr;
+    RegName  : AnsiString; //register name,
+  end;
+
   { TDbgSymbol }
 
   TDbgSymbol = class(TObject)
@@ -107,19 +115,24 @@ type
     dstSInt8,   dstSInt16,  dstSInt32, dstSInt64,
     dstUInt8,   dstUInt16,  dstUInt32, dstUInt64,
     dstFloat32, dstFloat48, dstFloat64,
+    dstBool8,   dstBool16,  dstBool32,
     dstChar8,   dstChar16
   );
 
   TDbgSymSimpleType = class(TDbgSymType)
-    SymType : TDbgSimpleType;
+    Simple  : TDbgSimpleType;
+  end;
+
+  TDbgSymPointerType = class(TDbgSymType)
+    RefType : TDbgSymType;
   end;
 
   { TDbgSymVar }
 
   TDbgSymVar = class(TDbgSymbol)
   public
-    addr    : TDbgPtr;
-    vartype : TDbgSymType;
+    VarType : TDbgSymType;
+    DataPos : TDbgDataPos;
   end;
 
   { TDbgInfo }
@@ -131,8 +144,11 @@ type
 
   protected
     function GetFileSymbolName(const FileName: WideString): AnsiString;
-    function FindInGlobal(const SymName: AnsiString): TDbgSymbol;
-    function AddGlobalSymbol(const SymName: AnsiString; symClass: TDbgSymClass): TDbgSymbol;
+    function FindInGlobal(const SymName: AnsiString; SymClass: TDbgSymClass=nil): TDbgSymbol;
+    procedure AddSymbolToHash(Symbol: TDbgSymbol);
+
+    function GetSymList(const SymName: AnsiString): TFPList;
+
   public
     Reader  : TDbgInfoReader;
     Root    : TDbgSymbol;
@@ -150,7 +166,7 @@ type
     function AddFileSymbol(const SymbolName: AnsiString; const FileName: WideString;
       const SymbolClass: TDbgSymClass): TDbgSymbol;
 
-    function FindSymbol(const SymbolName: AnsiString; Parent: TDbgSymbol; SearchInFiles: Boolean = true): TDbgSymbol;
+    function FindSymbol(const SymbolName: AnsiString; Parent: TDbgSymbol; SymbolClass: TDbgSymClass = nil; SearchInFiles: Boolean = true): TDbgSymbol;
     function FindInFile(const SymbolName: AnsiString; const FileName: WideString): TDbgSymbol;
     
     procedure EnumSourceFiles(str: TStrings);
@@ -184,7 +200,7 @@ end;
 function AddGlobalSimpleType(info: TDbgInfo; const TypeName: String; AType : TDbgSimpleType): TDbgSymSimpleType;
 begin
   Result:=info.AddSymbol( TypeName, nil, TDbgSymSimpleType) as TDbgSymSimpleType;
-  Result.SymType:=AType;
+  Result.Simple:=AType;
 end;
   
 procedure GetDebugInfos(Source: TDbgDataSource; List: TFPList);
@@ -292,11 +308,23 @@ begin
   Result := '#file:'+UTF8Encode(FileName);
 end;
 
-function TDbgInfo.FindInGlobal(const SymName: AnsiString): TDbgSymbol;
+function TDbgInfo.FindInGlobal(const SymName: AnsiString; SymClass: TDbgSymClass): TDbgSymbol;
+var
+  list  : TFPList;
+  i     : Integer;
 begin
-  Result := TDbgSymbol(fGlobalHash.Items[SymName]);
+  Result:=nil;
+  list:=GetSymList(SymName);
+  if SymClass=nil then begin
+    if list.Count>0 then
+      Result:=TDbgSymbol(list[0]);
+  end else
+    for i:=0 to list.Count-1 do
+      if TObject(list[i]) is SymClass then begin
+        Result:=TDbgSymbol(list[i]);
+        Exit;
+      end;
 end;
-
 
 constructor TDbgInfo.Create;
 begin
@@ -319,7 +347,7 @@ begin
   Result := FindFile(FileName);
   if Assigned(Result) then Exit;
 
-  Result := AddGlobalSymbol( GetFileSymbolName(FileName), TDbgSymFile ) as TDbgSymFile;
+  Result := AddSymbol( GetFileSymbolName(FileName), RootSymbol, TDbgSymFile ) as TDbgSymFile;
   Result.FileName := FileName;
 end;
 
@@ -338,15 +366,9 @@ function TDbgInfo.AddSymbol(const SymbolName: AnsiString;
   ParentSymbol: TDbgSymbol; SymbolClass: TDbgSymClass): TDbgSymbol;
 begin
   if ParentSymbol=nil then ParentSymbol:=Root;
-  if SymbolClass.InheritsFrom(TDbgSymFile) then begin
-    Result := nil;
-    Exit;
-  end;
 
-  if Assigned(ParentSymbol) then
-    Result := SymbolClass.Create(SymbolName, ParentSymbol)
-  else
-    Result := AddGlobalSymbol(SymbolName, SymbolClass)
+  Result := SymbolClass.Create(SymbolName, ParentSymbol);
+  AddSymbolToHash(Result);
 end;
 
 function TDbgInfo.AddSymbolVar(const VarName:AnsiSTring;ParentSymbol:TDbgSymbol):TDbgSymVar;
@@ -359,12 +381,22 @@ begin
   Result:=AddSymbol(FuncName, ParentSymbol, TDbgSymFunc)  as TDbgSymFunc;
 end;
 
-function TDbgInfo.AddGlobalSymbol(const SymName: AnsiString;
-  symClass: TDbgSymClass): TDbgSymbol;
+procedure TDbgInfo.AddSymbolToHash(Symbol: TDbgSymbol);
+var
+  List : TFPList;
 begin
-  Result := symClass.Create(SymName, nil);
-  fGlobalHash.Add(SymName, Result);
-  fGlobalList.Add(Result);
+  List:=GetSymList(Symbol.Name);
+  List.Add(Symbol);
+  fGlobalList.Add(Symbol);
+end;
+
+function TDbgInfo.GetSymList(const SymName:AnsiString):TFPList;
+begin
+  Result:=TFPList(fGlobalHash.Items[SymName]);
+  if not Assigned(Result) then begin
+    Result:=TFPList.Create;
+    fGlobalHash.Items[SymName]:=Result;
+  end;
 end;
 
 function TDbgInfo.AddFileSymbol(const SymbolName: AnsiString; const FileName: WideString;
@@ -373,7 +405,8 @@ begin
   Result := AddSymbol(SymbolName, AddFile(FileName), SymbolClass);
 end;
 
-function TDbgInfo.FindSymbol(const SymbolName: AnsiString; Parent: TDbgSymbol; SearchInFiles: Boolean): TDbgSymbol;
+function TDbgInfo.FindSymbol(const SymbolName: AnsiString; Parent: TDbgSymbol;
+  SymbolClass: TDbgSymClass; SearchInFiles: Boolean): TDbgSymbol;
 var
   i   : integer;
   sym : TDbgSymbol;
@@ -385,7 +418,7 @@ begin
     for i := 0 to fGlobalList.Count - 1 do begin
       sym := TDbgSymbol(fGlobalList[i]);
       if sym is TDbgSymFile then begin
-        Result := FindSymbol(SymbolName, sym, false);
+        Result := FindSymbol(SymbolName, sym, nil, false);
         if Assigned(Result) then Exit;
       end;
     end;

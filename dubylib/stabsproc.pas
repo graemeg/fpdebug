@@ -151,8 +151,7 @@ type
 
     fTypes          : TFPList;
 
-    OnlySourceDeclTypes : Boolean;
-    
+
     function CurrentProcName: AnsiString;
     function CurrentProcAddr: PtrUInt;
     function CurrentProc: TStabProc;
@@ -173,7 +172,12 @@ type
     function AddType(ATypeNum: Integer; AStabType: TStabType): TStabTypeDescr;
     function GetType(ATypeNum: Integer): TStabTypeDescr;
   public
-    AbsoluteLineNumbesAddress  : Boolean;
+    // if type declared without linenumber specified,
+    //  DeclareType is called if OnlySourceDeclTypes=True
+    // otherwise DeclareType is called for each type declaration
+    // default: false
+    OnlySourceDeclTypes       : Boolean;
+    AbsoluteLineNumbesAddress : Boolean;
     
     constructor Create;
     destructor Destroy; override;
@@ -615,7 +619,6 @@ constructor TStabsReader.Create;
 begin
   fProcStack:=TFPList.Create;
   fTypes:=TFPList.Create;
-  OnlySourceDeclTypes:=True;
 end;
 
 destructor TStabsReader.Destroy;

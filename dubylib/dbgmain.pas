@@ -191,7 +191,7 @@ begin
   try
     Result:=Assigned(athread) and (athread.GetThreadRegs(datalist));
     if Result then begin
-      datalist.Reg[CPUCode.ExecuteRegisterName].DbgPtr:=Addr;
+      datalist.Reg[CPUCode.ExecRegName].DbgPtr:=Addr;
       Result:=athread.SetThreadRegs(datalist);
     end;
   finally

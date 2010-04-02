@@ -17,13 +17,17 @@ type
     procedure WriteBreakPoint(var Buffer: array of byte; Offset: Integer); override;
     function IsBreakPoint(const Buffer: array of byte; Offset: Integer): Boolean; override;
     
-    function ExecuteRegisterName: AnsiString; override;
+    function ExecRegName: AnsiString; override;
+    function FrameRegName: AnsiString; override;
+    function StackRegName: AnsiString; override;
   end;
 
   { TCPUx64 }
 
   TCPUx64 = class(TCPUi386)
-    function ExecuteRegisterName: AnsiString; override;
+    function ExecRegName: AnsiString; override;
+    function FrameRegName: AnsiString; override;
+    function StackRegName: AnsiString; override;
   end;
 
 implementation
@@ -46,17 +50,36 @@ begin
   Result := Buffer[Offset] = Int3;
 end;
 
-function TCPUi386.ExecuteRegisterName: AnsiString;  
+function TCPUi386.ExecRegName:AnsiString;
 begin
-  Result:=_Eip;  
+  Result:=_Eip;
 end;
 
+function TCPUi386.FrameRegName:AnsiString;
+begin
+  Result:=_Ebp;
+end;
+
+function TCPUi386.StackRegName:AnsiString;
+begin
+  Result:=_Esp;
+end;
 
 { TCPUx64 }
 
-function TCPUx64.ExecuteRegisterName: AnsiString;
+function TCPUx64.ExecRegName:AnsiString;
 begin
   Result:=_rip;
+end;
+
+function TCPUx64.FrameRegName:AnsiString;
+begin
+  Result:=_rbp;
+end;
+
+function TCPUx64.StackRegName:AnsiString;
+begin
+ Result:=_rsp;
 end;
 
 initialization

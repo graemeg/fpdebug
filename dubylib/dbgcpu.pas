@@ -17,8 +17,10 @@ type
     function IsBreakPoint(const Buffer: array of byte; Offset: Integer): Boolean; virtual;
     procedure BreakPointAddress(const ExeRegValue : TDbgPtr; out BreakAddr: TDbgPtr); virtual;
     
-    function ExecuteRegisterName: AnsiString; virtual;
-  end;  
+    function ExecRegName: AnsiString; virtual;
+    function FrameRegName: AnsiString; virtual;
+    function StackRegName: AnsiString; virtual;
+  end;
 
 function CPUCode: TCPUCode; inline;
 procedure InstallCPU(ACPUCode: TCPUCode);
@@ -61,9 +63,19 @@ begin
   BreakAddr := 0;
 end;
 
-function TCPUCode.ExecuteRegisterName: AnsiString; 
+function TCPUCode.ExecRegName: AnsiString;
 begin
-  Result := '';
+  Result:='';
+end;
+
+function TCPUCode.FrameRegName: AnsiString;
+begin
+  Result:='';
+end;
+
+function TCPUCode.StackRegName:AnsiString;
+begin
+  Result:='';
 end;
 
 initialization

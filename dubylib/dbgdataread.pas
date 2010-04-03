@@ -9,13 +9,13 @@ uses
 type
   TDbgTypeRead = class(TObject)
   public
-    function Dump(atype: TDbgSymType; const Data; DataSize: Integer): AnsiString; virtual; abstract;
+    function Dump(ASymType: TDbgSymType; const Data; DataSize: Integer): AnsiString; virtual; abstract;
   end;
 
   { TDbgSimpleTypeRead }
 
   TDbgSimpleTypeRead = class(TDbgTypeRead)
-    function Dump(AType: TDbgSymType; const Data; DataSize: Integer): AnsiString; override;
+    function Dump(ASymType: TDbgSymType; const Data; DataSize: Integer): AnsiString; override;
   end;
 
 procedure RegisterReader(ADbgTypeClass: TDbgSymClass; Reader: TDbgTypeRead);
@@ -51,16 +51,16 @@ end;
 
 { TDbgSimpleTypeRead }
 
-function TDbgSimpleTypeRead.Dump(atype:TDbgSymType;const Data; DataSize:Integer): AnsiString;
+function TDbgSimpleTypeRead.Dump(ASymType:TDbgSymType;const Data; DataSize:Integer): AnsiString;
 type
   PReal = ^Real;
 begin
-  if not (AType is TDbgSymSimpleType) then begin
+  if not (ASymType is TDbgSymSimpleType) then begin
     Result:='';
     Exit;
   end;
 
-  case TDbgSymSimpleType(atype).Simple of
+  case TDbgSymSimpleType(ASymType).Simple of
     dstSInt8:   Result:=IntToStr( PShortInt(@Data)^);
     dstSInt16:  Result:=IntToStr( PSmallInt(@Data)^);
     dstSInt32:  Result:=IntToStr( PInteger(@Data)^);
@@ -92,16 +92,11 @@ function GetReaderForType(ADbgTypeClass: TDbgSymClass): TDbgTypeRead;
 var
   i : Integer;
 begin
-  writeln('readers count = ', Readers.Count);
-  writeln('ADbgTypeClass = ', ADbgTypeClass.ClassName);
-  for i:=0 to Readers.Count-1 do begin
-    writeln(i,' = ', TTypeRead(Readers[i]).TypeClass.ClassName);
+  for i:=0 to Readers.Count-1 do
     if TTypeRead(Readers[i]).TypeClass = ADbgTypeClass then begin
       Result:=TTypeRead(Readers[i]).Reader;
-      writeln('found. out of');
       Exit;
     end;
-  end;
   Result:=nil;
 end;
 
@@ -127,4 +122,4 @@ initialization
 finalization
   ReleaseVarReaders;
 
-end.
+end.

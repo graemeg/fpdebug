@@ -205,7 +205,7 @@ begin
     ptracePeekData(pid, Offset+i, PPtraceWord(@Data[i])^);
     inc(i, sizeof(TPtraceWord));
   end;
-  Result := cnt;
+  Result := cnt*sizeof(TPtraceWord);
 
   cnt := Size mod sizeof(TPtraceWord);
   if cnt > 0 then begin

@@ -116,7 +116,8 @@ begin
       if res = varsize then
         writeln(reader.Dump(VarType, vardata[0], varsize) )
       else
-        writeln('value of var scannot be read');
+        writeln('value of var scannot be read. ',
+          'var ', TDbgSymVar(sym).Name , ' addr: $', HexAddr(addr));
     end else
       writeln('cannot find reader for the type. var ', TDbgSymVar(sym).Name ,
               ' addr: $', HexAddr(addr));

@@ -1,4 +1,3 @@
-
 program dubyline;
 
 {$ifdef fpc}
@@ -10,6 +9,8 @@ program dubyline;
 uses
   SysUtils,
   dbgTypes,
+
+  dbgDataRead,
 
   dbgInfoTypes,
   dbgInfoPascal,

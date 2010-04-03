@@ -19,6 +19,7 @@ type
   end;
 
 procedure RegisterReader(ADbgTypeClass: TDbgSymClass; Reader: TDbgTypeRead);
+function GetReaderForType(ADbgTypeClass: TDbgSymClass): TDbgTypeRead;
 
 implementation
 
@@ -84,7 +85,24 @@ end;
 procedure RegisterReader(ADbgTypeClass: TDbgSymClass; Reader: TDbgTypeRead);
 begin
   //todo:
-  Readers.Add(Reader);
+  Readers.Add( TTypeRead.Create(ADbgTypeClass, Reader));
+end;
+
+function GetReaderForType(ADbgTypeClass: TDbgSymClass): TDbgTypeRead;
+var
+  i : Integer;
+begin
+  writeln('readers count = ', Readers.Count);
+  writeln('ADbgTypeClass = ', ADbgTypeClass.ClassName);
+  for i:=0 to Readers.Count-1 do begin
+    writeln(i,' = ', TTypeRead(Readers[i]).TypeClass.ClassName);
+    if TTypeRead(Readers[i]).TypeClass = ADbgTypeClass then begin
+      Result:=TTypeRead(Readers[i]).Reader;
+      writeln('found. out of');
+      Exit;
+    end;
+  end;
+  Result:=nil;
 end;
 
 procedure ReleaseVarReaders;
@@ -99,6 +117,8 @@ end;
 procedure InitVarReaders;
 begin
   Readers:=TFPList.Create;
+
+  RegisterReader(TDbgSymSimpleType, TDbgSimpleTypeRead.Create );
 end;
 
 initialization

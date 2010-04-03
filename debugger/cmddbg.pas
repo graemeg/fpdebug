@@ -7,7 +7,8 @@ interface
 uses
   Classes, SysUtils, contnrs, 
   dbgTypes, dbgUtils, dbgConsts,
-  dbgInfoTypes, dbgInfoUtils, cmdlineutils, dbgCPU,
+  dbgCPU, dbgInfoTypes, dbgInfoUtils, dbgDataRead,
+  cmdlineutils,
   commands, cmdloop; 
 
 //todo: remove debug info loading to some common units
@@ -72,12 +73,15 @@ type
 
 procedure TIntValue.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
-  name  : string;
-  err   : Integer;
-  addr  : TDbgPtr;
-  res   : Integer;
-  vl    : Integer;
-  sym   : TDbgSymbol;
+  name    : string;
+  err     : Integer;
+  addr    : TDbgPtr;
+  res     : Integer;
+  sym     : TDbgSymbol;
+  reader  : TDbgTypeRead;
+  vardata : array of byte;
+  varsize : LongWord;
+  vartype : TDbgSymType;
 begin
   if not Assigned(CommonInfo) then begin
     WriteLn('no debug info');
@@ -99,11 +103,25 @@ begin
       writeln('symbol not found or cannot be read');
       Exit;
     end;
-  end;
-    
-  res := Env.Process.ReadMem(addr, sizeof(vl), PByteArray(@vl)^);
-  if res = sizeof(vl) then writeln(vl)
-  else writeln('value cannot be read');
+  end else
+    sym:=nil;
+
+  if Assigned(sym) and (sym is TDbgSymVar) then begin
+    vartype:=TDbgSymVar(sym).VarType;
+    reader:=GetReaderForType(TDbgSymClass(vartype.ClassType));
+    if Assigned(reader) then begin
+      varsize:=vartype.GetVarSize;
+      SetLength(vardata, varsize);
+      res := Env.Process.ReadMem(addr, varsize, vardata[0]);
+      if res = varsize then
+        writeln(reader.Dump(VarType, vardata[0], varsize) )
+      else
+        writeln('value of var scannot be read');
+    end else
+      writeln('cannot find reader for the type. var ', TDbgSymVar(sym).Name ,
+              ' addr: $', HexAddr(addr));
+  end else
+    writeln('not a variable. var addr: ', HexAddr(addr));
 end;
 
 function TIntValue.ShortHelp: String;  

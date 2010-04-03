@@ -35,7 +35,7 @@ begin
   writeln;
 end;
 
-procedure TestLoop(a: Integer);
+procedure TestLoop(a, b, c: Integer);
 var
   i : Integer;
 type
@@ -57,7 +57,7 @@ type
 begin
   //TestIntelBreak;
   //TestAccessViolation;
-  TestLoop(10);
+  TestLoop(10, 20, 30);
   ExitCode := 55;
   //writeln('exiting with error code = ', ExitCode);
   //readln;

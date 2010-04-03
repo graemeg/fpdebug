@@ -71,7 +71,12 @@ type
   end;
   TDbgSymClass = class of TDbgSymbol;
 
-  TDbgSymType = class(TDbgSymbol);
+  TDbgSymType = class(TDbgSymbol)
+  public
+    function GetVarSize: LongWord; virtual; abstract;
+  end;
+  TDbgSymTypeClass = class of TDbgSymType;
+
 
   TDbgSymAlias = class(TDbgSymbol)
   public
@@ -119,8 +124,11 @@ type
     dstChar8,   dstChar16
   );
 
+  { TDbgSymSimpleType }
+
   TDbgSymSimpleType = class(TDbgSymType)
     Simple  : TDbgSimpleType;
+    function GetVarSize: LongWord; override;
   end;
 
   TDbgSymPointerType = class(TDbgSymType)
@@ -627,6 +635,21 @@ begin
   if not Result then Exit;
 
  Result:= dfile.FindAddrByLine(LineNum, addr);
+end;
+
+{ TDbgSymSimpleType }
+
+function TDbgSymSimpleType.GetVarSize: LongWord;
+const
+  SizeOfSimpleType : array [TDbgSimpleType] of Integer = (
+    1, 2, 4, 8, // dstSInt8,   dstSInt16,  dstSInt32, dstSInt64,
+    1, 2, 4, 8, // dstUInt8,   dstUInt16,  dstUInt32, dstUInt64,
+    4, 6, 8,    // dstFloat32, dstFloat48, dstFloat64,
+    1, 2, 4,    // dstBool8,   dstBool16,  dstBool32,
+    1, 2        // dstChar8,   dstChar16
+  );
+begin
+  Result:=SizeOfSimpleType[Simple];
 end;
 
 initialization

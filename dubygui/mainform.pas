@@ -41,7 +41,8 @@ end;
 
 procedure TForm1.btnRunClick(Sender:TObject);
 begin
-  if not Assigned(Main) then StartDebug(editCmdLine.Text);
+  if not FileExistsUtf8(editCmdLine.Text) then Exit;
+  if not Assigned(ASync.Main) then StartDebug(editCmdLine.Text);
   ASync.Resume;
 end;
 

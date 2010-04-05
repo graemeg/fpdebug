@@ -3,26 +3,22 @@ unit dbgProject;
 interface
 
 uses
+  SysUtils,
   dbgTypes,
   dbgMain, dbgAsyncMain, LMessages, LCLIntf;
 
-var
-  Main    : TDbgMain;
-  ASync   : TDbgAsyncMain;
-
+function ASync: TDbgAsyncMain;
 procedure StartDebug(const CmdLineUtf8: AnsiString);
 
 implementation
 
-procedure StartDebug(const CmdLineUtf8: AnsiString);
-begin
-  Main:=TDbgMain.Create(DebugProcessStart(CmdLineUtf8), 0);
-end;
+var
+  fASync : TDbgAsyncMain = nil;
 
 type
-  { TDbgThreadLCLCallback }
+  { TDbgAsyncLCLCallback }
 
-  TDbgThreadLCLCallback = class(TDbgThreadCallback)
+  TDbgAsyncLCLCallback = class(TDbgASyncCallback)
   protected
     fHwnd   : THandle;
     procedure WndProc(var TheMessage: TLMessage);
@@ -32,24 +28,37 @@ type
     procedure StateChanged; override;
   end;
 
+procedure StartDebug(const CmdLineUtf8: AnsiString);
+begin
+  ASync.Main:=TDbgMain.Create(DebugProcessStart(CmdLineUtf8), 0);
+end;
+
+function ASync: TDbgAsyncMain;
+begin
+  if not Assigned(fASync) then
+    fASync := TDbgAsyncMain.Create(TDbgAsyncLCLCallback.Create);
+  Result:=fASync;
+end;
+
+
 { TDbgThreadLCLCallback }
 
 const
   MSG_STATECHANGE=LM_USER;
 
-constructor TDbgThreadLCLCallback.Create;
+constructor TDbgAsyncLCLCallback.Create;
 begin
   inherited Create;
   fHwnd:=AllocateHWnd(@WndProc);
 end;
 
-destructor TDbgThreadLCLCallback.Destroy;
+destructor TDbgAsyncLCLCallback.Destroy;
 begin
   DeallocateHWnd(fHwnd);
   inherited Destroy;
 end;
 
-procedure TDbgThreadLCLCallback.WndProc(var TheMessage:TLMessage);
+procedure TDbgAsyncLCLCallback.WndProc(var TheMessage:TLMessage);
 begin
   case TheMessage.msg of
     MSG_STATECHANGE: begin
@@ -59,14 +68,13 @@ begin
   end;
 end;
 
-procedure TDbgThreadLCLCallback.StateChanged;
+procedure TDbgAsyncLCLCallback.StateChanged;
 begin
   writeln('posting state change! fHwnd = ', fHwnd);
   PostMessage(fHwnd, MSG_STATECHANGE, 0,0);
 end;
 
 initialization
-  ASync := TDbgAsyncMain.Create(TDbgThreadLCLCallback.Create);
 
 finalization
   ASync.Free;

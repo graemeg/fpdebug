@@ -94,7 +94,7 @@ type
 
 implementation
 
-function WinDebugProcessStart(const ACommandLine: String): TDbgTarget;
+function WinDebugProcessStart(const ACommandLine: UnicodeString): TDbgTarget;
 var
   win : TWinDbgTarget;
 begin

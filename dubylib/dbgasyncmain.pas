@@ -197,7 +197,6 @@ var
 begin
   while not fQuitLoop do begin
     fExeLock.WaitFor(INFINITE);
-    writeln('fExeLock.WaitFor done!');
     fExeLock.ResetEvent;
     if fQuitLoop then Break;
     if not Assigned(fMain) then begin
@@ -211,8 +210,6 @@ begin
       except
       end;
     end else begin
-      writeln('fMain waiting...');
-      writeln('fMain = ', PtrUInt(fMain));
       if not fMain.WaitNextEvent(event) then
         newState:=mstError
       else begin

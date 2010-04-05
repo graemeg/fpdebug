@@ -45,10 +45,12 @@
         <Filename Value="dubygui.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dubygui"/>
+        <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
         <TopLine Value="23"/>
         <CursorPos X="27" Y="23"/>
-        <UsageCount Value="23"/>
+        <UsageCount Value="24"/>
+        <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="mainform.pas"/>
@@ -58,23 +60,21 @@
         <UnitName Value="mainform"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="43"/>
-        <CursorPos X="7" Y="54"/>
-        <UsageCount Value="23"/>
+        <TopLine Value="1"/>
+        <CursorPos X="43" Y="9"/>
+        <UsageCount Value="24"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\dubylib\dbgasyncmain.pas"/>
         <UnitName Value="dbgAsyncMain"/>
-        <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="202"/>
-        <CursorPos X="34" Y="216"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
         <UsageCount Value="11"/>
         <Bookmarks Count="1">
           <Item0 X="16" Y="10" ID="1"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\dubylib\dbglclmain.pas"/>
@@ -125,20 +125,20 @@
       <Unit9>
         <Filename Value="dbgproject.pas"/>
         <UnitName Value="dbgProject"/>
-        <EditorIndex Value="1"/>
+        <EditorIndex Value="3"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="27"/>
-        <CursorPos X="15" Y="35"/>
+        <TopLine Value="1"/>
+        <CursorPos X="3" Y="8"/>
         <UsageCount Value="11"/>
         <Loaded Value="True"/>
       </Unit9>
       <Unit10>
         <Filename Value="..\dubylib\dbgmain.pas"/>
         <UnitName Value="dbgMain"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="4"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="421"/>
-        <CursorPos X="1" Y="426"/>
+        <TopLine Value="409"/>
+        <CursorPos X="18" Y="417"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
       </Unit10>
@@ -161,13 +161,13 @@
         <Filename Value="..\dubylib\windbgtypes.pas"/>
         <UnitName Value="winDbgTypes"/>
         <IsVisibleTab Value="True"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="181"/>
-        <CursorPos X="76" Y="189"/>
+        <TopLine Value="179"/>
+        <CursorPos X="1" Y="187"/>
         <UsageCount Value="10"/>
         <Bookmarks Count="1">
-          <Item0 X="28" Y="224" ID="2"/>
+          <Item0 X="28" Y="218" ID="2"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit13>
@@ -220,21 +220,17 @@
       <Unit20>
         <Filename Value="C:\FPC_Laz\fpc\rtl\win32\windows.pp"/>
         <UnitName Value="windows"/>
-        <EditorIndex Value="8"/>
         <WindowIndex Value="0"/>
         <TopLine Value="26"/>
         <CursorPos X="10" Y="34"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit20>
       <Unit21>
         <Filename Value="C:\FPC_Laz\fpc\rtl\win\wininc\errors.inc"/>
-        <EditorIndex Value="9"/>
         <WindowIndex Value="0"/>
         <TopLine Value="59"/>
         <CursorPos X="26" Y="75"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit21>
       <Unit22>
         <Filename Value="C:\FPC_Laz\lazarus\lcl\interfaces\win32\win32object.inc"/>
@@ -261,34 +257,28 @@
       </Unit24>
       <Unit25>
         <Filename Value="C:\FPC_Laz\fpc\rtl\win\wininc\struct.inc"/>
-        <EditorIndex Value="7"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1886"/>
         <CursorPos X="6" Y="1894"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit25>
       <Unit26>
         <Filename Value="C:\FPC_Laz\fpc\rtl\win\wininc\redef.inc"/>
-        <EditorIndex Value="6"/>
         <WindowIndex Value="0"/>
         <TopLine Value="912"/>
         <CursorPos X="27" Y="920"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit26>
       <Unit27>
         <Filename Value="..\dubylib\windbgproc.pas"/>
         <UnitName Value="winDbgProc"/>
-        <EditorIndex Value="5"/>
         <WindowIndex Value="0"/>
         <TopLine Value="72"/>
         <CursorPos X="25" Y="80"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit27>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="21" HistoryIndex="20">
       <Position1>
         <Filename Value="mainform.pas"/>
         <Caret Line="50" Column="34" TopLine="46"/>
@@ -306,109 +296,73 @@
         <Caret Line="50" Column="50" TopLine="46"/>
       </Position4>
       <Position5>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="261" Column="33" TopLine="249"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="9" Column="31" TopLine="1"/>
       </Position5>
       <Position6>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="139" Column="3" TopLine="135"/>
+        <Filename Value="mainform.pas"/>
+        <Caret Line="62" Column="1" TopLine="46"/>
       </Position6>
       <Position7>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="214" Column="19" TopLine="204"/>
+        <Filename Value="..\dubylib\dbgmain.pas"/>
+        <Caret Line="426" Column="1" TopLine="421"/>
       </Position7>
       <Position8>
-        <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="216" Column="28" TopLine="203"/>
+        <Filename Value="..\dubylib\dbgmain.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position8>
       <Position9>
-        <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="219" Column="41" TopLine="208"/>
+        <Filename Value="..\dubylib\dbgmain.pas"/>
+        <Caret Line="417" Column="18" TopLine="409"/>
       </Position9>
       <Position10>
-        <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="65" Column="31" TopLine="57"/>
+        <Filename Value="..\dubylib\dbgmain.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position10>
       <Position11>
-        <Filename Value="C:\FPC_Laz\fpc\rtl\win\wininc\struct.inc"/>
-        <Caret Line="1911" Column="30" TopLine="1903"/>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="186" Column="45" TopLine="181"/>
       </Position11>
       <Position12>
         <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="219" Column="28" TopLine="208"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position12>
       <Position13>
         <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="192" Column="16" TopLine="184"/>
       </Position13>
       <Position14>
         <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="171" Column="23" TopLine="166"/>
+        <Caret Line="215" Column="14" TopLine="207"/>
       </Position14>
       <Position15>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="215" Column="7" TopLine="204"/>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="226" Column="1" TopLine="218"/>
       </Position15>
       <Position16>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="26" Column="46" TopLine="17"/>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="227" Column="1" TopLine="218"/>
       </Position16>
       <Position17>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="228" Column="14" TopLine="218"/>
       </Position17>
       <Position18>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="136" Column="31" TopLine="128"/>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="243" Column="18" TopLine="235"/>
       </Position18>
       <Position19>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="186" Column="1" TopLine="172"/>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position19>
       <Position20>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="92" Column="60" TopLine="84"/>
       </Position20>
       <Position21>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="136" Column="31" TopLine="128"/>
+        <Filename Value="..\dubylib\windbgtypes.pas"/>
+        <Caret Line="166" Column="1" TopLine="160"/>
       </Position21>
-      <Position22>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="223" Column="3" TopLine="207"/>
-      </Position22>
-      <Position23>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="218" Column="19" TopLine="209"/>
-      </Position23>
-      <Position24>
-        <Filename Value="..\dubylib\dbgasyncmain.pas"/>
-        <Caret Line="216" Column="20" TopLine="202"/>
-      </Position24>
-      <Position25>
-        <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="215" Column="43" TopLine="213"/>
-      </Position25>
-      <Position26>
-        <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position26>
-      <Position27>
-        <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="241" Column="66" TopLine="233"/>
-      </Position27>
-      <Position28>
-        <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="171" Column="14" TopLine="166"/>
-      </Position28>
-      <Position29>
-        <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="191" Column="9" TopLine="181"/>
-      </Position29>
-      <Position30>
-        <Filename Value="..\dubylib\windbgtypes.pas"/>
-        <Caret Line="189" Column="42" TopLine="181"/>
-      </Position30>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>

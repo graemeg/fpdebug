@@ -55,7 +55,8 @@ type
   TWinDbgTarget = class(TDbgTarget)
   private
     fCmdLine  : String;
-    fis32proc : Boolean; //todo:
+    fOnlyProcess  : Boolean;
+    fis32proc     : Boolean; //todo:
   
     {the root process. If it's terminated the Target is terminated too}
     fMainProc   : TProcessInformation; 
@@ -72,7 +73,7 @@ type
     procedure AddProcess(ProcessID: DWORD; ProcessHandle: THandle);
     procedure AddThread(ProcessID, ThreadID: DWORD; ThreadHandle: THandle);
     procedure RemoveThread(ThreadID: TThreadID);
-    
+
   public
     constructor Create;
     destructor Destroy; override;
@@ -164,14 +165,11 @@ begin
   fThreads.DeleteByID(ThreadID);
 end;
 
-
-function TWinDbgTarget.StartDebugProcess(const ACommandLine: String; OnlyProcess: Boolean): Boolean;  
+function TWinDbgTarget.StartDebugProcess(const ACommandLine: String; OnlyProcess: Boolean): Boolean;
 begin
-  fCmdLine := ACommandLine;
-
-  // events like Create_Process and Create_Thread will be fired  
-  {  AddProcess(fMainProc.dwProcessId, fMainProc.hProcess);
-     AddThread(fMainProc.dwProcessId, fMainProc.hThread, fMainProc.dwThreadId);}
+  fCmdLine:=ACommandLine;
+  fOnlyProcess:=OnlyProcess;
+  Result:=True;
 end;
 
 procedure TWinDbgTarget.Terminate;  
@@ -186,12 +184,8 @@ const
   HandledStatus : array [Boolean] of LongWord =(DBG_EXCEPTION_NOT_HANDLED, DBG_CONTINUE);
 begin
   if fMainProc.dwProcessId=0 then begin
-    //todo: pass correct flags
-    Result := CreateDebugProcess(fCmdLine, True, fMainProc);
-    if not Result then begin
-      //writeln('cannot start a process');
-      Exit;
-    end;
+    Result := CreateDebugProcess(fCmdLine, fOnlyProcess, fMainProc);
+    if not Result then Exit;
   end;
 
 
@@ -223,9 +217,7 @@ begin
   FillChar(fLastEvent, sizeof(fLastEvent), 0);
   try
     fWaiting:=true;
-    writeln('Windows.WaitForDebugEvent...');
     Result := Windows.WaitForDebugEvent(fLastEvent, INFINITE);
-    writeln('Result = ', Result, ' ', GetLastError);
   except
     //writeln('exception while WaitForDebugEvent');
   end;

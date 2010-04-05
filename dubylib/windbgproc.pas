@@ -248,15 +248,11 @@ var
   ptr : TDbgPtr;
 begin
   Result := '';
-  //writelN('PointerOffset = ',PointerOffset, ' ', IntToHex(PointerOffset, 8));
   if PointerOffset = 0 then Exit;
   
   ptr := ReadPointerSize(dwProc, PointerOffset);
-  //writelN('ptr = ',ptr);
-  if ptr = 0 then 
-    Exit
-  else 
-    Result := ReadPCharAtProc(dwProc, ptr, isUnicode);
+  if ptr = 0 then Exit
+  else  Result := ReadPCharAtProc(dwProc, ptr, isUnicode);
 end;
 
 function ReadProcMem(dwProc: THandle; Offset : TDbgPtr; Count: Integer; var data: array of byte): Integer;
@@ -347,7 +343,7 @@ function DebugWinEvent(ProcessHandle: THandle; const Win: TDebugEvent): String;
 var
   nm : String;
 begin
-  Result := '(ev = '+IntToStr(Win.dwDebugEventCode)+') ';
+  Result := '';
   case Win.dwDebugEventCode of
     EXCEPTION_DEBUG_EVENT: begin
       Result := Result + 'EXCEPTION';
@@ -356,39 +352,30 @@ begin
       else
         Result := Result + ' last chance';
       Result := Result+#10#13+
-        Format('Code:   %s', [DebugWinExcpetionCode(Win.Exception.ExceptionRecord.ExceptionCode)]) + #10#13 +
-        Format('Flags:  %d', [Win.Exception.ExceptionRecord.ExceptionFlags]) + #10#13 +
-        Format('Addr:   %d', [Integer(Win.Exception.ExceptionRecord.ExceptionAddress)]) + #10#13 +
+        Format('Code:   %s', [DebugWinExcpetionCode(Win.Exception.ExceptionRecord.ExceptionCode)])+' '+
+        Format('Flags:  %d', [Win.Exception.ExceptionRecord.ExceptionFlags])+' '+
+        Format('Addr:   %x', [Integer(Win.Exception.ExceptionRecord.ExceptionAddress)])+' '+
         Format('Params: %d', [Win.Exception.ExceptionRecord.NumberParameters]);
     end;
     CREATE_THREAD_DEBUG_EVENT: begin
-      Result := Result + '  CREATE_THREAD';
+      Result := Result + 'CREATE_THREAD';
     end;
     CREATE_PROCESS_DEBUG_EVENT: begin
       Result := Result + 'CREATE_PROCESS';
-      //writeln('baseofimage = ',  PtrUInt(Win.CreateProcessInfo.lpBaseOfImage), ' ', IntToHex(PtrUInt(Win.CreateProcessInfo.lpBaseOfImage), HexSize));
-      //writeln('startaddr   = ',  PtrUInt(Win.CreateProcessInfo.lpStartAddress), ' ', IntToHex(PtrUInt(Win.CreateProcessInfo.lpStartAddress), HexSize));
-      //writeln('imagename   = ',  PtrUInt(Win.CreateProcessInfo.lpImageName));
     end;
     EXIT_THREAD_DEBUG_EVENT: Result := Result + 'EXIT_THREAD';
     EXIT_PROCESS_DEBUG_EVENT: Result := Result + 'EXIT_PROCESS';
 
-    LOAD_DLL_DEBUG_EVENT: begin
-      //writeln('hFile     = ', PtrUInt(Win.LoadDll.hFile));
-      //writeln('baseofdll = ', PtrUInt(Win.LoadDll.lpBaseOfDll), ' ',
-      //                      IntToHex( PtrUInt(Win.LoadDll.lpBaseOfDll), hexsize));
-      //writeln('debugInfo = ', PtrUInt(Win.LoadDll.dwDebugInfoFileOffset));
-      //writeln('infoSize  = ', PtrUInt(Win.LoadDll.nDebugInfoSize));
-      //writeln('imagename = ', PtrUInt(Win.LoadDll.lpImageName),' ',
-      //                      IntToHex( PtrUInt(Win.LoadDll.lpImageName), hexsize));
-      //writeln('isUnicode = ', PtrUInt(Win.LoadDll.fUnicode));
-      
-      Result := Result + 'LOAD_DLL';
-      nm :=  ReadPCharAtPointer(ProcessHandle, TDbgPtr(Win.LoadDll.lpImageName), Boolean(Win.LoadDll.fUnicode));
-      if nm <> '' then 
+    LOAD_DLL_DEBUG_EVENT, UNLOAD_DLL_DEBUG_EVENT: begin
+      if Win.dwDebugEventCode = LOAD_DLL_DEBUG_EVENT then
+        Result := Result + 'LOAD_DLL '
+      else
+        Result := Result + 'UNLOAD_DLL ';
+      nm := ReadPCharAtPointer(ProcessHandle, TDbgPtr(Win.LoadDll.lpImageName), Boolean(Win.LoadDll.fUnicode));
+      Result:=Result+', name image = ' + IntToStr(TDbgPtr(Win.LoadDll.lpImageName));
+      if nm <> '' then
         Result := Result + ', dllname = '+ nm;
     end;
-    UNLOAD_DLL_DEBUG_EVENT: Result := Result + 'UNLOAD_DLL';
     OUTPUT_DEBUG_STRING_EVENT: Result := Result + 'OUTPUT_DEBUG';
     RIP_EVENT: Result := Result + 'RIP_EVENT';
   else

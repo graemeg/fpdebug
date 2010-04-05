@@ -1,9 +1,9 @@
-object Form1: TForm1
+object MainDubyForm: TMainDubyForm
   Left = 287
   Height = 240
   Top = 138
   Width = 391
-  Caption = 'Form1'
+  Caption = 'MainDubyForm'
   ClientHeight = 240
   ClientWidth = 391
   OnCreate = FormCreate
@@ -622,6 +622,7 @@ object Form1: TForm1
     Lines.Strings = (
       'SynEdit1'
     )
+    ReadOnly = True
     BracketHighlightStyle = sbhsBoth
     inline SynGutterPartList1: TSynGutterPartList
       object SynGutterMarks1: TSynGutterMarks
@@ -730,5 +731,16 @@ object Form1: TForm1
           end>
       end
     end
+  end
+  object Button1: TButton
+    Left = 298
+    Height = 25
+    Top = 48
+    Width = 85
+    Anchors = [akTop, akRight]
+    AutoSize = True
+    Caption = 'Debug Info'
+    OnClick = Button1Click
+    TabOrder = 3
   end
 end

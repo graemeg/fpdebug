@@ -6,18 +6,20 @@ interface
 
 uses
   Classes,SysUtils,FileUtil,LResources,Forms,Controls,Graphics,Dialogs,StdCtrls,
-  ComCtrls,SynEdit,dbgAsyncMain,dbgProject;
+  ComCtrls,SynEdit,dbgTypes,dbgAsyncMain,dbgProject, DebugInfoForm;
 
 type
 
-  { TForm1 }
+  { TMainDubyForm }
 
-  TForm1 = class(TForm)
+  TMainDubyForm = class(TForm)
     btnRun:TButton;
+    Button1:TButton;
     editCmdLine:TEdit;
     Label1:TLabel;
     SynEdit1:TSynEdit;
     procedure btnRunClick(Sender:TObject);
+    procedure Button1Click(Sender:TObject);
     procedure FormCreate(Sender:TObject);
   private
     { private declarations }
@@ -27,32 +29,42 @@ type
   end;
 
 var
-  Form1: TForm1;
+  MainDubyForm: TMainDubyForm;
 
 implementation
 
 {$R *.lfm}
 
-{ TForm1 }
+{ TMainDubyForm }
 
-procedure TForm1.FormCreate(Sender:TObject);
+procedure TMainDubyForm.FormCreate(Sender:TObject);
 begin
   ASync.OnStateChanged:=@ASyncChangeState;
 end;
 
-procedure TForm1.btnRunClick(Sender:TObject);
+procedure TMainDubyForm.btnRunClick(Sender:TObject);
 begin
   if not FileExistsUtf8(editCmdLine.Text) then Exit;
-  if not Assigned(ASync.Main) then StartDebug(editCmdLine.Text);
+  if not Assigned(ASync.Main) then begin
+    StartDebug(editCmdLine.Text);
+    debugInfo.ReadDebugInfo;
+  end;
   ASync.Resume;
 end;
 
-procedure TForm1.ASyncChangeState(Sender: TObject);
+procedure TMainDubyForm.Button1Click(Sender:TObject);
+begin
+  debugInfo.Show;
+end;
+
+procedure TMainDubyForm.ASyncChangeState(Sender: TObject);
 begin
   case ASync.State of
     mstStopped: begin
       Caption := 'Stopped';
-      SynEdit1.Lines.Add( EventKindStr[ASync.LastEvent.Kind]);
+      SynEdit1.Lines.Add( EventKindStr[ASync.LastEvent.Kind] + ' '+ASync.LastEvent.Debug);
+      if ASync.LastEvent.Kind=dek_SysCall then
+        ASync.Resume;
     end;
     mstExecuting: Caption := 'Executing';
   end;

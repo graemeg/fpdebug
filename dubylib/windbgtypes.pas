@@ -188,7 +188,6 @@ begin
     if not Result then Exit;
   end;
 
-
   Result := false;
   if fWaited and (fLastEvent.dwDebugEventCode = EXCEPTION_DEBUG_EVENT) then begin
     case fLastEvent.Exception.ExceptionRecord.ExceptionCode of
@@ -206,7 +205,6 @@ begin
     with fLastEvent do
       ContinueDebugEvent(dwProcessId, dwThreadId, ContStatus);
   except
-    //writeln('exception while ContinueDebugEvent');
   end;
 
   if fTerminated then begin
@@ -219,7 +217,6 @@ begin
     fWaiting:=true;
     Result := Windows.WaitForDebugEvent(fLastEvent, INFINITE);
   except
-    //writeln('exception while WaitForDebugEvent');
   end;
   fWaiting:=false;
 
@@ -234,7 +231,6 @@ begin
     case fLastEvent.dwDebugEventCode of
       CREATE_PROCESS_DEBUG_EVENT: 
       begin
-        //writeln('Win Process Started: ', fLastEvent.dwProcessId);
         AddProcess(fLastEvent.dwProcessId, fLastEvent.CreateProcessInfo.hProcess);
         AddThread(fLastEvent.dwProcessId, fLastEvent.dwThreadId, fLastEvent.CreateProcessInfo.hThread); 
       end;

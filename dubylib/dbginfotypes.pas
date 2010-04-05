@@ -158,7 +158,7 @@ type
     function GetSymList(const SymName: AnsiString): TFPList;
 
   public
-    Reader  : TDbgInfoReader;
+    //Reader  : TDbgInfoReader;
     Root    : TDbgSymbol;
     constructor Create;
     destructor Destroy; override;
@@ -184,7 +184,8 @@ function GetDataSource(const FileName: string): TDbgDataSource; overload;
 function GetDataSource(ASource: TStream; OwnSource: Boolean): TDbgDataSource; overload;
 procedure RegisterDataSource(DataSource: TDbgDataSourceClass); 
 
-procedure GetDebugInfos(Source: TDbgDataSource; List: TFPList);
+procedure GetDebugInfos(Source: TDbgDataSource; List: TFPList); deprecated; //todo: remove, use LoadDebugInfoFromFile
+
 procedure RegisterDebugInfo(DebugInfo: TDbgInfoReaderClass);
 
 function FindSourceFileName(info: TDbgInfo; const ShortName: AnsiString; IgnoreCase: Boolean=True): AnsiString;
@@ -193,11 +194,40 @@ function FindLineAddr(info: TDbgInfo; const FullFileName: AnsiString; LineNum: I
 function AddAliasToSymbol(info: TDbgInfo; const AliasName: String; AliasParent, AOriginalSymbol: TDbgSymbol): TDbgSymAlias;
 function AddGlobalSimpleType(info: TDbgInfo; const TypeName: String; AType : TDbgSimpleType): TDbgSymSimpleType;
 
+procedure LoadDebugInfoFromFile(info: TDbgInfo; const FileName: UnicodeString);
+
 implementation
 
 var
   SrcClasses  : TFPList;
   InfoClasses : TFPList;
+
+procedure LoadDebugInfoFromFile(info: TDbgInfo; const FileName: UnicodeString);
+var
+  source      : TDbgDataSource;
+  infolist    : TFPList;
+  i           : Integer;
+  readerclass : TDbgInfoReaderClass;
+  reader      : TDbgInfoReader;
+
+begin
+  source := GetDataSource(FileName);
+  if not Assigned(source) then
+   { writeln('[LoadDebugInfo] cannot find reader for the file: ', FileName)};
+
+  for i := 0 to InfoClasses.Count - 1 do begin
+    readerclass := TDbgInfoReaderClass(InfoClasses[i]);
+    if readerclass.isPresent(Source) then begin
+      reader := ReaderClass.Create(Source);
+      try
+        reader.ReadDebugInfo(Source, info);
+      finally
+        reader.Free;
+      end;
+    end;
+  end;
+  source.Free;
+end;
 
 function AddAliasToSymbol(info: TDbgInfo; const AliasName: String; AliasParent, AOriginalSymbol: TDbgSymbol): TDbgSymAlias;
 begin
@@ -223,7 +253,6 @@ begin
     if readerclass.isPresent(Source) then begin
       reader := readerclass.Create(Source);
       info := TDbgInfo.Create;
-      info.Reader := reader;
       reader.ReadDebugInfo(Source, info);
       List.Add(info);
     end;

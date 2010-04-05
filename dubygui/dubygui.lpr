@@ -26,14 +26,15 @@ uses
 
   {$ifdef CPUI386}  ,dbgi386{$endif} // i386 CPU routines
   {$ifdef CPUx86_64},dbgi386{$endif}  //  x64 CPU routines
-  ,dbgMain
+  ,dbgMain, DebugInfoForm
   ;
 
 {$R *.res}
 
 begin
   Application.Initialize;
-  Application.CreateForm(TForm1,Form1);
+  Application.CreateForm(TMainDubyForm,MainDubyForm);
+  Application.CreateForm(TdebugInfo,debugInfo);
   Application.Run;
 end.
 

@@ -5,9 +5,13 @@ interface
 uses
   SysUtils,
   dbgTypes,
-  dbgMain, dbgAsyncMain, LMessages, LCLIntf, LCLType;
+  dbgMain, dbgAsyncMain, LMessages, LCLIntf, LCLType, dbgInfoTypes;
 
 function ASync: TDbgAsyncMain;
+
+var
+  dbgInfo: TDbgInfo=nil;
+
 procedure StartDebug(const CmdLineUtf8: AnsiString);
 
 const
@@ -38,6 +42,9 @@ type
 procedure StartDebug(const CmdLineUtf8: AnsiString);
 begin
   ASync.Main:=TDbgMain.Create(DebugProcessStart(CmdLineUtf8), 0);
+  dbgInfo.Free;
+  dbgInfo:=TDbgInfo.Create;
+  LoadDebugInfoFromFile(dbgInfo, UTF8Decode(CmdLineUtf8));
 end;
 
 function ASync: TDbgAsyncMain;
@@ -81,5 +88,6 @@ initialization
 
 finalization
   ASync.Free;
+  dbgInfo.Free;
 
 end.

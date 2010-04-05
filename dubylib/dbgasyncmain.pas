@@ -7,8 +7,9 @@ uses
   dbgTypes, dbgMain;
 
 type
-  TDbgMainState = (mstStopped, mstExecuting);
+  TDbgMainState = (mstStopped, mstExecuting, mstError);
 
+  TDbgEventStateChange = procedure (Sender: TObject; NewState: TDbgMainState) of object;
   TDbgASyncProc = function (Main: TDbgMain; AProcData: TObject): Integer of object;
 
   TDbgAsyncMain=class;
@@ -148,7 +149,7 @@ begin
   end;
 end;
 
-procedure TDbgAsyncMain.SetState(AState:TDbgMainState);
+procedure TDbgAsyncMain.SetState(AState: TDbgMainState);
 begin
   Lock;
   try
@@ -182,7 +183,6 @@ begin
   try
     fExeProc:=AProc;
     fExeData:=AData;
-
     SetState(mstExecuting);
     fExeLock.SetEvent;
   finally
@@ -192,10 +192,12 @@ end;
 
 procedure TDbgAsyncMain.ThreadLoop;
 var
-  event   : TDbgEvent;
+  event     : TDbgEvent;
+  newState  : TDbgMainState;
 begin
   while not fQuitLoop do begin
     fExeLock.WaitFor(INFINITE);
+    writeln('fExeLock.WaitFor done!');
     fExeLock.ResetEvent;
     if fQuitLoop then Break;
     if not Assigned(fMain) then begin
@@ -209,10 +211,16 @@ begin
       except
       end;
     end else begin
-      fMain.WaitNextEvent(event);
-      SetLastEvent(event);
+      writeln('fMain waiting...');
+      writeln('fMain = ', PtrUInt(fMain));
+      if not fMain.WaitNextEvent(event) then
+        newState:=mstError
+      else begin
+        newState:=mstStopped;
+        SetLastEvent(event);
+      end;
     end;
-    SetState(mstStopped);
+    SetState(newState);
   end;
 end;
 

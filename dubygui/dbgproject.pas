@@ -5,10 +5,17 @@ interface
 uses
   SysUtils,
   dbgTypes,
-  dbgMain, dbgAsyncMain, LMessages, LCLIntf;
+  dbgMain, dbgAsyncMain, LMessages, LCLIntf, LCLType;
 
 function ASync: TDbgAsyncMain;
 procedure StartDebug(const CmdLineUtf8: AnsiString);
+
+const
+  EventKindStr: array [TDbgEventKind] of String = (
+    'dek_Other', 'dek_SysExc', 'dek_SingleStep', 'dek_BreakPoint',
+    'dek_ProcessStart', 'dek_ProcessTerminated',
+    'dek_ThreadStart', 'dek_ThreadTerminated',
+    'dek_SysCall');
 
 implementation
 
@@ -61,17 +68,13 @@ end;
 procedure TDbgAsyncLCLCallback.WndProc(var TheMessage:TLMessage);
 begin
   case TheMessage.msg of
-    MSG_STATECHANGE: begin
-      writeln('do state changed!');
-      DoStateChanged;
-    end;
+    MSG_STATECHANGE: DoStateChanged;
   end;
 end;
 
 procedure TDbgAsyncLCLCallback.StateChanged;
 begin
-  writeln('posting state change! fHwnd = ', fHwnd);
-  PostMessage(fHwnd, MSG_STATECHANGE, 0,0);
+  PostMessage(fHwnd, MSG_STATECHANGE, 0, 0);
 end;
 
 initialization

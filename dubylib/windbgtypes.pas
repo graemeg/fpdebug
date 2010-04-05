@@ -168,9 +168,7 @@ end;
 function TWinDbgTarget.StartDebugProcess(const ACommandLine: String; OnlyProcess: Boolean): Boolean;  
 begin
   fCmdLine := ACommandLine;
-  Result := CreateDebugProcess(ACommandLine, OnlyProcess, fMainProc);
-  if not Result then Exit;
-  
+
   // events like Create_Process and Create_Thread will be fired  
   {  AddProcess(fMainProc.dwProcessId, fMainProc.hProcess);
      AddThread(fMainProc.dwProcessId, fMainProc.hThread, fMainProc.dwThreadId);}
@@ -187,6 +185,16 @@ var
 const
   HandledStatus : array [Boolean] of LongWord =(DBG_EXCEPTION_NOT_HANDLED, DBG_CONTINUE);
 begin
+  if fMainProc.dwProcessId=0 then begin
+    //todo: pass correct flags
+    Result := CreateDebugProcess(fCmdLine, True, fMainProc);
+    if not Result then begin
+      //writeln('cannot start a process');
+      Exit;
+    end;
+  end;
+
+
   Result := false;
   if fWaited and (fLastEvent.dwDebugEventCode = EXCEPTION_DEBUG_EVENT) then begin
     case fLastEvent.Exception.ExceptionRecord.ExceptionCode of
@@ -215,7 +223,9 @@ begin
   FillChar(fLastEvent, sizeof(fLastEvent), 0);
   try
     fWaiting:=true;
+    writeln('Windows.WaitForDebugEvent...');
     Result := Windows.WaitForDebugEvent(fLastEvent, INFINITE);
+    writeln('Result = ', Result, ' ', GetLastError);
   except
     //writeln('exception while WaitForDebugEvent');
   end;

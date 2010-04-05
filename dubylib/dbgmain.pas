@@ -422,12 +422,13 @@ begin
         ;
       fStepper:=nil;
     end;
-  
+
     Result:=fTarget.WaitNextEvent(Event);
-
-    if Result then DoHandleEvent(Event, ReportToUser);
-
-    if ReportToUser then loopdone:=True;
+    if Result then begin
+      DoHandleEvent(Event, ReportToUser);
+      if ReportToUser then loopdone:=True;
+    end else
+      loopdone:=True;
 
   until loopdone;
 end;

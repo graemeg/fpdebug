@@ -6,7 +6,7 @@ interface
 
 uses
   Classes,SysUtils,FileUtil,LResources,Forms,Controls,Graphics,Dialogs,StdCtrls,
-  dbgAsyncMain, dbgProject;
+  ComCtrls,SynEdit,dbgAsyncMain,dbgProject;
 
 type
 
@@ -16,6 +16,7 @@ type
     btnRun:TButton;
     editCmdLine:TEdit;
     Label1:TLabel;
+    SynEdit1:TSynEdit;
     procedure btnRunClick(Sender:TObject);
     procedure FormCreate(Sender:TObject);
   private
@@ -49,7 +50,10 @@ end;
 procedure TForm1.ASyncChangeState(Sender: TObject);
 begin
   case ASync.State of
-    mstStopped:  Caption := 'Stopped';
+    mstStopped: begin
+      Caption := 'Stopped';
+      SynEdit1.Lines.Add( EventKindStr[ASync.LastEvent.Kind]);
+    end;
     mstExecuting: Caption := 'Executing';
   end;
 end;

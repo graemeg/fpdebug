@@ -172,9 +172,17 @@ begin
   Result:=True;
 end;
 
-procedure TWinDbgTarget.Terminate;  
+procedure TWinDbgTarget.Terminate;
+var
+  b: WINBOOL;
 begin
-  //todo: terminate all processes
+  if fMainProc.dwProcessID<>0 then begin
+    b:=TerminateProcess(fMainProc.hProcess, 0);
+    if b then begin
+      //fMainProc.dwProcessID:=0;
+
+    end;
+  end;
 end;
 
 function TWinDbgTarget.WaitNextEvent(var Event: TDbgEvent): Boolean;  

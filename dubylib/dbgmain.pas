@@ -174,6 +174,8 @@ type
     function FindThread(processID: TDbgProcessID; ThreadID: TDbgThreadID): TDbgThread;
 
     function CPU: TCPUCode;
+
+    procedure Terminate; //terminates all processes
     property ProcessCount: Integer read GetProcessCount;
     property Process[i: Integer]: TDbgProcess read GetProcess;
   end;
@@ -458,6 +460,12 @@ end;
 function TDbgMain.CPU: TCPUCode; 
 begin
   Result:=dbgCPU.CPUCode;
+end;
+
+procedure TDbgMain.Terminate;
+begin
+  writeln('TDbgMain.Terminate');
+  fTarget.Terminate;
 end;
 
 procedure TDbgMain.AddEventHandler(AHandle: TDbgHandleEvent);

@@ -19,12 +19,14 @@ type
     Splitter1:TSplitter;
     SynEdit1:TSynEdit;
     procedure ListView1DblClick(Sender:TObject);
+    procedure Notebook1ChangeBounds(Sender:TObject);
   private
     { private declarations }
   public
     { public declarations }
     procedure ReadDebugInfo;
     procedure LoadContent(const FileName: AnsiString);
+    procedure OpenFileName;
   end;
 
 var
@@ -41,6 +43,11 @@ begin
   if i<0 then Exit;
   fn:=IncludeTrailingPathDelimiter(ListView1.Items[i].SubItems[0])+ ListView1.Items[i].Caption;
   LoadContent(UTF8Decode(fn));
+end;
+
+procedure TdebugInfo.Notebook1ChangeBounds(Sender:TObject);
+begin
+
 end;
 
 {$R *.lfm}
@@ -71,6 +78,11 @@ procedure TdebugInfo.LoadContent(const FileName:AnsiString);
 begin
   Page1.Caption:=ExtractFileName(FileName);
   SynEdit1.Lines.LoadFromFile(FileName);
+end;
+
+procedure TdebugInfo.OpenFileName;
+begin
+
 end;
 
 end.

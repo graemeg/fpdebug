@@ -743,4 +743,17 @@ object MainDubyForm: TMainDubyForm
     OnClick = Button1Click
     TabOrder = 3
   end
+  object Button2: TButton
+    AnchorSideLeft.Control = btnRun
+    AnchorSideLeft.Side = asrBottom
+    Left = 61
+    Height = 25
+    Top = 48
+    Width = 80
+    AutoSize = True
+    BorderSpacing.Left = 6
+    Caption = 'Terminate'
+    OnClick = Button2Click
+    TabOrder = 4
+  end
 end

@@ -1,7 +1,7 @@
 object debugInfo: TdebugInfo
-  Left = 200
+  Left = 301
   Height = 361
-  Top = 128
+  Top = 176
   Width = 648
   Caption = 'debugInfo'
   ClientHeight = 361
@@ -45,6 +45,7 @@ object debugInfo: TdebugInfo
     BorderSpacing.Top = 10
     BorderSpacing.Right = 10
     BorderSpacing.Bottom = 10
+    OnChangeBounds = Notebook1ChangeBounds
     PageIndex = 0
     TabOrder = 2
     object Page1: TPage

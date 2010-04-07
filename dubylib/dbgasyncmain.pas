@@ -76,6 +76,7 @@ type
     function GetAsyncResult(var AProcData: TObject; var RetValue: Integer): Boolean; overload;
     function GetAsyncResult(var RetValue: Integer): Boolean; overload;
     procedure Resume;
+    procedure Terminate;
     property State: TDbgMainState read GetState;
     property Main: TDbgMain read fMain write fMain; //todo: need thread-safer!
     property LastEvent: TDbgEvent read GetLastEvent;
@@ -137,6 +138,11 @@ procedure TDbgAsyncMain.Resume;
 begin
   if (State=mstExecuting) and Assigned(fMain) then Exit;
   ResumeExec(nil, nil);
+end;
+
+procedure TDbgAsyncMain.Terminate;
+begin
+
 end;
 
 function TDbgAsyncMain.GetState:TDbgMainState;

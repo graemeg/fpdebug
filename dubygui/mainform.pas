@@ -15,11 +15,13 @@ type
   TMainDubyForm = class(TForm)
     btnRun:TButton;
     Button1:TButton;
+    Button2:TButton;
     editCmdLine:TEdit;
     Label1:TLabel;
     SynEdit1:TSynEdit;
     procedure btnRunClick(Sender:TObject);
     procedure Button1Click(Sender:TObject);
+    procedure Button2Click(Sender:TObject);
     procedure FormCreate(Sender:TObject);
   private
     { private declarations }
@@ -55,6 +57,12 @@ end;
 procedure TMainDubyForm.Button1Click(Sender:TObject);
 begin
   debugInfo.Show;
+end;
+
+procedure TMainDubyForm.Button2Click(Sender:TObject);
+begin
+  if Assigned(ASync.Main) then
+    ASync.Main.Terminate;
 end;
 
 procedure TMainDubyForm.ASyncChangeState(Sender: TObject);

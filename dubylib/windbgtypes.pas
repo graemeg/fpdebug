@@ -79,6 +79,7 @@ type
     destructor Destroy; override;
 
     procedure Terminate; override;
+    function SuspendProcess(procID: TDbgProcessID): Boolean;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
     
     function GetThreadsCount(procID: TDbgProcessID): Integer; override;
@@ -183,6 +184,11 @@ begin
 
     end;
   end;
+end;
+
+function TWinDbgTarget.SuspendProcess(procID:TDbgProcessID): Boolean;
+begin
+  winDbgProc.SuspendProcess( fProcesses.HandleByID(procID));
 end;
 
 function TWinDbgTarget.WaitNextEvent(var Event: TDbgEvent): Boolean;  

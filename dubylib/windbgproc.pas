@@ -5,7 +5,7 @@ unit winDbgProc;
 interface
 
 uses
-  Windows, SysUtils, DbgTypes, dbgConsts;
+  Windows, SysUtils, DbgTypes, dbgConsts, winTools32;
 
 type
   PContext32 = ^TContext;
@@ -89,6 +89,9 @@ function DoReadThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
 function DoWriteThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
 
 function SetThread32SingleStep(ThreadHandle: THandle): Boolean;
+
+function SuspendProcess(AProcID: LongWord): Boolean;
+function ResumeProcess(AProcID: LongWord): Boolean;
 
 implementation
 
@@ -407,6 +410,25 @@ begin
   else
     Dbg.Kind := dek_SysCall;
   end;
+end;
+
+function SuspendProcess(AProcID: LongWord): Boolean;
+var
+  Snap : THandle;
+begin
+  //any hacks?
+  Result:=False;
+  if not Assigned(CreateToolhelp32Snapshot) then Exit;
+
+  Snap:=CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, AProcID);
+  if Snap<>0 then Exit;
+
+end;
+
+function ResumeProcess(AProcID: LongWord): Boolean;
+begin
+  if not Assigned(CreateToolhelp32Snapshot) then Exit;
+
 end;
 
 end.

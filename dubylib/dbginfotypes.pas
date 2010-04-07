@@ -501,7 +501,7 @@ begin
   inherited Create;
   fName := AName;
   fParent := AParentSym;
-  subList := TFPObjectList.Create(true);
+  subList := TFPObjectList.Create(False);
   subHash := TFPObjectHashTable.Create(false);
 
   if Assigned(fParent) then begin

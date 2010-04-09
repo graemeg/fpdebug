@@ -7,6 +7,9 @@ uses
   dbgTypes, dbgInfoTypes;
 
 type
+
+  { TDbgTypeRead }
+
   TDbgTypeRead = class(TObject)
   public
     function Dump(ASymType: TDbgSymType; const Data; DataSize: Integer): AnsiString; virtual; abstract;
@@ -116,10 +119,12 @@ begin
   RegisterReader(TDbgSymSimpleType, TDbgSimpleTypeRead.Create );
 end;
 
+{ TDbgTypeRead }
+
 initialization
   InitVarReaders;
 
 finalization
   ReleaseVarReaders;
 
-end.
+end.

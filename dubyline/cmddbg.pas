@@ -82,6 +82,7 @@ var
   vardata : array of byte;
   varsize : LongWord;
   vartype : TDbgSymType;
+  p       : TDbgPtr;
 begin
   if not Assigned(CommonInfo) then begin
     WriteLn('no debug info');
@@ -110,6 +111,12 @@ begin
     vartype:=TDbgSymVar(sym).VarType;
     reader:=GetReaderForType(TDbgSymClass(vartype.ClassType));
     if Assigned(reader) then begin
+
+      if vartype.isRefType then begin
+        res:=Env.Process.ReadMem(addr, sizeof(p), PByteArray(@p)^);
+        addr:=p+vartype.DerefOfs;
+      end;
+
       varsize:=vartype.GetVarSize;
       SetLength(vardata, varsize);
       res := Env.Process.ReadMem(addr, varsize, vardata[0]);

@@ -71,9 +71,13 @@ type
   end;
   TDbgSymClass = class of TDbgSymbol;
 
+  { TDbgSymType }
+
   TDbgSymType = class(TDbgSymbol)
   public
     function GetVarSize: LongWord; virtual; abstract;
+    function isRefType: Boolean; virtual; // true for AnsiString, FPC Classes etc.
+    function DerefOfs: PtrInt; virtual;
   end;
   TDbgSymTypeClass = class of TDbgSymType;
 
@@ -678,6 +682,18 @@ const
   );
 begin
   Result:=SizeOfSimpleType[Simple];
+end;
+
+{ TDbgSymType }
+
+function TDbgSymType.isRefType:Boolean;
+begin
+  Result:=False;
+end;
+
+function TDbgSymType.DerefOfs:PtrInt;
+begin
+  Result:=0;
 end;
 
 initialization

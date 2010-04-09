@@ -188,7 +188,7 @@ end;
 
 function TWinDbgTarget.SuspendProcess(procID:TDbgProcessID): Boolean;
 begin
-  winDbgProc.SuspendProcess( fProcesses.HandleByID(procID));
+  Result:=winDbgProc.SuspendProcess( fProcesses.HandleByID(procID));
 end;
 
 function TWinDbgTarget.WaitNextEvent(var Event: TDbgEvent): Boolean;  

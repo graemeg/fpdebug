@@ -427,6 +427,7 @@ end;
 
 function ResumeProcess(AProcID: LongWord): Boolean;
 begin
+  Result:=False;
   if not Assigned(CreateToolhelp32Snapshot) then Exit;
 
 end;

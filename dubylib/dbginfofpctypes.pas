@@ -12,6 +12,7 @@ type
     function GetVarSize: LongWord; override;
     function isRefType: Boolean; override;
     function DerefOfs: PtrInt; override;
+    function isIndexAccess: Boolean; override;
   end;
 
 type
@@ -37,6 +38,11 @@ end;
 function TDbgSymFPCDynArray.DerefOfs:PtrInt;
 begin
   Result:=-sizeof(TFPCDynArray);
+end;
+
+function TDbgSymFPCDynArray.isIndexAccess:Boolean;
+begin
+  Result:=True;
 end;
 
 end.

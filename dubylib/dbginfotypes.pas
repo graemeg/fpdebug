@@ -78,6 +78,8 @@ type
     function GetVarSize: LongWord; virtual; abstract;
     function isRefType: Boolean; virtual; // true for AnsiString, FPC Classes etc.
     function DerefOfs: PtrInt; virtual;
+    function isIndexAccess: Boolean; virtual; // true for arrays + array-like types (PChar, Classes with default value)
+    function GetItemOffset(AIndex: PtrInt; var Offset: PtrUInt): Boolean; virtual;
   end;
   TDbgSymTypeClass = class of TDbgSymType;
 
@@ -694,6 +696,17 @@ end;
 function TDbgSymType.DerefOfs:PtrInt;
 begin
   Result:=0;
+end;
+
+function TDbgSymType.isIndexAccess:Boolean;
+begin
+  Result:=False;
+end;
+
+function TDbgSymType.GetItemOffset(AIndex:PtrInt; var Offset: PtrUInt): Boolean;
+begin
+  Offset:=0;
+  Result:=False;
 end;
 
 initialization

@@ -10,7 +10,7 @@
       <MainUnit Value="0"/>
       <TargetFileExt Value=""/>
       <UseXPManifest Value="True"/>
-      <ActiveEditorIndexAtStart Value="1"/>
+      <ActiveWindowIndexAtStart Value="0"/>
     </General>
     <VersionInfo>
       <Language Value=""/>
@@ -29,31 +29,33 @@
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <Units Count="17">
+    <Units Count="20">
       <Unit0>
         <Filename Value="stabsreader.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="stabsreader"/>
-        <CursorPos X="1" Y="84"/>
-        <TopLine Value="65"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="41"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="6" Y="21"/>
+        <UsageCount Value="42"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="../dubylib/stabs.pas"/>
         <UnitName Value="stabs"/>
-        <CursorPos X="23" Y="106"/>
         <TopLine Value="99"/>
+        <CursorPos X="23" Y="106"/>
         <UsageCount Value="8"/>
       </Unit1>
       <Unit2>
         <Filename Value="../dubylib/stabsproc.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="stabsProc"/>
-        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="41"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="42"/>
         <Bookmarks Count="1">
           <Item0 X="3" Y="173" ID="1"/>
         </Bookmarks>
@@ -61,15 +63,15 @@
       <Unit3>
         <Filename Value="../dubylib/dbginfostabs.pas"/>
         <UnitName Value="dbgInfoStabs"/>
-        <CursorPos X="1" Y="43"/>
         <TopLine Value="43"/>
+        <CursorPos X="1" Y="43"/>
         <UsageCount Value="8"/>
       </Unit3>
       <Unit4>
         <Filename Value="../dubylib/elfdbgsource.pas"/>
         <UnitName Value="elfDbgSource"/>
-        <CursorPos X="10" Y="95"/>
         <TopLine Value="80"/>
+        <CursorPos X="10" Y="95"/>
         <UsageCount Value="10"/>
         <Bookmarks Count="1">
           <Item0 X="1" Y="159" ID="1"/>
@@ -78,219 +80,255 @@
       <Unit5>
         <Filename Value="../dubylib/dbgtypes.pas"/>
         <UnitName Value="dbgTypes"/>
-        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
         <UsageCount Value="8"/>
       </Unit5>
       <Unit6>
         <Filename Value="../dubylib/elf.pas"/>
         <UnitName Value="elf"/>
-        <CursorPos X="12" Y="168"/>
         <TopLine Value="181"/>
+        <CursorPos X="12" Y="168"/>
         <UsageCount Value="9"/>
       </Unit6>
       <Unit7>
         <Filename Value="../dubylib/dbginfotypes.pas"/>
         <UnitName Value="dbgInfoTypes"/>
-        <CursorPos X="1" Y="20"/>
         <TopLine Value="1"/>
+        <CursorPos X="1" Y="20"/>
         <UsageCount Value="8"/>
       </Unit7>
       <Unit8>
         <Filename Value="../dubylib/machodbgsource.pas"/>
         <UnitName Value="machoDbgSource"/>
-        <CursorPos X="1" Y="275"/>
         <TopLine Value="247"/>
+        <CursorPos X="1" Y="275"/>
         <UsageCount Value="8"/>
       </Unit8>
       <Unit9>
         <Filename Value="../dubylib/pesource.pas"/>
         <UnitName Value="PESource"/>
-        <CursorPos X="14" Y="104"/>
         <TopLine Value="92"/>
+        <CursorPos X="14" Y="104"/>
         <UsageCount Value="8"/>
       </Unit9>
       <Unit10>
         <Filename Value="../../dubylib/dbginfostabs.pas"/>
         <UnitName Value="dbgInfoStabs"/>
-        <CursorPos X="1" Y="186"/>
-        <TopLine Value="170"/>
         <EditorIndex Value="1"/>
-        <UsageCount Value="19"/>
-        <Bookmarks Count="1">
-          <Item0 X="41" Y="183" ID="2"/>
-        </Bookmarks>
+        <WindowIndex Value="0"/>
+        <TopLine Value="9"/>
+        <CursorPos X="1" Y="21"/>
+        <UsageCount Value="20"/>
         <Loaded Value="True"/>
       </Unit10>
       <Unit11>
         <Filename Value="../../dubylib/stabs.pas"/>
         <UnitName Value="stabs"/>
-        <CursorPos X="6" Y="163"/>
-        <TopLine Value="144"/>
-        <EditorIndex Value="4"/>
-        <UsageCount Value="19"/>
+        <EditorIndex Value="5"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="590"/>
+        <CursorPos X="5" Y="602"/>
+        <UsageCount Value="20"/>
         <Loaded Value="True"/>
       </Unit11>
       <Unit12>
         <Filename Value="../../dubylib/stabsproc.pas"/>
         <UnitName Value="stabsProc"/>
-        <CursorPos X="51" Y="601"/>
-        <TopLine Value="588"/>
         <EditorIndex Value="3"/>
-        <UsageCount Value="19"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="109"/>
+        <CursorPos X="1" Y="120"/>
+        <UsageCount Value="20"/>
+        <Bookmarks Count="1">
+          <Item0 X="45" Y="510" ID="2"/>
+        </Bookmarks>
         <Loaded Value="True"/>
       </Unit12>
       <Unit13>
         <Filename Value="test2.pas"/>
         <UnitName Value="test2"/>
-        <CursorPos X="25" Y="6"/>
         <TopLine Value="1"/>
+        <CursorPos X="25" Y="6"/>
         <UsageCount Value="20"/>
       </Unit13>
       <Unit14>
         <Filename Value="C:/checkker/unit1.lfm"/>
-        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
         <UsageCount Value="10"/>
-        <SyntaxHighlighter Value="LFM"/>
+        <DefaultSyntaxHighlighter Value="LFM"/>
       </Unit14>
       <Unit15>
         <Filename Value="C:/checkker/unit2.pas"/>
         <UnitName Value="unit2"/>
-        <CursorPos X="24" Y="4"/>
         <TopLine Value="1"/>
+        <CursorPos X="24" Y="4"/>
         <UsageCount Value="10"/>
       </Unit15>
       <Unit16>
         <Filename Value="../../dubylib/dbginfotypes.pas"/>
         <UnitName Value="dbgInfoTypes"/>
-        <CursorPos X="5" Y="87"/>
-        <TopLine Value="75"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="6"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="196"/>
+        <CursorPos X="1" Y="208"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
       </Unit16>
+      <Unit17>
+        <Filename Value="../../dubylib/pesource.pas"/>
+        <UnitName Value="PESource"/>
+        <EditorIndex Value="7"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="175"/>
+        <CursorPos X="29" Y="175"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="../../dubylib/dbgtypes.pas"/>
+        <UnitName Value="dbgTypes"/>
+        <EditorIndex Value="4"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="93"/>
+        <CursorPos X="43" Y="104"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="../../dubylib/machodbgsource.pas"/>
+        <UnitName Value="machoDbgSource"/>
+        <EditorIndex Value="2"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="100"/>
+        <CursorPos X="60" Y="112"/>
+        <SyntaxHighlighter Value="FreePascal"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Text"/>
+      </Unit19>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="15" Column="1" TopLine="1"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="65" Column="27" TopLine="53"/>
       </Position1>
       <Position2>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="49" Column="26" TopLine="43"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="72" Column="40" TopLine="53"/>
       </Position2>
       <Position3>
-        <Filename Value="stabsreader.pas"/>
-        <Caret Line="72" Column="30" TopLine="1"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="76" Column="33" TopLine="64"/>
       </Position3>
       <Position4>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="49" Column="12" TopLine="43"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="86" Column="26" TopLine="64"/>
       </Position4>
       <Position5>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="57" Column="15" TopLine="50"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="90" Column="39" TopLine="78"/>
       </Position5>
       <Position6>
         <Filename Value="../../dubylib/stabsproc.pas"/>
-        <Caret Line="87" Column="20" TopLine="83"/>
+        <Caret Line="97" Column="51" TopLine="78"/>
       </Position6>
       <Position7>
-        <Filename Value="stabsreader.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="103" Column="28" TopLine="91"/>
       </Position7>
       <Position8>
         <Filename Value="../../dubylib/stabsproc.pas"/>
-        <Caret Line="140" Column="1" TopLine="127"/>
+        <Caret Line="104" Column="63" TopLine="91"/>
       </Position8>
       <Position9>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="30" Column="16" TopLine="15"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="164" Column="87" TopLine="152"/>
       </Position9>
       <Position10>
         <Filename Value="../../dubylib/stabsproc.pas"/>
-        <Caret Line="731" Column="1" TopLine="711"/>
+        <Caret Line="172" Column="73" TopLine="152"/>
       </Position10>
       <Position11>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="24" Column="10" TopLine="10"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="173" Column="51" TopLine="152"/>
       </Position11>
       <Position12>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="244" Column="27" TopLine="230"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="291" Column="67" TopLine="279"/>
       </Position12>
       <Position13>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="73" Column="35" TopLine="59"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="357" Column="49" TopLine="345"/>
       </Position13>
       <Position14>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="216" Column="44" TopLine="202"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="402" Column="94" TopLine="390"/>
       </Position14>
       <Position15>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="244" Column="24" TopLine="230"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="407" Column="24" TopLine="390"/>
       </Position15>
       <Position16>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="85" Column="34" TopLine="65"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="408" Column="24" TopLine="390"/>
       </Position16>
       <Position17>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="133" Column="89" TopLine="129"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="424" Column="24" TopLine="412"/>
       </Position17>
       <Position18>
-        <Filename Value="../../dubylib/stabsproc.pas"/>
-        <Caret Line="105" Column="1" TopLine="87"/>
+        <Filename Value="../../dubylib/stabs.pas"/>
+        <Caret Line="610" Column="5" TopLine="599"/>
       </Position18>
       <Position19>
-        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Filename Value="../../dubylib/stabs.pas"/>
         <Caret Line="1" Column="1" TopLine="1"/>
       </Position19>
       <Position20>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="262" Column="18" TopLine="242"/>
+        <Filename Value="../../dubylib/stabs.pas"/>
+        <Caret Line="327" Column="12" TopLine="315"/>
       </Position20>
       <Position21>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="179" Column="1" TopLine="168"/>
+        <Filename Value="../../dubylib/stabs.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position21>
       <Position22>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="178" Column="1" TopLine="168"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="449" Column="34" TopLine="437"/>
       </Position22>
       <Position23>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="188" Column="24" TopLine="185"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position23>
       <Position24>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="184" Column="24" TopLine="169"/>
+        <Filename Value="../../dubylib/stabs.pas"/>
+        <Caret Line="324" Column="1" TopLine="315"/>
       </Position24>
       <Position25>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="182" Column="9" TopLine="169"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="29" Column="8" TopLine="17"/>
       </Position25>
       <Position26>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="50" Column="25" TopLine="36"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="127" Column="8" TopLine="111"/>
       </Position26>
       <Position27>
-        <Filename Value="../../dubylib/dbginfotypes.pas"/>
-        <Caret Line="91" Column="21" TopLine="68"/>
+        <Filename Value="../../dubylib/stabsproc.pas"/>
+        <Caret Line="147" Column="1" TopLine="133"/>
       </Position27>
       <Position28>
         <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="50" Column="25" TopLine="36"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position28>
       <Position29>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="168" Column="23" TopLine="158"/>
+        <Filename Value="../../dubylib/machodbgsource.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position29>
       <Position30>
-        <Filename Value="../../dubylib/dbginfostabs.pas"/>
-        <Caret Line="183" Column="66" TopLine="169"/>
+        <Filename Value="stabsreader.pas"/>
+        <Caret Line="46" Column="1" TopLine="29"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>
@@ -309,6 +347,9 @@
       </Debugging>
     </Linking>
     <Other>
+      <CompilerMessages>
+        <IgnoredMessages idx5024="True" idx5057="True" idx5058="True" idx5060="True"/>
+      </CompilerMessages>
       <CompilerPath Value="$(CompPath)"/>
     </Other>
   </CompilerOptions>

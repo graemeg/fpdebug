@@ -18,7 +18,6 @@ type
   private
     fSource         : TDbgDataSource;
     fInfo           : TDbgInfo;
-    StabsRead       : Boolean;
     fReadDebugMode  : Boolean;
   protected
     procedure DoReadSymbols;

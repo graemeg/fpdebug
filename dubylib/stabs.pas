@@ -322,13 +322,6 @@ type
 function StabFuncStr(const funcstr: AnsiString; var name: AnsiString;
   var Descr: TStabFuncDescr; var retType: Integer): Boolean;
 
-
-type
-  TStabType = packed record
-    _typestr  : AnsiString;
-    _typenum  : Integer;
-  end;
-
 type
   TStabReadCallback = procedure (AType, Misc: Byte; Desc: Word; Value: LongWord; const StabStr: AnsiString) of object;
 
@@ -606,9 +599,8 @@ end;
 
 const 
   NameSeparator = ':';
-
-  Numbers       = ['0'..'9'];
-  NumbersAndNeg = ['-'] + Numbers;
+  //Numbers       = ['0'..'9'];
+  //NumbersAndNeg = ['-'] + Numbers;
 
 function GetSubStr(const s: AnsiString; Index: Integer; Sep: AnsiChar): AnsiString;
 var

@@ -8,7 +8,7 @@ uses
   elfDbgSource,
   machoDbgSource, PESource, stabsproc;
 
-function GetFileString(const Name: WideString; LineNum: Integer): String;
+{function GetFileString(const Name: WideString; LineNum: Integer): String;
 var
   st  : TStringList;
 begin
@@ -18,12 +18,11 @@ begin
   if (LineNum >= 0) and (LineNum < st.Count) then
     Result := st[LineNum];
   st.Free;
-end;  
+end;}
   
 procedure ReadStabsData(source : TDbgDataSource);
 var
   stabs : TDbgStabsInfo;
-  names : TStringList;
 begin
   if not TDbgStabsInfo.isPresent(source) then begin
     writeln('stabs debug data is not present');

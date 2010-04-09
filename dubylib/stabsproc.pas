@@ -120,12 +120,6 @@ type
 
   TStabAddr = LongWord;
 
-  TStabVar = class(TObject)
-    Name      : AnsiString;
-    Location  : TStabVarLocation;
-    LocNumber : Integer;
-  end;
-
   { TStabProc }
 
   TStabProc = class(TObject)
@@ -139,18 +133,11 @@ type
   TStabsReader = class(TObject)
   private
     fCallback       : TStabsCallback;
-    
     fProcStack      : TFPList;
-
-    fUnnamed        : TStringList;
-
     fSourceFileName : AnsiString;
     fSourceAddr     : TStabAddr;
-
     fLastType       : Byte;
-
     fTypes          : TFPList;
-
 
     function CurrentProcName: AnsiString;
     function CurrentProcAddr: PtrUInt;
@@ -520,12 +507,11 @@ begin
       if Assigned(typedescr) then begin
         typedescr.DeclLine:=LineNum;
         typedescr.Name:=name;
-        if (typedescr.Name<>'') and ((not OnlySourceDeclTypes) or (LineNum>0)) then
-          fCallback.DeclareType(typedescr);
+        //if (typedescr.Name<>'') and ((not OnlySourceDeclTypes) or (LineNum>0)) then
+        fCallback.DeclareType(typedescr);
       end;
     end;
   end;
-
 end;
 
 procedure TStabsReader.HandleFunc(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);

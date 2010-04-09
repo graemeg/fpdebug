@@ -205,7 +205,6 @@ var
 procedure LoadDebugInfoFromFile(info: TDbgInfo; const FileName: UnicodeString);
 var
   source      : TDbgDataSource;
-  infolist    : TFPList;
   i           : Integer;
   readerclass : TDbgInfoReaderClass;
   reader      : TDbgInfoReader;

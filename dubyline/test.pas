@@ -38,14 +38,16 @@ end;
 procedure TestLoop(a, b, c: Integer);
 var
   i : Integer;
+  d : array of Integer;
 type
   TMySubType = record
     a,z : integer;
     b   : array [1..10] of record b, c : Integer; end;
   end;
 begin
-  for i := 1 to 10 do
-    writeln(i+a);
+  SetLength(d, 10);
+  for i := 1 to 10 do d[i-1]:=i+a;
+  for i:=0 to 9 do writeln(d[i]);
 end;
 
 type

@@ -474,7 +474,7 @@ end;
 procedure LoadDebugInfo(const FileName: string);
 var
   source   : TDbgDataSource;
-  infolist : TFPList;
+  //infolist : TFPList;
   //i        : Integer;
 begin
   source := GetDataSource(FileName);  
@@ -482,16 +482,19 @@ begin
     writeln('[LoadDebugInfo] cannot find reader for the file: ', FileName);
   //writeln('[LoadDebugInfo] source file accepted: ', FileName);
   DbgSources.Add(source);
-  
-  infolist := TFPList.Create;
-  GetDebugInfos(source, infolist);
+
+  if Assigned(CommonInfo) then CommonInfo.Free;
+  CommonInfo := TDbgInfo.Create;
+  LoadDebugInfoFromFile(CommonInfo, FileName);
+  //infolist := TFPList.Create;
+  {GetDebugInfos(source, infolist);
   if infolist.Count > 0 then 
-    CommonInfo := TDbgInfo(infolist[0]);
+    CommonInfo := TDbgInfo(infolist[0]);}
   {for i := 0 to infolist.Count - 1 do begin
     //writeln('[LoadDebugInfo] debug info found: ', TDbgInfo(infolist[i]).ClassName );
     DbgInfos.Add( TObject(infolist[i]));
   end;}
-  infolist.Free;  
+  //infolist.Free;
 end;  
 
 procedure LoadExeDebugInfo(const cmdLine: string);

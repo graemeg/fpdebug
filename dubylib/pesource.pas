@@ -187,29 +187,6 @@ begin
   Result:='PE file';
 end;
 
-{function TPEFileSource.SectionsCount: Integer;
-begin
-  Result := fLoader.SectionsCount;
-end;
-
-function TPEFileSource.GetSection(Index: Integer; var Name: AnsiString; var Size: Int64): Boolean;
-var
-  sc : PDbgImageSection;
-begin
-  sc := fLoader.GetSectionByIndex(Index);
-  Result := Assigned(sc);
-  if not Result then Exit;
-  //Offset := sc^.VirtualAdress;
-  Size := sc^.Size;
-end;
-
-function TPEFileSource.GetSectionData(index: Integer; outData: TStream): Boolean;
-begin
-  //  Result:=fStream;
-  //todo:
-  Result := false;
-end;}
-
 { TDbgImageLoader }
 
 procedure TDbgImageLoader.Add(const AName: String; ARawData: Pointer; ASize: QWord; AVirtualAdress: QWord);
@@ -353,12 +330,6 @@ begin
   try
     SetLength(data, FStream.Size);
     FStream.Read(data[0], length(data));
-    //FMapHandle := CreateFileMapping(FFileHandle, nil, PAGE_READONLY{ or SEC_IMAGE}, 0, 0, nil);
-    {if FMapHandle = 0
-    then begin
-      WriteLn('Could not create module mapping');
-      Exit;
-    end;}
 
     //FModulePtr := MapViewOfFile(FMapHandle, FILE_MAP_READ, 0, 0, 0);
     FModulePtr := @data[0];

@@ -11,6 +11,7 @@ uses
   dbgTypes,
 
   dbgDataRead,
+  dbgFPCDataRead,
 
   dbgInfoTypes,
   dbgInfoPascal,

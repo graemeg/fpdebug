@@ -360,6 +360,9 @@ function NextStructElemPos(const v: AnsiString; Index: Integer; var BitOfs, BitS
 function isSymTypeSet(const TypeVal: AnsiString): Boolean;
 function ParseSetType(const v: AnsiString; var EnumType: Integer): Boolean;
 
+// pointer type
+function isSymTypePointer(const TypeVal: AnsiString): Boolean;
+
 // enum type
 function isSymTypeEnum(const TypeVal: AnsiString): Boolean;
 // the function reads the next enumeration declaration.             //
@@ -464,6 +467,11 @@ begin
   GetNextNumber(v, idx, num);
   Val(num, EnumType, err);
   Result:=err=0;
+end;
+
+function isSymTypePointer(const TypeVal: AnsiString): Boolean;
+begin
+  Result:=(TypeVal<>'') and (TypeVal[1]=SymType_Pointer);
 end;
 
 function ParseStructSize(const v: AnsiString; var StructBytes: Integer; var FirstElemIndex: Integer): Boolean;

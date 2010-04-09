@@ -56,6 +56,7 @@ type
   public
     Name      : AnsiString;
     DeclLine  : Integer;
+    isRelHere : Boolean;    // related type is declared in the same symbol (for pointer)
     Related   : TStabTypeDescr; // array, alias, range, pointer types. destroyed by itself
 
     Count     : Integer;  // count of elements or enumcount.
@@ -148,7 +149,7 @@ type
     procedure DoReadStabs(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
     procedure HandleSourceFile(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
 
-    function StabTypeDecl(const TypeDec, TypeVal: AnsiString; Num: Integer): TStabTypeDescr;
+    function StabTypeDecl(const TypeVal: AnsiString; Num: Integer): TStabTypeDescr;
     procedure HandleLSym(AType, Misc: Byte; LineNum: Word; Value: TStabAddr; const AStr: AnsiString);
     procedure HandleFunc(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
     procedure HandleLine(AType, Misc: Byte; Desc: Word; Value: TStabAddr; const AStr: AnsiString);
@@ -386,7 +387,7 @@ begin
   end;
 end;
 
-function TStabsReader.StabTypeDecl(const TypeDec,TypeVal:AnsiString; Num: Integer): TStabTypeDescr;
+function TStabsReader.StabTypeDecl(const TypeVal:AnsiString; Num: Integer): TStabTypeDescr;
 var
   typenum   : Integer;
   lowr      : AnsiString;
@@ -478,6 +479,15 @@ begin
     stabt:=AddType(num, stSet);
     ParseSetType(v, typeNum);
     stabt.Related:=GetType(typeNum);
+  end else if isSymTypePointer(v) then begin
+    stabt:=AddType(num, stPointer);
+    if ParseSymTypeVal(v, typenum, typedesc) then begin
+      stabt.Related:=GetType(typeNum);
+      stabt.isRelHere:=False;
+    end else begin
+      stabt.isRelHere:=True;
+      stabt.Related:=StabTypeDecl( Copy(v, 2, length(v)-1), 0);
+    end;
   end else begin
     if ParseSymTypeVal(v, typenum, typedesc) then begin
       if typenum=num then
@@ -486,7 +496,8 @@ begin
         stabt:=AddType(num, stPointer);
         stabt.Related:=GetType(typeNum);
       end
-    end;
+    end else
+      writeln('unparsed = ', v,' ', typeNum,' ',typedesc);
   end;
   Result:=stabt;
 end;
@@ -503,7 +514,7 @@ begin
   case desc[1] of
     Sym_TypeName, Sym_StructType:
     begin
-      typedescr:=StabTypeDecl(desc, v, num);
+      typedescr:=StabTypeDecl(v, num);
       if Assigned(typedescr) then begin
         typedescr.DeclLine:=LineNum;
         typedescr.Name:=name;

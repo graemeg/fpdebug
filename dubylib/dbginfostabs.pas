@@ -6,6 +6,7 @@ interface
 
 uses
   Classes, SysUtils, dbgTypes, dbgInfoTypes,
+  dbgInfoFPCTypes,
   stabs, stabsProc;
 
 var
@@ -32,7 +33,22 @@ type
   
 function StabsTypeToStr(_type: Byte): string;
 
+// a hack to detect FPC declared dynamic arrays in stab symbol.    //
+// it should work, while format of generated stab remain the same. //
+// Since STABS are deprecated (in favour of Dwarf) it won't happen //
+function isFPCDynamicArray(AType: TStabTypeDescr): Boolean;
+
 implementation
+
+function isFPCDynamicArray(AType: TStabTypeDescr): Boolean;
+begin
+  Result:= (AType.BaseType=stPointer);
+  if not Result then Exit;
+  Result:=AType.isRelHere and
+          Assigned(AType.Related) and
+          (AType.Related.BaseType=stArray) and
+          (AType.Related.LowRange='0') and (AType.Related.HighRange='-1');
+end;
 
 type
   
@@ -91,6 +107,9 @@ type
 procedure TStabsCallbackLogging.DeclareType(AType: TStabTypeDescr);
 begin
   writeln('Type: ', AType.Name, ' : ', AType.BaseType);
+  if isFPCDynamicArray(AType) then
+    writeln('DYNAMIC ARRAY');
+
 end;
 
 procedure TStabsCallbackLogging.StartFile(const FileName:AnsiString;FirstAddr:
@@ -193,14 +212,15 @@ var
   parent  : TDbgSymbol;
   simple  : TDbgSymSimpleType;
 begin
-  if isSimpleType(TypeDescr.BaseType) then begin
+  parent:=RootSymbol; //todo: select non Root for local types
+  if isFPCDynamicArray(TypeDescr) then
+    DebugInfo.AddSymbol(TypeDescr.Name, parent, TDbgSymFPCDynArray)
+  else if isSimpleType(TypeDescr.BaseType) then begin
     {if TypeDescr.DeclLine=0 then parent:=RootSymbol
     else //todo: find the proper parent file }
     if TypeDescr.Name='' then Exit;//todo: remove type name check!
-    parent:=RootSymbol;
     simple:=DebugInfo.AddSymbol(TypeDescr.Name, parent, TDbgSymSimpleType)as TDbgSymSimpleType;
     simple.Simple:=StabToDbgSimple(TypeDescr.BaseType);
-
   end else begin
 
   end;
@@ -337,7 +357,7 @@ begin
     writeln('Total symbols = ', SymCount);
   end;
 
-  callback:=AllocCallback;
+  if DebugParseStabs then callback:=AllocCallback else callback:=nil;
   if Assigned(callback) then begin
     stabsProc.ReadStabs(buf, sz, strbuf, strsz, callback);
     callback.Free;

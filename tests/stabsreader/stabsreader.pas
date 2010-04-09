@@ -8,18 +8,6 @@ uses
   elfDbgSource,
   machoDbgSource, PESource, stabsproc;
 
-{function GetFileString(const Name: WideString; LineNum: Integer): String;
-var
-  st  : TStringList;
-begin
-  st := TStringList.Create;
-  st.LoadFromFile(Name);
-  dec(LineNum);
-  if (LineNum >= 0) and (LineNum < st.Count) then
-    Result := st[LineNum];
-  st.Free;
-end;}
-  
 procedure ReadStabsData(source : TDbgDataSource);
 var
   stabs : TDbgStabsInfo;

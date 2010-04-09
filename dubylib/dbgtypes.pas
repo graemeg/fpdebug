@@ -101,7 +101,10 @@ type
   public
     procedure Terminate; virtual; abstract;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; virtual; abstract;
-    
+
+    function SuspendProcess(procID: TDbgProcessID): Boolean; virtual; {abstract;}
+    function ResumeProcess(procID: TDbgProcessID): Boolean; virtual; {abstract;}
+
     function GetThreadsCount(AProcess: TDbgProcessID): Integer; virtual; abstract;
     function GetThreadID(AProcess: TDbgProcessID; AIndex: Integer): TDbgThreadID; virtual; abstract;
     function GetThreadRegs(AProcess: TDbgProcessID; ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; virtual; abstract;
@@ -222,6 +225,16 @@ end;
 procedure TDbgData.SetUInt64(const AValue: QWord); 
 begin
   SetValue(AValue, 64);
+end;
+
+function TDbgTarget.SuspendProcess(procID:TDbgProcessID):Boolean;
+begin
+  Result:=False;
+end;
+
+function TDbgTarget.ResumeProcess(procID:TDbgProcessID):Boolean;
+begin
+  Result:=False;
 end;
 
 { TDbgTarget }

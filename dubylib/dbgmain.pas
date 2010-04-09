@@ -125,6 +125,9 @@ type
     function AddBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent): Boolean;
     procedure RemoveBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent);
 
+    procedure Suspend;
+    procedure Resume;
+
     property ID: TDbgProcessID read fID;
     property State: TDbgProcessState read fState;
     property ThreadsCount: Integer read GetThreadsCount;
@@ -689,6 +692,16 @@ var
 begin
   bp:=FindBreakpoint(Addr, False);
   if Assigned(bp) then bp.RemoveHandler(Handler);
+end;
+
+procedure TDbgProcess.Suspend;
+begin
+  fOwner.fTarget.SuspendProcess(fID);
+end;
+
+procedure TDbgProcess.Resume;
+begin
+  fOwner.fTarget.ResumeProcess(fID);
 end;
 
 { TDbgThread }

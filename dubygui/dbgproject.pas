@@ -12,7 +12,7 @@ function ASync: TDbgAsyncMain;
 var
   dbgInfo: TDbgInfo=nil;
 
-procedure StartDebug(const CmdLineUtf8: AnsiString);
+function StartDebug(const CmdLineUtf8: AnsiString): Boolean;
 
 const
   EventKindStr: array [TDbgEventKind] of String = (
@@ -39,8 +39,9 @@ type
     procedure StateChanged; override;
   end;
 
-procedure StartDebug(const CmdLineUtf8: AnsiString);
+function StartDebug(const CmdLineUtf8: AnsiString): Boolean;
 begin
+  Result:=True;
   ASync.Main:=TDbgMain.Create(DebugProcessStart(CmdLineUtf8), 0);
   dbgInfo.Free;
   dbgInfo:=TDbgInfo.Create;

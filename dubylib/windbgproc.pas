@@ -414,22 +414,48 @@ end;
 
 function SuspendProcess(AProcID: LongWord): Boolean;
 var
-  Snap : THandle;
+  Snap  : THandle;
+  entry : TThreadEntry32;
+  thr   : THandle;
 begin
   //any hacks?
   Result:=False;
   if not Assigned(CreateToolhelp32Snapshot) then Exit;
 
+  //todo: check 64-bit compatibility
   Snap:=CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, AProcID);
   if Snap<>0 then Exit;
 
+  Thread32First(Snap, entry);
+  thr:=OpenThread(THREAD_SUSPEND_RESUME, True, entry.th32ThreadID);
+  if thr<>INVALID_HANDLE_VALUE then begin
+    SuspendThread(thr);
+    CloseThread(thr);
+  end;
+  CloseHandle(Snap);
 end;
 
 function ResumeProcess(AProcID: LongWord): Boolean;
+var
+  Snap  : THandle;
+  entry : TThreadEntry32;
+  thr   : THandle;
 begin
+  //any hacks?
   Result:=False;
   if not Assigned(CreateToolhelp32Snapshot) then Exit;
 
+  //todo: check 64-bit compatibility
+  Snap:=CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, AProcID);
+  if Snap<>0 then Exit;
+
+  Thread32First(Snap, entry);
+  thr:=OpenThread(THREAD_SUSPEND_RESUME, True, entry.th32ThreadID);
+  if thr<>INVALID_HANDLE_VALUE then begin
+    ResumeThread(thr);
+    CloseThread(thr);
+  end;
+  CloseHandle(Snap);
 end;
 
 end.

@@ -46,8 +46,8 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)/"/>
-      <OtherUnitFiles Value="../../dubylib/"/>
-      <UnitOutputDirectory Value="./lib/$(TargetCPU)-$(TargetOS)"/>
+      <OtherUnitFiles Value="../../dubylib/;../../templib/"/>
+      <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>

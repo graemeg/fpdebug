@@ -4,6 +4,9 @@
 
 program p1;
 
+uses
+  test2;
+
 type
   MyType = record
    a, b : integer;
@@ -68,6 +71,7 @@ begin
   ProcFastCall(2, bb, nil, 0, 'test');
   ProcStdCall(3, bb, nil, 0, 'test');
   ProcCdecl2(8, bb, nil, 0, 'test');
+  writeln(GetHi);
   my.a := bb;
   writeln(my.a);
 end.

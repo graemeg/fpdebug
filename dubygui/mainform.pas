@@ -86,7 +86,7 @@ begin
       Caption := 'Stopped';
       btnRun.Caption:='Continue';
       SynEdit1.Lines.Add( EventKindStr[ASync.LastEvent.Kind] + ' '+ASync.LastEvent.Debug);
-      if ASync.LastEvent.Kind=dek_SysCall then
+      if not (ASync.LastEvent.Kind in [dek_BreakPoint, dek_SingleStep]) then
         ASync.Resume;
     end;
     mstExecuting: Caption := 'Executing';

@@ -24,7 +24,7 @@ begin
   writeln('dwarf data found');
 
   writeln('dumping: debug_info');
-  dwarf.dump_debug_info;
+  dwarf.dump_debug_info2;
 
   dwarf.Free;
 end;

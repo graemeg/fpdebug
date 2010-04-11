@@ -6,15 +6,18 @@ interface
 
 uses
   Classes, SysUtils, dbgInfoTypes,
-  dbgTypes,
+  dbgTypes, dwarf,
   dwarfTypes{, dwarfConst};
 
 type
+
   { TDbgDwarf3Info }
 
   TDbgDwarf3Info = class(TDbgInfoReader)
   private
     fSource : TDbgDataSource;
+    
+    dwarf   : TDbgDwarf;
   public
     class function isPresent(ASource: TDbgDataSource): Boolean; override;
     constructor Create(ASource: TDbgDataSource); override;
@@ -23,6 +26,7 @@ type
 
     procedure dump_debug_abbrev;
     procedure dump_debug_info;
+    procedure dump_debug_info2;
   end;
 
 implementation
@@ -50,52 +54,78 @@ end;
 
 procedure TDbgDwarf3Info.dump_debug_abbrev;
 begin
-  
+  writeln('dump_debug_abbrev undone!');
 end;
 
 procedure TDbgDwarf3Info.dump_debug_info;
 var
-  i     : integer;
   sz    : Int64;
-  data  : array of byte;
-  buf   : PByteArray;
-  cu32  : PDwarfCUHeader32;
-  cu64  : PDwarfCUHeader64;
-  c     : Integer;
+  buf   : Pointer;
+  dwarf : TDbgDwarf; 
+  sc    : TDwarfSection;
+  i     : Integer;
 begin
+  dwarf := TDbgDwarf.Create;
+  
   if not fSource.GetSectionInfo('.debug_info', sz) then begin
-     writeln('no .debug_info section');
-     Exit;
+    writeln('no .debug_info section');
+    Exit;
   end;
-  SetLength(data, sz);
-  sz:=fSource.GetSectionData('.debug_info', 0, sz, data);
-  writeln('section size = ', sz);
+  
+  for sc:=low(sc) to High(sc) do begin
+    if fSource.GetSectionInfo(DWARF_SECTION_NAME[sc], sz) then begin
+      //todo: virtual address
+      buf:=dwarf.GetSectionData(sc, sz, 0);
+      sz:=fSource.GetSectionData(DWARF_SECTION_NAME[sc], 0, sz, PByteArray(buf)^);  
+    end else
+      dwarf.GetSectionData(sc, 0, 0);
+  end;
 
-  buf := @data[0];
-  i := 0;
-  c := 1;
-  writeln('Compilation Units:');
-  while i < sz do begin
-    writeln('i = ', i);
-    cu32 := @buf^[i];
-    if cu32^.Length = DWARF_HEADER64_SIGNATURE then begin
-      cu64 := PDwarfCUHeader64(cu32);
-      writeln('64-bit');
-      writeln('  version   ', cu64^.Version);
-      writelN('  addrsize: ', cu64^.AddressSize);
-      writelN('  offset:   ', cu64^.AbbrevOffset);
-      writeln('  length:   ', cu64^.Length);
-      inc(i, sizeof (TDwarfCUHeader64) + cu64^.Length - 12);
-    end else begin
-      writeln('32-bit');
-      writelN('  version:  ',cu32^.Version);
-      writeln('  addrsize: ', cu32^.AddressSize);
-      writeln('  offset:   ', cu32^.AbbrevOffset);
-      writeln('  length:   ', cu32^.Length);
-      inc(i, sizeof(TDwarfCUHeader32) + cu32^.Length - 4);
-    end;
-    inc(c);
+  dwarf.LoadCompilationUnits;
+  
+  //writeln('units: ', dwarf.Count);
+  for i:=0 to dwarf.Count-1 do begin
+    writeln('Filename: ', dwarf.CompilationUnits[i].FileName);
   end;
+  
+  dwarf.Free;
+end;
+
+
+procedure WriteEntry(Entry: TDwarfEntry; const Prefix: AnsisTring);
+begin
+  if not Assigned(Entry) then Exit;
+  writeln(Prefix, DwarfTagToString(Entry.Tag));
+  if Assigned(Entry.Child) then WriteEntry(Entry.Child, Prefix+'  ');
+  if Assigned(Entry.Next) then WriteEntry(Entry.Next, Prefix);
+end;
+
+procedure TDbgDwarf3Info.dump_debug_info2; 
+var
+  dwarf : TDwarfReader; 
+  i     : Integer;
+  size  : Int64;
+begin
+  dwarf := TDwarfReader.Create;
+  
+  if not fSource.GetSectionInfo('.debug_info', size) then begin
+    writeln('no .debug_info section');
+    Exit;
+  end;
+  
+  if fSource.GetSectionInfo('.debug_info', dwarf.InfoSize) then begin
+    SetLength(dwarf.Info, size);
+    fSource.GetSectionData('.debug_info', 0, dwarf.InfoSize, dwarf.Info);
+  end;
+  
+  if fSource.GetSectionInfo('.debug_abbrev', dwarf.AbbrevsSize) then begin
+    SetLength(dwarf.Abbrevs, dwarf.AbbrevsSize);
+    fSource.GetSectionData('.debug_abbrev', 0, dwarf.AbbrevsSize, dwarf.Abbrevs);
+  end;
+
+  dwarf.ReadDwarf;
+  WriteEntry(dwarf.FirstEntry, '');
+  dwarf.Free;
 end;
 
 initialization

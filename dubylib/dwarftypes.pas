@@ -31,6 +31,8 @@
  *   Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.        *
  *                                                                         *
  ***************************************************************************
+
+the code adapted for the dubylib
 }
 unit dwarfTypes;
 
@@ -40,9 +42,8 @@ interface
 
 uses
   Classes, Types, SysUtils, contnrs, Math,
-  dwarfConst,
+  dwarfConst, Maps,
   dbgTypes;
-  {DbgClasses, DbgDwarfConst, Maps, Math, DbgLoader, DbgWinExtra, }
   
 type
   // compilation unit header
@@ -218,7 +219,7 @@ type
     FFileName: String;
     FIdentifierCase: Integer;
 
-    //FMap: TMap;
+    FMap: TMap;
     FDefinitions: array of record
       Attribute: Cardinal;
       Form: Cardinal;
@@ -248,7 +249,7 @@ type
     
     FLineNumberMap: TStringList;
 
-    //FAddressMap: TMap;
+    FAddressMap: TMap;
     FAddressMapBuild: Boolean;
     
     FMinPC: QWord;  // the min and max PC value found in this unit.
@@ -275,7 +276,7 @@ type
     destructor Destroy; override;
     function GetDefinition(AAbbrev: Cardinal; out ADefinition: TDwarfAbbrev): Boolean;
     function GetLineAddress(const AFileName: String; ALine: Cardinal): TDbgPtr;
-    property FileName: String read FFileName;
+    property FileName: AnsiString read FFileName;
     property Valid: Boolean read FValid;
   end;
   
@@ -317,16 +318,6 @@ type
   
   { TVerboseDwarfCallframeDecoder }
 
-{  TVerboseDwarfCallframeDecoder = class(TObject)
-  private
-    FLoader: TDbgImageLoader;
-    procedure InternalDecode(AData: Pointer; ASize, AStart: QWord);
-  protected
-  public
-    constructor Create(ALoader: TDbgImageLoader);
-    procedure Decode;
-  end;}
-
   TDbgSymbol = class(TObject);
   
   { TDbgDwarfProcSymbol }
@@ -353,16 +344,26 @@ type
     destructor Destroy; override;
   end;
 
+  TVerboseDwarfCallframeDecoder = class(TObject)
+  private
+    procedure InternalDecode(AData: Pointer; ASize, AStart: QWord);
+  protected
+  public
+    constructor Create;
+    procedure Decode;
+  end;
+
+  
 
   
 type
   TDwarfSection = (dsAbbrev, dsARanges, dsFrame,  dsInfo, dsLine, dsLoc, dsMacinfo, dsPubNames, dsPubTypes, dsRanges, dsStr);
 
   TDwarfSectionInfo = record
-    Section: TDwarfSection;
-    VirtualAdress: QWord;
-    Size: QWord; // the virtual size
-    RawData: Pointer;
+    Section       : TDwarfSection;
+    VirtualAdress : QWord;
+    Size          : QWord; // the virtual size
+    RawData       : Pointer;
   end;
   PDwarfSectionInfo = ^TDwarfSectionInfo;
 
@@ -376,8 +377,7 @@ const
   { TDbgDwarf }
 
 type
-  TDbgImageLoader = class(TObject); //todo:
-
+  
   TDbgDwarf = class(TObject)
   private
     FCompilationUnits: TList;
@@ -386,15 +386,22 @@ type
     function GetCompilationUnit(AIndex: Integer): TDwarfCompilationUnit;
   protected
     function GetCompilationUnitClass: TDwarfCompilationUnitClass; virtual;
+    function GetCount: Integer;
   public
-    constructor Create(ALoader: TDbgImageLoader);
+    constructor Create;
     destructor Destroy; override;
+
+    //todo: better code!
+    function GetSectionData(ASection: TDwarfSection; ASize: TDbgPtr; AVirtualAddr: TDbgPtr): Pointer;
+
+    function LoadCompilationUnits: Integer;
+    
     function FindSymbol(AAddress: TDbgPtr): TDbgSymbol;
     function GetLineAddress(const AFileName: String; ALine: Cardinal): TDbgPtr;
-    function LoadCompilationUnits: Integer;
     function PointerFromRVA(ARVA: QWord): Pointer;
     function PointerFromVA(ASection: TDwarfSection; AVA: QWord): Pointer;
-    property CompilationUnits[AIndex: Integer]: TDwarfCompilationUnit read GetCompilationUnit;
+    property CompilationUnits[AIndex: Integer]: TDwarfCompilationUnit read GetCompilationUnit; 
+    property Count: Integer read GetCount;
   end;
 
   { TDbgVerboseDwarf }
@@ -410,9 +417,13 @@ type
 function DwarfTagToString(AValue: Integer): String;
 function DwarfAttributeToString(AValue: Integer): String;
 function DwarfAttributeFormToString(AValue: Integer): String;
+function DwarfChildrenToString(AValue: Integer): String;
 
 function ULEB128toOrdinal(var p: PByte): QWord;
 function SLEB128toOrdinal(var p: PByte): Int64;
+
+function ULEB128toOrdinal(const p: array of Byte; var ofs: Integer): QWord;
+function SLEB128toOrdinal(const p: array of Byte; var ofs: Integer): QWord;
 
 implementation
 
@@ -450,6 +461,23 @@ begin
   then Result := Result or (Int64(-1) shl n);
 end;
 
+function ULEB128toOrdinal(const p: array of Byte; var ofs: Integer): QWord;
+var
+  pb: PByte;
+begin
+  pb:=@p[ofs];
+  Result:=ULEB128toOrdinal(pb);
+  inc(ofs, PtrUInt(pb-@p[ofs]));
+end;
+
+function SLEB128toOrdinal(const p: array of Byte; var ofs: Integer): QWord;
+var
+  pb: PByte;
+begin
+  pb:=@p[ofs];
+  Result:=SLEB128toOrdinal(pb);
+  inc(ofs, PtrUInt(pb-@p[ofs]));
+end;
 
 function DwarfTagToString(AValue: Integer): String;
 begin
@@ -878,24 +906,10 @@ end;
 
 { TDbgDwarf }
 
-constructor TDbgDwarf.Create(ALoader: TDbgImageLoader);
-{var
-  Section: TDwarfSection;}
-  //p: PDbgImageSection;
+constructor TDbgDwarf.Create;
 begin
-  //inherited Create(ALoader);
-  //FCompilationUnits := TList.Create;
-  //FImageBase := ALoader.ImageBase;
-  {for Section := Low(Section) to High(Section) do
-  begin
-    p := ALoader.Section[DWARF_SECTION_NAME[Section]];
-    if p = nil then Continue;
-    FSections[Section].Section := Section;
-    FSections[Section].RawData := p^.RawData;
-    FSections[Section].Size := p^.Size;
-    FSections[Section].VirtualAdress := p^.VirtualAdress;
-  end;}
-
+  inherited Create;
+  FCompilationUnits := TList.Create;
 end;
 
 destructor TDbgDwarf.Destroy;
@@ -908,12 +922,22 @@ begin
   inherited Destroy;
 end;
 
+function TDbgDwarf.GetSectionData(ASection: TDwarfSection; ASize: TDbgPtr; AVirtualAddr: TDbgPtr): Pointer;
+begin
+  FSections[ASection].Section:=ASection;
+  GetMem(FSections[ASection].RawData, ASize);
+  FSections[ASection].Size := ASize;
+  FSections[ASection].VirtualAdress:=AVirtualAddr; //todo!
+  
+  Result:=FSections[ASection].RawData;
+end;
+
 function TDbgDwarf.FindSymbol(AAddress: TDbgPtr): TDbgSymbol;
 var
   n: Integer;
   CU: TDwarfCompilationUnit;
-  //Iter: TMapIterator;
-  //Info: PDwarfAddressInfo;
+  Iter: TMapIterator;
+  Info: PDwarfAddressInfo;
   MinMaxSet: boolean;
 begin
   Result := nil;
@@ -927,7 +951,6 @@ begin
     
     CU.BuildAddressMap;
 
-    {
     Iter := TMapIterator.Create(CU.FAddressMap);
     try
       if Iter.EOM
@@ -963,7 +986,7 @@ begin
     finally
       Iter.Free;
     end;
-    }
+    
   end;
 end;
 
@@ -975,6 +998,11 @@ end;
 function TDbgDwarf.GetCompilationUnitClass: TDwarfCompilationUnitClass;
 begin
   Result := TDwarfCompilationUnit;
+end;
+
+function TDbgDwarf.GetCount: Integer; 
+begin
+  Result:=FCompilationUnits.Count;
 end;
 
 function TDbgDwarf.GetLineAddress(const AFileName: String; ALine: Cardinal): TDbgPtr;
@@ -994,8 +1022,8 @@ end;
 function TDbgDwarf.LoadCompilationUnits: Integer;
 var
   p: Pointer;
-  CU32: PDwarfCUHeader32 absolute p;
-  CU64: PDwarfCUHeader64 absolute p;
+  CU32: PDwarfCUHeader32;
+  CU64: PDwarfCUHeader64;
   CU: TDwarfCompilationUnit;
   CUClass: TDwarfCompilationUnitClass;
 begin
@@ -1003,6 +1031,8 @@ begin
   p := FSections[dsInfo].RawData;
   while p <> nil do
   begin
+    CU32:=p;
+    CU64:=p;
     if CU64^.Signature = DWARF_HEADER64_SIGNATURE
     then begin
       CU := CUClass.Create(
@@ -1117,7 +1147,7 @@ end;
 
 function TDwarfLineInfoStateMachine.NextLine: Boolean;
 var
-  pb: PByte{ absolute FLineInfoPtr};
+  pb: PByte;
   p: Pointer;
   Opcode: Byte;
   instrlen: Cardinal;
@@ -1268,16 +1298,14 @@ end;
 { TDwarfCompilationUnit }
 
 procedure TDwarfCompilationUnit.BuildLineInfo(AAddressInfo: PDwarfAddressInfo; ADoAll: Boolean);
-{
 var
   Iter: TMapIterator;
   Info: PDwarfAddressInfo;
-  SM: TDwarfLineInfoStateMachine absolute FLineInfo.StateMachine;
+  SM: TDwarfLineInfoStateMachine;
   idx: Integer;
   LineMap: TMap;
-}
 begin
-{
+  SM:=FLineInfo.StateMachine;
   if not ADoAll
   then begin
     if AAddressInfo = nil then Exit;
@@ -1316,7 +1344,6 @@ begin
   end;
     
   Iter.Free;
-  }
 end;
 
 procedure TDwarfCompilationUnit.BuildAddressMap;
@@ -1372,10 +1399,9 @@ begin
 end;
 
 constructor TDwarfCompilationUnit.Create(AOwner: TDbgDwarf; ADataOffset: QWord; ALength: QWord; AVersion: Word; AAbbrevOffset: QWord; AAddressSize: Byte; AIsDwarf64: Boolean);
+
   procedure FillLineInfo(AData: Pointer);
   var
-    LNP32: PDwarfLNPHeader32 absolute AData;
-    LNP64: PDwarfLNPHeader64 absolute AData;
     Info: PDwarfLNPInfoHeader;
 
     UnitLength: QWord;
@@ -1385,7 +1411,11 @@ constructor TDwarfCompilationUnit.Create(AOwner: TDbgDwarf; ADataOffset: QWord; 
     diridx: Cardinal;
     S: String;
     pb: PByte absolute Name;
+    LNP32: PDwarfLNPHeader32;
+    LNP64: PDwarfLNPHeader64;
   begin
+    LNP32:=PDwarfLNPHeader32(AData);
+    LNP64:=PDwarfLNPHeader64(AData);
     FLineInfo.Header := AData;
     if LNP64^.Signature = DWARF_HEADER64_SIGNATURE
     then begin
@@ -1481,17 +1511,17 @@ begin
   FAddressSize := AAddressSize;
   FIsDwarf64 := AIsDwarf64;
 
-  //FMap := TMap.Create(itu4, SizeOf(TDwarfAbbrev));
+  FMap := TMap.Create(itu4, SizeOf(TDwarfAbbrev));
   SetLength(FDefinitions, 256);
   // initialize last abbrev with start
 //  FLastAbbrevPtr := FOwner.PointerFromVA(dsAbbrev, FAbbrevOffset);
   FLastAbbrevPtr := FOwner.FSections[dsAbbrev].RawData + FAbbrevOffset;
 
   // use internally 64 bit target pointer
-  {FAddressMap := TMap.Create(itu8, SizeOf(TDwarfAddressInfo));
+  FAddressMap := TMap.Create(itu8, SizeOf(TDwarfAddressInfo));
   FLineNumberMap := TStringList.Create;
   FLineNumberMap.Sorted := True;
-  FLineNumberMap.Duplicates := dupError;}
+  FLineNumberMap.Duplicates := dupError;
   
 
   FScope := TDwarfScopeInfo.Create(FInfoData);
@@ -1568,8 +1598,8 @@ destructor TDwarfCompilationUnit.Destroy;
 
 begin
   FreeScope;
-  //FreeAndNil(FMap);
-  //FreeAndNil(FAddressMap);
+  FreeAndNil(FMap);
+  FreeAndNil(FAddressMap);
   FreeLineNumberMap;
   FreeAndNil(FLineInfo.StateMachines);
   FreeAndNil(FLineInfo.StateMachine);
@@ -1584,7 +1614,7 @@ begin
   Result := false;
   LoadAbbrevs(AAbbrev);
   Result := false;
-  //Result := FMap.GetData(AAbbrev, ADefinition);
+  Result := FMap.GetData(AAbbrev, ADefinition);
 end;
 
 function TDwarfCompilationUnit.GetLineAddress(const AFileName: String; ALine: Cardinal): TDbgPtr;
@@ -1636,15 +1666,14 @@ procedure TDwarfCompilationUnit.LoadAbbrevs(ANeeded: Cardinal);
     else len := len * 2;
     SetLength(FDefinitions, len);
   end;
-{var
+var
   MaxData: Pointer;
   pb: PByte;
   pw: PWord;
   Def: TDwarfAbbrev;
   abbrev, attrib, form: Cardinal;
-  n: Integer;}
+  n: Integer;
 begin
-  {
   pb:=PByte(FLastAbbrevPtr);
   pw:=PWord(FLastAbbrevPtr);
   if ANeeded <= FLastAbbrev then Exit;
@@ -1700,7 +1729,6 @@ begin
   end;
   if abbrev <> 0
   then FLastAbbrev := abbrev;
-  }
 end;
 
 function TDwarfCompilationUnit.LocateAttribute(AEntry: Pointer; AAttribute: Cardinal; const AList: TPointerDynArray; out AAttribPtr: Pointer; out AForm: Cardinal): Boolean;
@@ -2257,13 +2285,13 @@ begin
 end;
 
 procedure TDwarfAbbrevDecoder.Decode;
-{var
+var
   Iter: TMapIterator;
   Info: TDwarfAddressInfo;
-  Scope: TDwarfScopeInfo;}
+  Scope: TDwarfScopeInfo;
 begin
   // force all abbrevs to be loaded
-  {
+  
   FCU.LoadAbbrevs(High(Cardinal));
   InternalDecode(FCU.FInfoData, FCU.FInfoData + FCU.FLength);
 
@@ -2283,7 +2311,6 @@ begin
     Iter.Next;
   end;
   Iter.Free;
-  }
 end;
 
 procedure TDwarfAbbrevDecoder.DecodeLocation(AData: PByte; ASize: QWord; const AIndent: String);
@@ -2886,8 +2913,8 @@ var
 
 
 var
-  LNP32: PDwarfLNPHeader32 absolute AData;
-  LNP64: PDwarfLNPHeader64 absolute AData;
+  LNP32: PDwarfLNPHeader32;
+  LNP64: PDwarfLNPHeader64;
   UnitLength: QWord;
   Version: Word;
   HeaderLength: QWord;
@@ -2901,6 +2928,8 @@ var
   UValue: QWord;
   SValue: Int64;
 begin
+  LNP32:=PDwarfLNPHeader32(AData);
+  LNP64:=PDwarfLNPHeader64(AData);
   WriteLn('FileName: ', FCU.FFileName);
 
   if LNP64^.Signature = DWARF_HEADER64_SIGNATURE
@@ -3105,20 +3134,19 @@ begin
 end;
 
 { TVerboseDwarfCallframeDecoder }
-{
-constructor TVerboseDwarfCallframeDecoder.Create(ALoader: TDbgImageLoader);
+
+constructor TVerboseDwarfCallframeDecoder.Create;
 begin
   inherited Create;
-  FLoader := Aloader;
 end;
 
 procedure TVerboseDwarfCallframeDecoder.Decode;
-var
-  Section: PDbgImageSection;
+{var
+  Section: PDbgImageSection;}
 begin
-  Section := FLoader.Section[DWARF_SECTION_NAME[dsFrame]];
-  if Section <> nil
-  then InternalDecode(Section^.RawData, Section^.Size, Section^.VirtualAdress);
+//  Section := FLoader.Section[DWARF_SECTION_NAME[dsFrame]];
+//  if Section <> nil
+  //then InternalDecode(Section^.RawData, Section^.Size, Section^.VirtualAdress);
 end;
 
 procedure TVerboseDwarfCallframeDecoder.InternalDecode(AData: Pointer; ASize: QWord; AStart: QWord);
@@ -3330,9 +3358,10 @@ begin
       else WriteLn(ULEB128toOrdinal(p));
     end
     else begin
-      if pc^ > ASize
-      then WriteLn('CIE: $', IntToHex(pc^, 8), ' (=adress ?) -> offset: ', pc^ - AStart - FLoader.ImageBase)
-      else WriteLn('CIE: ', pc^);
+      //todo:
+      //if pc^ > ASize
+      //then WriteLn('CIE: $', IntToHex(pc^, 8), ' (=adress ?) -> offset: ', pc^ - AStart - FLoader.ImageBase)
+      //else WriteLn('CIE: ', pc^);
       Inc(pc);
       WriteLn('InitialLocation: $', IntToHex(pc^, 8));
       Inc(pc);
@@ -3345,6 +3374,6 @@ begin
     p := next;
   end;
 end;
-}
+
 end.
 

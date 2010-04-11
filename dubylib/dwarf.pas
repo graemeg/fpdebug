@@ -39,7 +39,7 @@ type
     FVerbose  : Boolean;
     DefFilled : array of Boolean;
   protected
-    procedure DoReadAbbrev(const AData: array of byte; Offset, Size: Integer);
+    procedure DoReadAbbrev(const AData: array of byte; Offset, ADataSize: Integer);
   public
     FDefCount     : Integer;
     FDefinitions  : array of record
@@ -86,7 +86,9 @@ var
 
   procedure SkipLEB(var p: Pointer);
   begin
-    while (PByte(p)^ and $80) <> 0 do Inc(p);
+    while (PByte(p)^ and $80) <> 0 do begin
+      Inc(p);
+    end;
     Inc(p);
   end;
 
@@ -109,8 +111,9 @@ var
       then AList[idx - ADef.Index] := p;}
 
       Form := abbr.FDefinitions[idx].Form;
-      while Form = DW_FORM_indirect do Form := ULEB128toOrdinal(Info, ofs);
-
+      while Form = DW_FORM_indirect do  
+        Form := ULEB128toOrdinal(Info, ofs);
+      
       case Form of
         DW_FORM_addr     : begin
           Inc(ofs, AddrSize);
@@ -184,7 +187,6 @@ var
         DW_FORM_indirect : begin
         end;
       else
-        WriteLN('Error: Unknown Form: ', Form);
         Break;
       end;
     end;
@@ -199,6 +201,7 @@ var
   parent    : TDwarfEntry;
   prev      : TDwarfEntry;
   newdw     : TDwarfEntry;
+  t   : TDwarfEntry;
 begin
   abbr:=TAbbrevTable.Create(Abbrevs, AbbrevOfs, AbbrevsSize);  
   
@@ -222,7 +225,7 @@ begin
     end else begin
       
       if not abbr.GetDefintion(Abbrev, Def)  then begin
-        WriteLN('Error: Abbrev not found: ', Abbrev);
+        WriteLn('Error: Abbrev not found: ', Abbrev,' i=',i);
         Break;
       end;
       
@@ -234,15 +237,25 @@ begin
       if Assigned(Parent) and not Assigned(Parent.Child) then 
         Parent.child:=newdw;
       newdw.Tag:=Def.tag; 
-      if not Assigned(FirstEntry) then FirstEntry:=newdw;
+      
+      if not Assigned(Parent) then begin
+        if not Assigned(FirstEntry) then 
+          FirstEntry:=newdw
+        else begin
+          t:=FirstEntry;
+          while Assigned(t.Next) do t:=t.Next;
+          t.Next:=newdw;
+        end;
+      end;
       
       // Def.children can be set while no children are found
       // we cannot have a next without a defined child
-      if Def.Children  then begin
+      if Def.Children then begin
         parent:=newdw;
         prev:=nil;
-      end else
+      end else begin
         prev:=newdw;
+      end;
     end;
   end;
 end;
@@ -283,7 +296,7 @@ end;
 { TAbbrevTable }
 
 procedure TAbbrevTable.DoReadAbbrev(const AData: array of byte; Offset,  
-  Size: Integer); 
+  ADataSize: Integer); 
 
   procedure MakeRoom(AMinSize: Integer);
   var
@@ -316,8 +329,8 @@ begin
   // we don't know the number of abbrevs for this unit,
   // but we cannot go beyond the section limit, so use that as safetylimit
   // in case of corrupt data
-  i:=0;
-  MaxData:=Offset+Size;
+  i:=Offset;
+  MaxData:=ADataSize;
   while (i < MaxData) and (AData[i] <> 0) do begin
     abbrev := ULEB128toOrdinal(AData, i);
     tagnum := ULEB128toOrdinal(AData, i);

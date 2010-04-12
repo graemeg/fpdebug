@@ -4,7 +4,7 @@
  ---------------------------------------------------------------------------
 
  This unit contains helper classes for loading and resolving of DWARF debug
- symbols. It's based on Marc Weustink's dwarf reader unit part of FPDebugger
+ symbols. Based on Marc Weustink's dwarf reader unit part of FPDebugger
 
  ***************************************************************************
  *                                                                         *
@@ -87,6 +87,7 @@ type
                     Form   : Integer;
                   end;
     AttribCount : Integer;
+  protected
     procedure AddAttrib(AName, AForm: Integer; AOffset: QWord; AValSize: Integer);
   public
     Child     : TDwarfEntry;
@@ -96,6 +97,8 @@ type
     Tag       : Integer;
     constructor Create(AOwner: TDwarfReader);
     function GetStr(AttrName: Integer; var Res: AnsiString): Boolean;
+    function GetAttr(index: Integer; var AttrName, AttrForm: Integer): Boolean;
+    function GetAttrCount: Integer;
   end;
 
   { TDwarfReader }
@@ -292,17 +295,18 @@ begin
         parent:=nil;
       Continue
     end else begin
-      
+
       if not abbr.GetDefintion(Abbrev, Def)  then begin
         WriteLn('Error: Abbrev not found: ', Abbrev,' i=',i);
         Break;
       end;
 
+
       newdw:=TDwarfEntry.Create(Self);
       ParseAttribs(newdw, Def, BuildList, i);
   
       if Assigned(prev) then prev.Next:=newdw;
-      newdw.Parent:=newdw;
+      newdw.Parent:=parent;
       if Assigned(Parent) and not Assigned(Parent.Child) then 
         Parent.child:=newdw;
       newdw.Tag:=Def.tag; 
@@ -355,8 +359,8 @@ begin
   Result:=InfoSize>0;
   if not Result then Exit;
   
-  writeln('Info Size    = ', InfoSize);
-  writeln('Abbrevs Size = ', AbbrevsSize);
+  //writeln('Info Size    = ', InfoSize);
+  //writeln('Abbrevs Size = ', AbbrevsSize);
   
   i:=0;
   while i<InfoSize do begin
@@ -491,6 +495,7 @@ begin
   Attribs[AttribCount].Form:=AForm;
   Attribs[AttribCount].Offset:=AOffset;
   Attribs[AttribCount].Size:=AValSize;
+  inc(AttribCount);
 end;
 
 { TDwarfEntry }
@@ -513,6 +518,18 @@ begin
       Exit;
     end;
   Result:=False;
+end;
+
+function TDwarfEntry.GetAttr(index:Integer;var AttrName,AttrForm:Integer): Boolean;
+begin
+  Result:=(index>=0) and (index<AttribCount);
+  AttrName:=Attribs[index].Name;
+  AttrForm:=Attribs[index].Form;
+end;
+
+function TDwarfEntry.GetAttrCount:Integer;
+begin
+  Result:=AttribCount;
 end;
 
 end.

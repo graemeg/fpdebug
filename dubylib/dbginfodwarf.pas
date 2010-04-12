@@ -96,6 +96,7 @@ begin
   if not Assigned(Entry) then Exit;
 
   write(Prefix, DwarfTagToString(Entry.Tag));
+  if Entry.GetStr(DW_AT_name, s) then write(': ', s);
   writeln;
 
   if Assigned(Entry.Child) then WriteEntry(Entry.Child, Prefix+'  ');
@@ -125,7 +126,7 @@ begin
   end;
 
   dwarf.ReadDwarf;
-  //WriteEntry(dwarf.FirstEntry, '');
+  WriteEntry(dwarf.FirstEntry, '');
   dwarf.Free;
 end;
 

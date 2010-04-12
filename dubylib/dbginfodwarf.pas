@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, dbgInfoTypes,
   dbgTypes, dwarf,
-  dwarfTypes{, dwarfConst};
+  dwarfTypes, dwarfConst;
 
 type
 
@@ -16,8 +16,6 @@ type
   TDbgDwarf3Info = class(TDbgInfoReader)
   private
     fSource : TDbgDataSource;
-    
-    dwarf   : TDbgDwarf;
   public
     class function isPresent(ASource: TDbgDataSource): Boolean; override;
     constructor Create(ASource: TDbgDataSource); override;
@@ -83,7 +81,6 @@ begin
 
   dwarf.LoadCompilationUnits;
   
-  //writeln('units: ', dwarf.Count);
   for i:=0 to dwarf.Count-1 do begin
     writeln('Filename: ', dwarf.CompilationUnits[i].FileName);
   end;
@@ -93,9 +90,14 @@ end;
 
 
 procedure WriteEntry(Entry: TDwarfEntry; const Prefix: AnsisTring);
+var
+  s : AnsisTring;
 begin
   if not Assigned(Entry) then Exit;
-  writeln(Prefix, DwarfTagToString(Entry.Tag));
+
+  write(Prefix, DwarfTagToString(Entry.Tag));
+  writeln;
+
   if Assigned(Entry.Child) then WriteEntry(Entry.Child, Prefix+'  ');
   if Assigned(Entry.Next) then WriteEntry(Entry.Next, Prefix);
 end;
@@ -103,7 +105,6 @@ end;
 procedure TDbgDwarf3Info.dump_debug_info2; 
 var
   dwarf : TDwarfReader; 
-  i     : Integer;
   size  : Int64;
 begin
   dwarf := TDwarfReader.Create;
@@ -124,7 +125,7 @@ begin
   end;
 
   dwarf.ReadDwarf;
-  WriteEntry(dwarf.FirstEntry, '');
+  //WriteEntry(dwarf.FirstEntry, '');
   dwarf.Free;
 end;
 

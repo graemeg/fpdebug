@@ -32,6 +32,7 @@ unit dwarf;
 interface
 
 uses
+  SysUtils, Classes,
   dwarfConst, dwarfTypes;
 
 type
@@ -51,18 +52,12 @@ type
     Name     : Integer;
     Value    : TDwarfAttrValue; //todo: TDbgPtr
   end;
-  
-  TDwarfEntry = class(TObject) {Debugging Information Entry aka DIE}
-  public
-    Child     : TDwarfEntry;
-    Next      : TDwarfEntry;  
-    Parent    : TDwarfEntry;  
-  
-    Tag       : Integer;   
-  end;
-  
-type
+
+  TDwarfReader = class;
+
+
   { TAbbrevTable }
+
   TAbbrevTable = class(TObject)
   private
     FVerbose  : Boolean;
@@ -76,13 +71,38 @@ type
       Form        : Cardinal;
     end;
     Def   : array of TDwarfAbbrev;
-    constructor Create(const Abbrev: array of byte; Offset,Size: Integer);  
+    constructor Create(const Abbrev: array of byte; Offset,Size: Integer);
     function GetDefintion(AbbrevNum: Integer; var Abbrev: TDwarfAbbrev): Boolean;
   end;
-  
+
+  { TDwarfEntry }
+
+  TDwarfEntry = class(TObject) {Debugging Information Entry aka DIE}
+  private
+    fOwner      : TDwarfReader;
+    Attribs     : array of record
+                    Offset : QWord;
+                    Size   : Integer;
+                    Name   : INteger;
+                    Form   : Integer;
+                  end;
+    AttribCount : Integer;
+    procedure AddAttrib(AName, AForm: Integer; AOffset: QWord; AValSize: Integer);
+  public
+    Child     : TDwarfEntry;
+    Next      : TDwarfEntry;  
+    Parent    : TDwarfEntry;  
+
+    Tag       : Integer;
+    constructor Create(AOwner: TDwarfReader);
+    function GetStr(AttrName: Integer; var Res: AnsiString): Boolean;
+  end;
+
   { TDwarfReader }
 
   TDwarfReader = class(TObject)
+  private
+    fTables : TFPList;
   protected
     procedure ReadEntries(InfoOfs, InfoSize, AbbrevOfs: QWord; AddrSize: Byte);    
   public
@@ -93,7 +113,9 @@ type
     
     Abbrevs       : array of byte;
     AbbrevsSize   : Int64;
-    
+
+    constructor Create;
+    destructor Destroy; override;
     function ReadDwarf: Boolean;
   end;
 
@@ -127,7 +149,7 @@ var
     Inc(p);
   end;
   
-  procedure ParseAttribs(const ADef: TDwarfAbbrev; ABuildList: Boolean; var ofs: Integer);
+  procedure ParseAttribs(die: TDwarfEntry; const ADef: TDwarfAbbrev; ABuildList: Boolean; var ofs: Integer);
   var
     idx: Integer;
     Form: Cardinal;
@@ -136,81 +158,98 @@ var
   begin
     for idx := ADef.Index to ADef.Index + ADef.Count - 1 do
     begin
-      {if ABuildList
-      then AList[idx - ADef.Index] := p;}
-
       Form := abbr.FDefinitions[idx].Form;
       while Form = DW_FORM_indirect do  
         Form := ULEB128toOrdinal(Info, ofs);
       
       case Form of
         DW_FORM_addr     : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, AddrSize);
           Inc(ofs, AddrSize);
         end;
         DW_FORM_block    : begin
           UValue := ULEB128toOrdinal(Info, ofs);
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, UValue);
           Inc(ofs, UValue);
         end;
         DW_FORM_block1   : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs+1, PByte(@Info[ofs])^);
           Inc(ofs, PByte(@Info[ofs])^ + 1);
         end;
         DW_FORM_block2   : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs+2, PWord(@Info[ofs])^);
           Inc(ofs, PWord(@Info[ofs])^ + 2);
         end;
         DW_FORM_block4   : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs+4, PLongWord(@Info[ofs])^);
           Inc(ofs, PLongWord(@Info[ofs])^ + 4);
         end;
         DW_FORM_data1    : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, 1);
           Inc(ofs, 1);
         end;
         DW_FORM_data2    : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, 2);
           Inc(ofs, 2);
         end;
         DW_FORM_data4    : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, 4);
           Inc(ofs, 4);
         end;
         DW_FORM_data8    : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, 8);
           Inc(ofs, 8);
         end;
         DW_FORM_sdata    : begin
           p:=@Info[ofs];//todo: change
           SkipLEB(p);
-          inc(ofs, p-@Info[ofs]);          
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, p-@Info[ofs]);
+          inc(ofs, p-@Info[ofs]);
         end;
         DW_FORM_udata    : begin
           p:=@Info[ofs];//todo: change
           SkipLEB(p);
-          inc(ofs, p-@Info[ofs]);          
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, p-@Info[ofs]);
+          inc(ofs, p-@Info[ofs]);
         end;
         DW_FORM_flag     : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, 1);
           Inc(ofs, 1);
         end;
         DW_FORM_ref1     : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, 1);
           Inc(ofs, 1);
         end;
         DW_FORM_ref2     : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, 2);
           Inc(ofs, 2);
         end;
         DW_FORM_ref4     : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, 4);
           Inc(ofs, 4);
         end;
         DW_FORM_ref8     : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, 8);
           Inc(ofs, 8);
         end;
         DW_FORM_ref_udata: begin
           p:=@Info[ofs];//todo: change
           SkipLEB(p);
-          inc(ofs, p-@Info[ofs]);          
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, p-@Info[ofs]);
+          inc(ofs, p-@Info[ofs]);
         end;
         DW_FORM_ref_addr : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, AddrSize);
           Inc(ofs, AddrSize);
         end;
         DW_FORM_string   : begin
           p:=@Info[ofs];//todo: change
           SkipStr(p);
-          inc(ofs, p-@Info[ofs]);          
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, p-@Info[ofs]);
+          inc(ofs, p-@Info[ofs]);
         end;
         DW_FORM_strp     : begin
+          die.AddAttrib( abbr.FDefinitions[idx].Attribute, Form, ofs, AddrSize);
           Inc(ofs, AddrSize);
         end;
         DW_FORM_indirect : begin
@@ -222,17 +261,18 @@ var
   end;
 
 var
-  i       : Integer;
-  Abbrev  : Cardinal;
-  Def     : TDwarfAbbrev;
+  i         : Integer;
+  Abbrev    : Cardinal;
+  Def       : TDwarfAbbrev;
   MaxData   : QWord;
   BuildList : Boolean; // set once if we need to fill the list
   parent    : TDwarfEntry;
   prev      : TDwarfEntry;
   newdw     : TDwarfEntry;
-  t   : TDwarfEntry;
+  t         : TDwarfEntry;
 begin
-  abbr:=TAbbrevTable.Create(Abbrevs, AbbrevOfs, AbbrevsSize);  
+  abbr:=TAbbrevTable.Create(Abbrevs, AbbrevOfs, AbbrevsSize);
+  fTables.Add(abbr);
   
   BuildList := False;
   parent:=nil; 
@@ -241,7 +281,7 @@ begin
   //Scope := AStartScope;
   //p := Scope.Entry;
   i:=InfoOfs;
-  while (i <= MaxData) do begin
+  while (i < MaxData) do begin
     Abbrev := ULEB128toOrdinal(Info, i);
     
     if Abbrev = 0 then begin  // children are complete
@@ -257,10 +297,10 @@ begin
         WriteLn('Error: Abbrev not found: ', Abbrev,' i=',i);
         Break;
       end;
-      
-      ParseAttribs(Def, BuildList, i);
+
+      newdw:=TDwarfEntry.Create(Self);
+      ParseAttribs(newdw, Def, BuildList, i);
   
-      newdw:=TDwarfEntry.Create;
       if Assigned(prev) then prev.Next:=newdw;
       newdw.Parent:=newdw;
       if Assigned(Parent) and not Assigned(Parent.Child) then 
@@ -287,6 +327,21 @@ begin
       end;
     end;
   end;
+end;
+
+constructor TDwarfReader.Create;
+begin
+  inherited Create;
+  fTables := TFPList.Create;
+end;
+
+destructor TDwarfReader.Destroy;
+var
+  i : Integer;
+begin
+  for i:=0 to fTables.Count-1 do TObject(fTables[i]).Free;
+  fTables.Free;
+  inherited Destroy;
 end;
   
 function TDwarfReader.ReadDwarf: Boolean; 
@@ -424,6 +479,40 @@ function TAbbrevTable.GetDefintion(AbbrevNum: Integer; var Abbrev: TDwarfAbbrev)
 begin
   Result:=(AbbrevNum>=0) and (AbbrevNum<length(DefFilled)) and DefFilled[AbbrevNum];
   if Result then Abbrev:=Def[AbbrevNum];
+end;
+
+procedure TDwarfEntry.AddAttrib(AName,AForm:Integer;AOffset:QWord;AValSize:Integer);
+begin
+  if AttribCount=length(Attribs) then begin
+    if AttribCount=0 then SetLength(Attribs, 4)
+    else SetLength(Attribs, AttribCount*2);
+  end;
+  Attribs[AttribCount].Name:=AName;
+  Attribs[AttribCount].Form:=AForm;
+  Attribs[AttribCount].Offset:=AOffset;
+  Attribs[AttribCount].Size:=AValSize;
+end;
+
+{ TDwarfEntry }
+
+constructor TDwarfEntry.Create(AOwner:TDwarfReader);
+begin
+  inherited Create;
+  fOwner:=AOwner;
+end;
+
+function TDwarfEntry.GetStr(AttrName:Integer;var Res:AnsiString):Boolean;
+var
+  i : Integer;
+begin
+  for i:=0 to AttribCount-1 do
+    if Attribs[i].Name=AttrName then begin
+      SetLength(Res,Attribs[i].Size);
+      Move(fOwner.Info[Attribs[i].Offset], Res[1], Attribs[i].Size);
+      Result:=True;
+      Exit;
+    end;
+  Result:=False;
 end;
 
 end.

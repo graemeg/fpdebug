@@ -32,7 +32,7 @@ unit dwarf;
 interface
 
 uses
-  SysUtils, Classes,
+  SysUtils, Classes, contnrs,
   dwarfConst, dwarfTypes;
 
 type
@@ -74,6 +74,67 @@ type
     constructor Create(const Abbrev: array of byte; Offset,Size: Integer);
     function GetDefintion(AbbrevNum: Integer; var Abbrev: TDwarfAbbrev): Boolean;
   end;
+
+  { TLineInfoStateMachine }
+
+  TLineInfoStateMachine = class(TObject)
+  private
+    FLineInfo: record
+      Header: Pointer;
+      DataStart: Pointer;
+      DataEnd: Pointer;
+
+      Valid: Boolean;
+      Addr64: Boolean;
+      MinimumInstructionLength: Byte;
+      DefaultIsStmt: Boolean;
+      LineBase: ShortInt;
+      LineRange: Byte;
+      StandardOpcodeLengths: array of Byte; //record end; {array[1..OpcodeBase-1] of Byte}
+      Directories: TStringList;
+      FileNames: TStringList;
+      // the line info is build incrementy when needed
+      // StateMachine: TDwarfLineInfoStateMachine;
+      StateMachines: TFPObjectList; // list of state machines to be freed
+    end;
+
+    FLineInfoPtr: Pointer;
+    FMaxPtr: Pointer;
+    FEnded: Boolean;
+
+    FAddress: QWord;
+    FFileName: String;
+    FLine: Cardinal;
+    FColumn: Cardinal;
+    FIsStmt: Boolean;
+    FBasicBlock: Boolean;
+    FEndSequence: Boolean;
+    FPrologueEnd: Boolean;
+    FEpilogueBegin: Boolean;
+    FIsa: QWord;
+  protected
+    procedure FillLineInfo;
+  public
+    Data        : array of byte;
+    Offset      : Integer;
+    constructor Create;
+    function NextLine: Boolean;
+    procedure Reset;
+
+    property Address: QWord read FAddress;
+    property FileName: String read FFileName;
+    property Line: Cardinal read FLine;
+    property Column: Cardinal read FColumn;
+    property IsStmt: Boolean read FIsStmt;
+    property BasicBlock: Boolean read FBasicBlock;
+    property EndSequence: Boolean read FEndSequence;
+    property PrologueEnd: Boolean read FPrologueEnd;
+    property EpilogueBegin: Boolean read FEpilogueBegin;
+    property Isa: QWord read FIsa;
+
+    property Ended: Boolean read FEnded;
+  end;
+
 
   { TDwarfEntry }
 
@@ -530,6 +591,115 @@ end;
 function TDwarfEntry.GetAttrCount:Integer;
 begin
   Result:=AttribCount;
+end;
+
+procedure TLineInfoStateMachine.FillLineInfo;
+var
+  AData: Pointer;
+  Info: PDwarfLNPInfoHeader;
+
+  UnitLength: QWord;
+  Version: Word;
+  HeaderLength: QWord;
+  Name: PChar;
+  diridx: Cardinal;
+  S: String;
+  pb: PByte absolute Name;
+  LNP32: PDwarfLNPHeader32;
+  LNP64: PDwarfLNPHeader64;
+begin
+  AData:=@Data[Offset];
+  LNP32:=PDwarfLNPHeader32(AData);
+  LNP64:=PDwarfLNPHeader64(AData);
+  FLineInfo.Header:=AData;
+  if LNP64^.Signature=DWARF_HEADER64_SIGNATURE then begin
+    FLineInfo.Addr64 := True;
+    UnitLength := LNP64^.UnitLength;
+    FLineInfo.DataEnd := Pointer(@LNP64^.Version) + UnitLength;
+    Version := LNP64^.Version;
+    HeaderLength := LNP64^.HeaderLength;
+    Info := @LNP64^.Info;
+  end else begin
+    FLineInfo.Addr64 := False;
+    UnitLength := LNP32^.UnitLength;
+    FLineInfo.DataEnd := Pointer(@LNP32^.Version) + UnitLength;
+    Version := LNP32^.Version;
+    HeaderLength := LNP32^.HeaderLength;
+    Info := @LNP32^.Info;
+  end;
+  FLineInfo.DataStart := PByte(Info) + HeaderLength;
+
+  FLineInfo.MinimumInstructionLength := Info^.MinimumInstructionLength;
+  FLineInfo.DefaultIsStmt := Info^.DefaultIsStmt <> 0;
+  FLineInfo.LineBase := Info^.LineBase;
+  FLineInfo.LineRange := Info^.LineRange;
+
+  // opcodelengths
+  SetLength(FLineInfo.StandardOpcodeLengths, Info^.OpcodeBase - 1);
+  Move(Info^.StandardOpcodeLengths, FLineInfo.StandardOpcodeLengths[0], Info^.OpcodeBase - 1);
+
+  // directories & filenames
+  FLineInfo.Directories := TStringList.Create;
+  FLineInfo.Directories.Add(''); // current dir
+  Name := @Info^.StandardOpcodeLengths;
+  Inc(Name, Info^.OpcodeBase-1);
+  // directories
+  while Name^ <> #0 do
+  begin
+    S := String(Name);
+    Inc(pb, Length(S)+1);
+    FLineInfo.Directories.Add(S + DirectorySeparator);
+  end;
+  Inc(Name);
+
+  // filenames
+  FLineInfo.FileNames := TStringList.Create;
+  while Name^ <> #0 do
+  begin
+    S := String(Name);
+    Inc(pb, Length(S)+1);
+    //diridx
+    diridx := ULEB128toOrdinal(pb);
+    if diridx < FLineInfo.Directories.Count
+    then S := FLineInfo.Directories[diridx] + S
+    else S := Format('Unknown dir(%u)', [diridx]) + DirectorySeparator + S;
+    FLineInfo.FileNames.Add(S);
+    //last modified
+    ULEB128toOrdinal(pb);
+    //length
+    ULEB128toOrdinal(pb);
+  end;
+
+  //FLineInfo.StateMachine := TDwarfLineInfoStateMachine.Create(Self, FLineInfo.DataStart, FLineInfo.DataEnd);
+  FLineInfo.StateMachines := TFPObjectList.Create(True);
+
+  FLineInfo.Valid := True;
+end;
+
+constructor TLineInfoStateMachine.Create;
+begin
+
+end;
+
+{ TLineInfoStateMachine }
+
+function TLineInfoStateMachine.NextLine: Boolean;
+begin
+  Result:=False;
+end;
+
+procedure TLineInfoStateMachine.Reset;
+begin
+  FAddress := 0;
+  //SetFileName(1);
+  FLine := 1;
+  FColumn := 0;
+  //FIsStmt := FOwner.FLineInfo.DefaultIsStmt;
+  FBasicBlock := False;
+  FEndSequence := False;
+  FPrologueEnd := False;
+  FEpilogueBegin := False;
+  FIsa := 0;
 end;
 
 end.

@@ -107,6 +107,8 @@ procedure TDbgDwarf3Info.dump_debug_info2;
 var
   dwarf : TDwarfReader; 
   size  : Int64;
+  entry : TDwarfEntry;
+  lines : Integer;
 begin
   dwarf := TDwarfReader.Create;
   
@@ -118,15 +120,26 @@ begin
   if fSource.GetSectionInfo('.debug_info', dwarf.InfoSize) then begin
     SetLength(dwarf.Info, size);
     fSource.GetSectionData('.debug_info', 0, dwarf.InfoSize, dwarf.Info);
-  end;
+  end else
+    writeln('no debug info');
   
   if fSource.GetSectionInfo('.debug_abbrev', dwarf.AbbrevsSize) then begin
     SetLength(dwarf.Abbrevs, dwarf.AbbrevsSize);
     fSource.GetSectionData('.debug_abbrev', 0, dwarf.AbbrevsSize, dwarf.Abbrevs);
-  end;
+  end else
+    writeln('no debug abbrev');
 
   dwarf.ReadDwarf;
   WriteEntry(dwarf.FirstEntry, '');
+
+  entry:=dwarf.FirstEntry;
+  while Assigned(entry) do begin
+    if entry.Tag=DW_TAG_compile_unit then begin
+      lines:=entry.GetInt32(DW_AT_stmt_list);
+      writeln('lind offset = $', HexStr(lines, 8));
+    end;
+  end;
+
   dwarf.Free;
 end;
 

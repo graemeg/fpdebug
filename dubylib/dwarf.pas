@@ -150,6 +150,7 @@ type
     AttribCount : Integer;
   protected
     procedure AddAttrib(AName, AForm: Integer; AOffset: QWord; AValSize: Integer);
+    function GetAttrData(AttrName: Integer; var Data: Integer; DataSize: Integer): Boolean;
   public
     Child     : TDwarfEntry;
     Next      : TDwarfEntry;  
@@ -160,6 +161,7 @@ type
     function GetStr(AttrName: Integer; var Res: AnsiString): Boolean;
     function GetAttr(index: Integer; var AttrName, AttrForm: Integer): Boolean;
     function GetAttrCount: Integer;
+    function GetInt32(AttrName: Integer): Integer;
   end;
 
   { TDwarfReader }
@@ -437,7 +439,7 @@ begin
       len:=header^.hdr32.Length-(sizeof(header^.hdr32)-4);
       inc(i, sizeof(header^.hdr32));
     end;
-    ReadEntries(i, len, abbrofs, addrsz);    
+    ReadEntries(i, len, abbrofs, addrsz);
     inc(i, len); // skipping the data
   end;
 end;
@@ -559,6 +561,21 @@ begin
   inc(AttribCount);
 end;
 
+function TDwarfEntry.GetAttrData(AttrName:Integer;var Data:Integer;DataSize:
+  Integer):Boolean;
+var
+  i : Integer;
+begin
+  Result:=False;
+  for i:=0 to AttribCount-1 do
+    if Attribs[i].Name=AttrName then begin
+      if Attribs[i].Size<DataSize then Exit;
+      Move(fOwner.Info[Attribs[i].Offset], Data, DataSize);
+      Result:=True;
+      Exit;
+    end;
+end;
+
 { TDwarfEntry }
 
 constructor TDwarfEntry.Create(AOwner:TDwarfReader);
@@ -591,6 +608,11 @@ end;
 function TDwarfEntry.GetAttrCount:Integer;
 begin
   Result:=AttribCount;
+end;
+
+function TDwarfEntry.GetInt32(AttrName:Integer):Integer;
+begin
+  if not GetAttrData(AttrName, Result, sizeof(Result)) then Result:=0;
 end;
 
 procedure TLineInfoStateMachine.FillLineInfo;
@@ -702,4 +724,4 @@ begin
   FIsa := 0;
 end;
 
-end.
+end.

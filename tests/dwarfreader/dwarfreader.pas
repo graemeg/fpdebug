@@ -6,9 +6,8 @@ uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
-  Classes, dbgInfoTypes, dbgInfoDwarf,
+  SysUtils, Classes, dbgInfoTypes, dbgInfoDwarf,
   PESource, machoDbgSource;
-
 
 procedure ReadDwarfData(source : TDbgDataSource);
 var
@@ -29,9 +28,23 @@ begin
   dwarf.Free;
 end;
 
+function GetExternalDebugInfo(const FileName: String): string;
+{$ifdef DARWIN}
+const
+  DwarfPath : String = '/Contents/Resources/DWARF/';
+begin
+  Result:=ChangeFileExt(FileName, '.dSYM')+DwarfPath+ExtractFileName(FileName);
+end;
+{$else}
+begin
+  Result:='';
+end;
+{$endif}
+
+
 var
   dbgInfoSrc : TDbgDataSource;
-
+  info : AnsiString;
 begin
   if Paramcount < 1 then begin
     writeln('please specify dwarf debug-info file name');
@@ -45,7 +58,19 @@ begin
   writeln('File format: ', dbgInfoSrc.UserName);
 
   ReadDwarfData(dbgInfoSrc);
-
   dbgInfoSrc.Free;
+
+  info:=GetExternalDebugInfo(ParamStr(1));
+  if info<>'' then begin
+    dbgInfoSrc := GetDataSource(info);
+    if not Assigned(dbgInfoSrc) then begin
+      writeln('file '+ info+ ' is of unknow format');
+      Exit;
+    end;
+    writeln('File format: ', dbgInfoSrc.UserName);
+
+    ReadDwarfData(dbgInfoSrc);
+    dbgInfoSrc.Free;
+  end;
 end.
 

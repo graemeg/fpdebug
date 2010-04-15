@@ -16,6 +16,7 @@ type
   TDbgDwarf3Info = class(TDbgInfoReader)
   private
     fSource : TDbgDataSource;
+    procedure dump_lineinfo(entry: TDwarfEntry; ParseSiblings: Boolean=True);
   public
     class function isPresent(ASource: TDbgDataSource): Boolean; override;
     constructor Create(ASource: TDbgDataSource); override;
@@ -103,15 +104,46 @@ begin
   if Assigned(Entry.Next) then WriteEntry(Entry.Next, Prefix);
 end;
 
+procedure TDbgDwarf3Info.dump_lineinfo(entry:TDwarfEntry; ParseSiblings: Boolean);
+var
+  line    : TLineInfoStateMachine;
+  size    : Int64;
+  ofs     : Integer;
+const
+  debug_line = '.debug_line';
+
+begin
+  if not assigned(entry) then Exit;
+  if not fSource.GetSectionInfo(debug_line, size) then begin
+    writeln('line info is not found!');
+    Exit;
+  end;
+
+  line:=TLineInfoStateMachine.Create;
+  SetLength(line.Data, size);
+  fSource.GetSectionData(debug_line, 0, size, line.Data);
+  repeat
+    if (entry.Tag=DW_TAG_compile_unit) and entry.GetInt32(DW_AT_stmt_list, ofs) then begin
+      writeln('line info at $', HexStr(ofs, 8));
+      line.Reset(ofs);
+      while (not line.Ended) and line.NextLine do begin
+        writeln('line: ', line.Line );
+      end;
+    end;
+    entry:=entry.Next;
+  until not Assigned(entry) or not ParseSiblings;
+
+  line.Free;
+end;
+
 procedure TDbgDwarf3Info.dump_debug_info2; 
 var
-  dwarf : TDwarfReader; 
-  size  : Int64;
-  entry : TDwarfEntry;
-  lines : Integer;
+  dwarf   : TDwarfReader;
+  size    : Int64;
+  entry   : TDwarfEntry;
 begin
   dwarf := TDwarfReader.Create;
-  
+
   if not fSource.GetSectionInfo('.debug_info', size) then begin
     writeln('no .debug_info section');
     Exit;
@@ -132,14 +164,7 @@ begin
   dwarf.ReadDwarf;
   WriteEntry(dwarf.FirstEntry, '');
 
-  entry:=dwarf.FirstEntry;
-  while Assigned(entry) do begin
-    if entry.Tag=DW_TAG_compile_unit then begin
-      lines:=entry.GetInt32(DW_AT_stmt_list);
-      writeln('lind offset = $', HexStr(lines, 8));
-    end;
-    entry:=entry.Next;
-  end;
+  dump_lineinfo(dwarf.FirstEntry);
 
   dwarf.Free;
 end;

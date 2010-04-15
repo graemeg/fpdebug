@@ -94,9 +94,10 @@ type
       Directories: TStringList;
       FileNames: TStringList;
       // the line info is build incrementy when needed
-      // StateMachine: TDwarfLineInfoStateMachine;
-      StateMachines: TFPObjectList; // list of state machines to be freed
+      //StateMachines: TFPObjectList; // list of state machines to be freed
     end;
+
+    FOffset : QWord;
 
     FLineInfoPtr: Pointer;
     FMaxPtr: Pointer;
@@ -114,12 +115,12 @@ type
     FIsa: QWord;
   protected
     procedure FillLineInfo;
+    procedure ResetMachine;
+    procedure SetFileName(i: Integer);
   public
     Data        : array of byte;
-    Offset      : Integer;
-    constructor Create;
     function NextLine: Boolean;
-    procedure Reset;
+    procedure Reset(AOffset: QWord);
 
     property Address: QWord read FAddress;
     property FileName: String read FFileName;
@@ -161,7 +162,7 @@ type
     function GetStr(AttrName: Integer; var Res: AnsiString): Boolean;
     function GetAttr(index: Integer; var AttrName, AttrForm: Integer): Boolean;
     function GetAttrCount: Integer;
-    function GetInt32(AttrName: Integer): Integer;
+    function GetInt32(AttrName: Integer; var Int32: Integer): Boolean;
   end;
 
   { TDwarfReader }
@@ -610,9 +611,9 @@ begin
   Result:=AttribCount;
 end;
 
-function TDwarfEntry.GetInt32(AttrName:Integer):Integer;
+function TDwarfEntry.GetInt32(AttrName: Integer; var Int32: Integer): Boolean;
 begin
-  if not GetAttrData(AttrName, Result, sizeof(Result)) then Result:=0;
+  Result:=GetAttrData(AttrName, Int32, sizeof(int32));
 end;
 
 procedure TLineInfoStateMachine.FillLineInfo;
@@ -629,8 +630,15 @@ var
   pb: PByte absolute Name;
   LNP32: PDwarfLNPHeader32;
   LNP64: PDwarfLNPHeader64;
+
+
+  i : Integer;
 begin
-  AData:=@Data[Offset];
+  for i:=0 to length(data)-1 do Write(HexStr(data[i], 2),' ');
+  writeln;
+  writelN('line info. Data = ', length(data));
+  writeln('FOffset = ', FOffset);
+  AData:=@Data[FOffset];
   LNP32:=PDwarfLNPHeader32(AData);
   LNP64:=PDwarfLNPHeader64(AData);
   FLineInfo.Header:=AData;
@@ -640,14 +648,14 @@ begin
     FLineInfo.DataEnd := Pointer(@LNP64^.Version) + UnitLength;
     Version := LNP64^.Version;
     HeaderLength := LNP64^.HeaderLength;
-    Info := @LNP64^.Info;
+    Info := @(LNP64^.Info);
   end else begin
     FLineInfo.Addr64 := False;
     UnitLength := LNP32^.UnitLength;
     FLineInfo.DataEnd := Pointer(@LNP32^.Version) + UnitLength;
     Version := LNP32^.Version;
     HeaderLength := LNP32^.HeaderLength;
-    Info := @LNP32^.Info;
+    Info := @(LNP32^.Info);
   end;
   FLineInfo.DataStart := PByte(Info) + HeaderLength;
 
@@ -657,6 +665,7 @@ begin
   FLineInfo.LineRange := Info^.LineRange;
 
   // opcodelengths
+  writeln('Opcodes = ', Info^.OpcodeBase);
   SetLength(FLineInfo.StandardOpcodeLengths, Info^.OpcodeBase - 1);
   Move(Info^.StandardOpcodeLengths, FLineInfo.StandardOpcodeLengths[0], Info^.OpcodeBase - 1);
 
@@ -693,30 +702,18 @@ begin
   end;
 
   //FLineInfo.StateMachine := TDwarfLineInfoStateMachine.Create(Self, FLineInfo.DataStart, FLineInfo.DataEnd);
-  FLineInfo.StateMachines := TFPObjectList.Create(True);
+  //FLineInfo.StateMachines := TFPObjectList.Create(True);
 
   FLineInfo.Valid := True;
 end;
 
-constructor TLineInfoStateMachine.Create;
-begin
-
-end;
-
-{ TLineInfoStateMachine }
-
-function TLineInfoStateMachine.NextLine: Boolean;
-begin
-  Result:=False;
-end;
-
-procedure TLineInfoStateMachine.Reset;
+procedure TLineInfoStateMachine.ResetMachine;
 begin
   FAddress := 0;
-  //SetFileName(1);
+  SetFileName(1);
   FLine := 1;
   FColumn := 0;
-  //FIsStmt := FOwner.FLineInfo.DefaultIsStmt;
+  FIsStmt := FLineInfo.DefaultIsStmt;
   FBasicBlock := False;
   FEndSequence := False;
   FPrologueEnd := False;
@@ -724,4 +721,152 @@ begin
   FIsa := 0;
 end;
 
-end.
+procedure TLineInfoStateMachine.SetFileName(i:Integer);
+begin
+
+end;
+
+{ TLineInfoStateMachine }
+
+function TLineInfoStateMachine.NextLine: Boolean;
+var
+  pb: PByte;
+  p: Pointer;
+  Opcode: Byte;
+  instrlen: Cardinal;
+  diridx: Cardinal;
+begin
+  if FEnded then begin
+    Result:=False;//it has ended! what else do you want?
+    Exit;
+  end;
+
+  pb := PByte(FLineInfoPtr);
+  Result := False;
+  if FEndSequence then begin
+    ResetMachine;
+  end else begin
+    FBasicBlock := False;
+    FPrologueEnd := False;
+    FEpilogueBegin := False;
+  end;
+
+  while pb <= FMaxPtr do
+  begin
+    Opcode := pb^;
+    Inc(pb);
+    if Opcode <= Length(FLineInfo.StandardOpcodeLengths)
+    then begin
+      // Standard opcode
+      case Opcode of
+        DW_LNS_copy: begin
+          Result := True;
+          Exit;
+        end;
+        DW_LNS_advance_pc: begin
+          Inc(FAddress, ULEB128toOrdinal(pb));
+        end;
+        DW_LNS_advance_line: begin
+          Inc(FLine, SLEB128toOrdinal(pb));
+        end;
+        DW_LNS_set_file: begin
+          SetFileName(ULEB128toOrdinal(pb));
+        end;
+        DW_LNS_set_column: begin
+          FColumn := ULEB128toOrdinal(pb);
+        end;
+        DW_LNS_negate_stmt: begin
+          FIsStmt := not FIsStmt;
+        end;
+        DW_LNS_set_basic_block: begin
+          FBasicBlock := True;
+        end;
+        DW_LNS_const_add_pc: begin
+          Opcode := 255 - Length(FLineInfo.StandardOpcodeLengths);
+          if FLineInfo.LineRange = 0
+          then Inc(FAddress, Opcode * FLineInfo.MinimumInstructionLength)
+          else Inc(FAddress, (Opcode div FLineInfo.LineRange) * FLineInfo.MinimumInstructionLength);
+        end;
+        DW_LNS_fixed_advance_pc: begin
+          Inc(FAddress, PWord(pb)^);
+          Inc(pb, 2);
+        end;
+        DW_LNS_set_prologue_end: begin
+          FPrologueEnd := True;
+        end;
+        DW_LNS_set_epilogue_begin: begin
+          FEpilogueBegin := True;
+        end;
+        DW_LNS_set_isa: begin
+          FIsa := ULEB128toOrdinal(pb);
+        end;
+        // Extended opcode
+        DW_LNS_extended_opcode: begin
+          instrlen := ULEB128toOrdinal(pb); // instruction length
+
+          case pb^ of
+            DW_LNE_end_sequence: begin
+              FEndSequence := True;
+              Result := True;
+              Exit;
+            end;
+            DW_LNE_set_address: begin
+              if FLineInfo.Addr64
+              then FAddress := PQWord(pb+1)^
+              else FAddress := PLongWord(pb+1)^;
+            end;
+            DW_LNE_define_file: begin
+              // don't move pb, it's done at the end by instruction length
+              p := pb;
+              FFileName := String(PChar(p));
+              Inc(p, Length(FFileName) + 1);
+
+              //diridx
+              diridx := ULEB128toOrdinal(p);
+              if diridx < FLineInfo.Directories.Count
+              then FFileName := FLineInfo.Directories[diridx] + FFileName
+              else FFileName := Format('Unknown dir(%u)', [diridx]) + DirectorySeparator + FFileName;
+              //last modified
+              //ULEB128toOrdinal(p);
+              //length
+              //ULEB128toOrdinal(p));
+            end;
+          else
+            // unknown extendend opcode
+          end;
+          Inc(pb, instrlen);
+        end;
+      else
+        // unknown opcode
+        Inc(pb, FLineInfo.StandardOpcodeLengths[Opcode])
+      end;
+      Continue;
+    end;
+
+    // Special opcode
+    Dec(Opcode, Length(FLineInfo.StandardOpcodeLengths)+1);
+    if FLineInfo.LineRange = 0
+    then begin
+      Inc(FAddress, Opcode * FLineInfo.MinimumInstructionLength);
+    end
+    else begin
+      Inc(FAddress, (Opcode div FLineInfo.LineRange) * FLineInfo.MinimumInstructionLength);
+      Inc(FLine, FLineInfo.LineBase + (Opcode mod FLineInfo.LineRange));
+    end;
+    Result := True;
+    Exit;
+  end;
+  Result := False;
+  FEnded := True;
+end;
+
+procedure TLineInfoStateMachine.Reset(AOffset: QWord);
+begin
+  FOffset:=AOffset;
+  FillLineInfo;
+  FLineInfoPtr:=FLineInfo.DataStart;
+  FMaxPtr := FLineInfo.DataEnd;
+  ResetMachine;
+end;
+
+end.

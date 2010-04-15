@@ -138,6 +138,7 @@ begin
       lines:=entry.GetInt32(DW_AT_stmt_list);
       writeln('lind offset = $', HexStr(lines, 8));
     end;
+    entry:=entry.Next;
   end;
 
   dwarf.Free;

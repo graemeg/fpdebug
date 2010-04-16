@@ -99,24 +99,26 @@ type
 
     FOffset : QWord;
 
-    FLineInfoPtr: Pointer;
+    FLineInfoPtr: PByte;
     FMaxPtr: Pointer;
     FEnded: Boolean;
 
-    FAddress: QWord;
-    FFileName: String;
-    FLine: Cardinal;
-    FColumn: Cardinal;
-    FIsStmt: Boolean;
-    FBasicBlock: Boolean;
-    FEndSequence: Boolean;
-    FPrologueEnd: Boolean;
-    FEpilogueBegin: Boolean;
-    FIsa: QWord;
+    FFileName       : String;
+
+    FAddress        : QWord;
+    FFileNameId     : Cardinal;
+    FLine           : Cardinal;
+    FColumn         : Cardinal;
+    FIsStmt         : Boolean;
+    FBasicBlock     : Boolean;
+    FEndSequence    : Boolean;
+    FPrologueEnd    : Boolean;
+    FEpilogueBegin  : Boolean;
+    FIsa            : QWord;
+
   protected
     procedure FillLineInfo;
     procedure ResetMachine;
-    procedure SetFileName(i: Integer);
   public
     Data        : array of byte;
     function NextLine: Boolean;
@@ -423,9 +425,6 @@ begin
   Result:=InfoSize>0;
   if not Result then Exit;
   
-  //writeln('Info Size    = ', InfoSize);
-  //writeln('Abbrevs Size = ', AbbrevsSize);
-  
   i:=0;
   while i<InfoSize do begin
     header:=@Info[i];
@@ -498,7 +497,7 @@ begin
     end;
 
     if DefFilled[abbrev] then begin
-      WriteLN('Duplicate abbrev=', abbrev, ' found. Ignoring....');
+      if FVerbose then WriteLN('Duplicate abbrev=', abbrev, ' found. Ignoring....');
       while PWord(@AData[i])^ <> 0 do Inc(i, 2);
       Inc(i, 2);
       Continue;
@@ -634,10 +633,6 @@ var
 
   i : Integer;
 begin
-  for i:=0 to length(data)-1 do Write(HexStr(data[i], 2),' ');
-  writeln;
-  writelN('line info. Data = ', length(data));
-  writeln('FOffset = ', FOffset);
   AData:=@Data[FOffset];
   LNP32:=PDwarfLNPHeader32(AData);
   LNP64:=PDwarfLNPHeader64(AData);
@@ -665,7 +660,6 @@ begin
   FLineInfo.LineRange := Info^.LineRange;
 
   // opcodelengths
-  writeln('Opcodes = ', Info^.OpcodeBase);
   SetLength(FLineInfo.StandardOpcodeLengths, Info^.OpcodeBase - 1);
   Move(Info^.StandardOpcodeLengths, FLineInfo.StandardOpcodeLengths[0], Info^.OpcodeBase - 1);
 
@@ -701,16 +695,13 @@ begin
     ULEB128toOrdinal(pb);
   end;
 
-  //FLineInfo.StateMachine := TDwarfLineInfoStateMachine.Create(Self, FLineInfo.DataStart, FLineInfo.DataEnd);
-  //FLineInfo.StateMachines := TFPObjectList.Create(True);
-
   FLineInfo.Valid := True;
 end;
 
 procedure TLineInfoStateMachine.ResetMachine;
 begin
   FAddress := 0;
-  SetFileName(1);
+  FFileNameId := 1;
   FLine := 1;
   FColumn := 0;
   FIsStmt := FLineInfo.DefaultIsStmt;
@@ -719,11 +710,6 @@ begin
   FPrologueEnd := False;
   FEpilogueBegin := False;
   FIsa := 0;
-end;
-
-procedure TLineInfoStateMachine.SetFileName(i:Integer);
-begin
-
 end;
 
 { TLineInfoStateMachine }
@@ -736,11 +722,6 @@ var
   instrlen: Cardinal;
   diridx: Cardinal;
 begin
-  if FEnded then begin
-    Result:=False;//it has ended! what else do you want?
-    Exit;
-  end;
-
   pb := PByte(FLineInfoPtr);
   Result := False;
   if FEndSequence then begin
@@ -755,11 +736,11 @@ begin
   begin
     Opcode := pb^;
     Inc(pb);
-    if Opcode <= Length(FLineInfo.StandardOpcodeLengths)
-    then begin
+    if Opcode <= Length(FLineInfo.StandardOpcodeLengths) then begin
       // Standard opcode
       case Opcode of
         DW_LNS_copy: begin
+          FLineInfoPtr:=pb;
           Result := True;
           Exit;
         end;
@@ -770,7 +751,7 @@ begin
           Inc(FLine, SLEB128toOrdinal(pb));
         end;
         DW_LNS_set_file: begin
-          SetFileName(ULEB128toOrdinal(pb));
+          FFileNameId:=ULEB128toOrdinal(pb);
         end;
         DW_LNS_set_column: begin
           FColumn := ULEB128toOrdinal(pb);
@@ -807,6 +788,7 @@ begin
           case pb^ of
             DW_LNE_end_sequence: begin
               FEndSequence := True;
+              FLineInfoPtr:=pb;
               Result := True;
               Exit;
             end;
@@ -840,21 +822,21 @@ begin
         // unknown opcode
         Inc(pb, FLineInfo.StandardOpcodeLengths[Opcode])
       end;
-      Continue;
+    end else begin
+      // Special opcode
+      Dec(Opcode, Length(FLineInfo.StandardOpcodeLengths)+1);
+      if FLineInfo.LineRange = 0
+      then begin
+        Inc(FAddress, Opcode * FLineInfo.MinimumInstructionLength);
+      end
+      else begin
+        Inc(FAddress, (Opcode div FLineInfo.LineRange) * FLineInfo.MinimumInstructionLength);
+        Inc(FLine, FLineInfo.LineBase + (Opcode mod FLineInfo.LineRange));
+      end;
+      FLineInfoPtr:=pb;
+      Result := True;
+      Exit;
     end;
-
-    // Special opcode
-    Dec(Opcode, Length(FLineInfo.StandardOpcodeLengths)+1);
-    if FLineInfo.LineRange = 0
-    then begin
-      Inc(FAddress, Opcode * FLineInfo.MinimumInstructionLength);
-    end
-    else begin
-      Inc(FAddress, (Opcode div FLineInfo.LineRange) * FLineInfo.MinimumInstructionLength);
-      Inc(FLine, FLineInfo.LineBase + (Opcode mod FLineInfo.LineRange));
-    end;
-    Result := True;
-    Exit;
   end;
   Result := False;
   FEnded := True;

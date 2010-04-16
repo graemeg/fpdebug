@@ -363,7 +363,7 @@ begin
     end else begin
 
       if not abbr.GetDefintion(Abbrev, Def)  then begin
-        WriteLn('Error: Abbrev not found: ', Abbrev,' i=',i);
+        // WriteLn('Error: Abbrev not found: ', Abbrev,' i=',i);
         Break;
       end;
 
@@ -740,8 +740,8 @@ begin
       // Standard opcode
       case Opcode of
         DW_LNS_copy: begin
-          FLineInfoPtr:=pb;
           Result := True;
+          FLineInfoPtr:=pb;
           Exit;
         end;
         DW_LNS_advance_pc: begin
@@ -846,8 +846,9 @@ procedure TLineInfoStateMachine.Reset(AOffset: QWord);
 begin
   FOffset:=AOffset;
   FillLineInfo;
-  FLineInfoPtr:=FLineInfo.DataStart;
+  FLineInfoPtr := FLineInfo.DataStart;
   FMaxPtr := FLineInfo.DataEnd;
+  FEnded:=False;
   ResetMachine;
 end;
 

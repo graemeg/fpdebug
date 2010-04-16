@@ -126,8 +126,8 @@ begin
     if (entry.Tag=DW_TAG_compile_unit) and entry.GetInt32(DW_AT_stmt_list, ofs) then begin
       writeln('line info at $', HexStr(ofs, 8));
       line.Reset(ofs);
-      while (not line.Ended) and line.NextLine do begin
-        writeln('line: ', line.Line );
+      while line.NextLine do begin
+        writeln('line: ', line.Line,'  addr: ', HexStr(line.Address, sizeof(PtrUint)*2) );
       end;
     end;
     entry:=entry.Next;
@@ -140,7 +140,6 @@ procedure TDbgDwarf3Info.dump_debug_info2;
 var
   dwarf   : TDwarfReader;
   size    : Int64;
-  entry   : TDwarfEntry;
 begin
   dwarf := TDwarfReader.Create;
 

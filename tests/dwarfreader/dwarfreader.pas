@@ -64,7 +64,7 @@ begin
   if info<>'' then begin
     dbgInfoSrc := GetDataSource(info);
     if not Assigned(dbgInfoSrc) then begin
-      writeln('file '+ info+ ' is of unknow format');
+      writeln('file '+ info+ ' is of unknown format');
       Exit;
     end;
     writeln('File format: ', dbgInfoSrc.UserName);

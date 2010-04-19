@@ -252,9 +252,8 @@ begin
       Exit;
   end else begin
     idx := GetSectionIndex(SectionName);
-
     s := TMachOsection(fFile.sections[idx]);
-    if not s.is32 then begin
+    if s.is32 then begin
       ssize := s.sec32.size;
       sofs := s.sec32.offset;
     end else begin

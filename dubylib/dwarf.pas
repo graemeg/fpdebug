@@ -419,8 +419,8 @@ var
   header  : PDwarfHeader;
   i       : Integer;
   addrsz  : Byte;
-  abbrofs : int64;
-  len     : QWord;
+  abbrofs : Int64;
+  len     : Int64;
 begin
   Result:=InfoSize>0;
   if not Result then Exit;
@@ -439,6 +439,8 @@ begin
       len:=header^.hdr32.Length-(sizeof(header^.hdr32)-4);
       inc(i, sizeof(header^.hdr32));
     end;
+    if len<0 then {error} Break;
+
     ReadEntries(i, len, abbrofs, addrsz);
     inc(i, len); // skipping the data
   end;
@@ -852,4 +854,4 @@ begin
   ResetMachine;
 end;
 
-end.
+end.

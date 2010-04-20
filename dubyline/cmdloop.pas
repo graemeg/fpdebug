@@ -348,55 +348,6 @@ begin
   Result:=Target.FindThread(DbgEvent.Process, DbgEvent.Thread);
 end;
 
-
-// Hanlder routines
-
-{procedure InstallHandler(AHandler: TEventHandler);
-var
-  p : TProcHandler;
-begin
-  p := TProcHandler.Create;
-  p.Handler := AHandler;
-  EventHandlers.Add( p );
-end;
-
-procedure RemoveHandler(AHandler: TEventHandler);
-var
-  i : Integer;
-begin
-  for i := 0 to EventHandlers.Count - 1 do
-    if @TProcHandler(EventHandlers[i]).Handler = @AHandler then begin
-      TProcHandler(EventHandlers[i]).Free;
-      EventHandlers.Delete(i);
-      Exit;
-    end;
-end;
-
-procedure HandleEvent(Process: TDbgTarget; Event: TDbgEvent);
-var
-  i : Integer;
-begin
-  for i := 0 to EventHandlers.Count - 1 do
-    try
-      TProcHandler(EventHandlers[i]).Handler(Process, Event);
-    except
-    end;
-end;
-
-procedure InitHandlers;
-begin
-  EventHandlers := TFPList.Create;  
-end;
-
-procedure ReleaseHandlers;
-var
-  i : Integer;
-begin
-  for i := 0 to EventHandlers.Count - 1 do TProcHandler(EventHandlers[i]).free;
-  EventHandlers.Free;
-end;
-}
-
 // Registering commands
 procedure RegisterLoopCommands;
 begin
@@ -408,10 +359,8 @@ end;
 
 initialization
   RegisterLoopCommands;
-//  InitHandlers;
  
 finalization
-//  ReleaseHandlers;
     
   
 

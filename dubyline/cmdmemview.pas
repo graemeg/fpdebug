@@ -236,12 +236,17 @@ begin
   Result:='Show callstack';
 end;
 
-initialization
+procedure RegisterMemCommands;
+begin
   RegisterCommand(['view','v'], TViewMemCommand.Create);
   RegisterCommand(['reg','g'], TRegistersView.Create);
   {$ifdef cpui386}
   RegisterCommand(['unwind','stack','st'], TStackView.Create);
   {$endif}
+end;
+
+initialization
+  RegisterMemCommands;
 
 end.
 

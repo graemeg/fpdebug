@@ -56,9 +56,9 @@
         <UnitName Value="cmdDbg"/>
       </Unit3>
       <Unit4>
-        <Filename Value="..\dubylib\dbginfodwarf.pas"/>
+        <Filename Value="dbginfodwarfold.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dbgInfoDwarf"/>
+        <UnitName Value="dbgInfoDwarfOld"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\dubylib\dwarfproc.pas"/>

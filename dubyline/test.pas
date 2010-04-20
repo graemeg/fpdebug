@@ -46,8 +46,10 @@ type
   end;
 begin
   SetLength(d, 10);
-  for i := 1 to 10 do d[i-1]:=i+a;
-  for i:=0 to 9 do writeln(d[i]);
+  for i := 1 to 10 do 
+    d[i-1]:=i+a;
+  for i:=0 to 9 do 
+    writeln(d[i]);
 end;
 
 type

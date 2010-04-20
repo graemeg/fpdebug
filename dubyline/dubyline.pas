@@ -15,7 +15,7 @@ uses
 
   dbgInfoTypes,
   dbgInfoPascal,
-  //dbgInfoDwarf,  // dwarf debug information
+  dbgInfoDwarf,  // dwarf debug information
   dbgInfoStabs,  // stabs debug information
   
   PESource,        // Win (PE), Linux (elf), MacOSX (macho) executable files

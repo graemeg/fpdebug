@@ -126,6 +126,7 @@ type
 
     property Address: QWord read FAddress;
     property FileName: String read FFileName;
+    property FileNameId: LongWord read FFileNameId;
     property Line: Cardinal read FLine;
     property Column: Cardinal read FColumn;
     property IsStmt: Boolean read FIsStmt;
@@ -188,6 +189,8 @@ type
     function ReadDwarf: Boolean;
   end;
 
+function DwarfName(e: TDwarfEntry): AnsiString;
+
 implementation
 
 type
@@ -197,6 +200,11 @@ type
   end;
   PDwarfHeader =  ^TDwarfHeader;
 
+
+function DwarfName(e: TDwarfEntry): AnsiString;
+begin
+  if (not Assigned(e)) or (not e.GetStr(DW_AT_name, Result)) then Result:='';
+end;
 
 { TDwarfReader }
 
@@ -363,7 +371,7 @@ begin
     end else begin
 
       if not abbr.GetDefintion(Abbrev, Def)  then begin
-        // WriteLn('Error: Abbrev not found: ', Abbrev,' i=',i);
+        //WriteLn('Error: Abbrev not found: ', Abbrev,' i=',i);
         Break;
       end;
 
@@ -588,12 +596,14 @@ end;
 
 function TDwarfEntry.GetStr(AttrName:Integer;var Res:AnsiString):Boolean;
 var
-  i : Integer;
+  i   : Integer;
+  sz  : Integer;
 begin
   for i:=0 to AttribCount-1 do
     if Attribs[i].Name=AttrName then begin
-      SetLength(Res,Attribs[i].Size);
-      Move(fOwner.Info[Attribs[i].Offset], Res[1], Attribs[i].Size);
+      sz:=Attribs[i].Size-1; //excluding Null-terminating character
+      SetLength(Res,sz);
+      Move(fOwner.Info[Attribs[i].Offset], Res[1], sz);
       Result:=True;
       Exit;
     end;
@@ -854,4 +864,4 @@ begin
   ResetMachine;
 end;
 
-end.
+end.

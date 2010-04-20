@@ -42,7 +42,7 @@ interface
 
 uses
   Classes, Types, SysUtils, contnrs, Math,
-  dwarfConst, Maps,
+  dwarfConst, //Maps,
   dbgTypes;
   
 type
@@ -219,7 +219,7 @@ type
     FFileName: String;
     FIdentifierCase: Integer;
 
-    FMap: TMap;
+    //FMap: TMap;
     FDefinitions: array of record
       Attribute: Cardinal;
       Form: Cardinal;
@@ -249,7 +249,7 @@ type
     
     FLineNumberMap: TStringList;
 
-    FAddressMap: TMap;
+    //FAddressMap: TMap;
     FAddressMapBuild: Boolean;
     
     FMinPC: QWord;  // the min and max PC value found in this unit.
@@ -318,11 +318,11 @@ type
   
   { TVerboseDwarfCallframeDecoder }
 
-  TDbgSymbol = class(TObject);
+  TDbgSymbol_ = class(TObject);
   
   { TDbgDwarfProcSymbol }
 
-  TDbgDwarfProcSymbol = class(TDbgSymbol)
+  TDbgDwarfProcSymbol = class(TDbgSymbol_)
   private
     FCU: TDwarfCompilationUnit;
     FAddress: TDbgPtr;
@@ -330,13 +330,13 @@ type
     FStateMachine: TDwarfLineInfoStateMachine;
     function StateMachineValid: Boolean;
   protected
-    function GetChild(AIndex: Integer): TDbgSymbol; virtual;
+    function GetChild(AIndex: Integer): TDbgSymbol_; virtual;
     function GetColumn: Cardinal; virtual;
     function GetCount: Integer; virtual;
     function GetFile: String; virtual;
 //    function GetFlags: TDbgSymbolFlags; override;
     function GetLine: Cardinal; virtual;
-    function GetParent: TDbgSymbol; virtual;
+    function GetParent: TDbgSymbol_; virtual;
 //    function GetReference: TDbgSymbol; override;
     function GetSize: Integer; virtual;
   public
@@ -396,7 +396,7 @@ type
 
     function LoadCompilationUnits: Integer;
     
-    function FindSymbol(AAddress: TDbgPtr): TDbgSymbol;
+    function FindSymbol(AAddress: TDbgPtr): TDbgSymbol_;
     function GetLineAddress(const AFileName: String; ALine: Cardinal): TDbgPtr;
     function PointerFromRVA(ARVA: QWord): Pointer;
     function PointerFromVA(ASection: TDwarfSection; AVA: QWord): Pointer;
@@ -813,7 +813,7 @@ begin
   inherited Destroy;
 end;
 
-function TDbgDwarfProcSymbol.GetChild(AIndex: Integer): TDbgSymbol;
+function TDbgDwarfProcSymbol.GetChild(AIndex: Integer): TDbgSymbol_;
 begin
   //Result:=inherited GetChild(AIndex);
   Result := nil;
@@ -850,7 +850,7 @@ begin
   Result := 0;
 end;
 
-function TDbgDwarfProcSymbol.GetParent: TDbgSymbol;
+function TDbgDwarfProcSymbol.GetParent: TDbgSymbol_;
 begin
   // Result:=inherited GetParent;
   Result := nil;
@@ -932,62 +932,67 @@ begin
   Result:=FSections[ASection].RawData;
 end;
 
-function TDbgDwarf.FindSymbol(AAddress: TDbgPtr): TDbgSymbol;
-var
-  n: Integer;
-  CU: TDwarfCompilationUnit;
-  Iter: TMapIterator;
-  Info: PDwarfAddressInfo;
-  MinMaxSet: boolean;
+function TDbgDwarf.FindSymbol(AAddress: TDbgPtr): TDbgSymbol_;
 begin
-  Result := nil;
-  for n := 0 to FCompilationUnits.Count - 1 do
+  (*
+  var
+    n: Integer;
+    CU: TDwarfCompilationUnit;
+    Iter: TMapIterator;
+    Info: PDwarfAddressInfo;
+    MinMaxSet: boolean;
   begin
-    CU := TDwarfCompilationUnit(FCompilationUnits[n]);
-    if not CU.Valid then Continue;
-    MinMaxSet := CU.FMinPC <> CU.FMaxPC;
-    if MinMaxSet and ((AAddress < CU.FMinPC) or (AAddress > CU.FMaxPC))
-    then Continue;
-    
-    CU.BuildAddressMap;
+    Result := nil;
+    for n := 0 to FCompilationUnits.Count - 1 do
+    begin
+      CU := TDwarfCompilationUnit(FCompilationUnits[n]);
+      if not CU.Valid then Continue;
+      MinMaxSet := CU.FMinPC <> CU.FMaxPC;
+      if MinMaxSet and ((AAddress < CU.FMinPC) or (AAddress > CU.FMaxPC))
+      then Continue;
 
-    Iter := TMapIterator.Create(CU.FAddressMap);
-    try
-      if Iter.EOM
-      then begin
-        if MinMaxSet
-        then Exit //  minmaxset and no procs defined ???
-        else Continue;
-      end;
+      CU.BuildAddressMap;
 
-      if not Iter.Locate(AAddress)
-      then begin
-        if not Iter.BOM
-        then Iter.Previous;
-
-        if Iter.BOM
+      Iter := TMapIterator.Create(CU.FAddressMap);
+      try
+        if Iter.EOM
         then begin
           if MinMaxSet
-          then Exit //  minmaxset and no proc @ minpc ???
+          then Exit //  minmaxset and no procs defined ???
           else Continue;
         end;
+
+        if not Iter.Locate(AAddress)
+        then begin
+          if not Iter.BOM
+          then Iter.Previous;
+
+          if Iter.BOM
+          then begin
+            if MinMaxSet
+            then Exit //  minmaxset and no proc @ minpc ???
+            else Continue;
+          end;
+        end;
+
+        // iter is at the closest defined adress before AAddress
+        Info := Iter.DataPtr;
+        if AAddress > Info^.EndPC
+        then begin
+          if MinMaxSet
+          then Exit //  minmaxset and no proc @ maxpc ???
+          else Continue;
+        end;
+
+        Result := TDbgDwarfProcSymbol.Create(CU, Iter.DataPtr, AAddress);
+      finally
+        Iter.Free;
       end;
-      
-      // iter is at the closest defined adress before AAddress
-      Info := Iter.DataPtr;
-      if AAddress > Info^.EndPC
-      then begin
-        if MinMaxSet
-        then Exit //  minmaxset and no proc @ maxpc ???
-        else Continue;
-      end;
-      
-      Result := TDbgDwarfProcSymbol.Create(CU, Iter.DataPtr, AAddress);
-    finally
-      Iter.Free;
+
     end;
-    
   end;
+  *)
+  Result:=nil;
 end;
 
 function TDbgDwarf.GetCompilationUnit(AIndex: Integer): TDwarfCompilationUnit;
@@ -1298,6 +1303,8 @@ end;
 { TDwarfCompilationUnit }
 
 procedure TDwarfCompilationUnit.BuildLineInfo(AAddressInfo: PDwarfAddressInfo; ADoAll: Boolean);
+begin
+(*
 var
   Iter: TMapIterator;
   Info: PDwarfAddressInfo;
@@ -1344,6 +1351,7 @@ begin
   end;
     
   Iter.Free;
+  *)
 end;
 
 procedure TDwarfCompilationUnit.BuildAddressMap;
@@ -1511,14 +1519,16 @@ begin
   FAddressSize := AAddressSize;
   FIsDwarf64 := AIsDwarf64;
 
-  FMap := TMap.Create(itu4, SizeOf(TDwarfAbbrev));
+  //todo:
+  //FMap := TMap.Create(itu4, SizeOf(TDwarfAbbrev));
+
   SetLength(FDefinitions, 256);
   // initialize last abbrev with start
 //  FLastAbbrevPtr := FOwner.PointerFromVA(dsAbbrev, FAbbrevOffset);
   FLastAbbrevPtr := FOwner.FSections[dsAbbrev].RawData + FAbbrevOffset;
 
   // use internally 64 bit target pointer
-  FAddressMap := TMap.Create(itu8, SizeOf(TDwarfAddressInfo));
+  //FAddressMap := TMap.Create(itu8, SizeOf(TDwarfAddressInfo));
   FLineNumberMap := TStringList.Create;
   FLineNumberMap.Sorted := True;
   FLineNumberMap.Duplicates := dupError;
@@ -1598,8 +1608,8 @@ destructor TDwarfCompilationUnit.Destroy;
 
 begin
   FreeScope;
-  FreeAndNil(FMap);
-  FreeAndNil(FAddressMap);
+  //FreeAndNil(FMap);
+  //FreeAndNil(FAddressMap);
   FreeLineNumberMap;
   FreeAndNil(FLineInfo.StateMachines);
   FreeAndNil(FLineInfo.StateMachine);
@@ -1614,7 +1624,7 @@ begin
   Result := false;
   LoadAbbrevs(AAbbrev);
   Result := false;
-  Result := FMap.GetData(AAbbrev, ADefinition);
+  //Result := FMap.GetData(AAbbrev, ADefinition);
 end;
 
 function TDwarfCompilationUnit.GetLineAddress(const AFileName: String; ALine: Cardinal): TDbgPtr;
@@ -1688,14 +1698,15 @@ begin
     abbrev := ULEB128toOrdinal(pb);
     Def.tag := ULEB128toOrdinal(pb);
 
-    if FMap.HasId(abbrev)
+    //tood: commented by duby
+    (*if FMap.HasId(abbrev)
     then begin
       WriteLN('Duplicate abbrev=', abbrev, ' found. Ignoring....');
       while pw^ <> 0 do Inc(pw);
       Inc(pw);
       abbrev := 0;
       Continue;
-    end;
+    end;*)
 
     if FVerbose
     then begin
@@ -1723,7 +1734,8 @@ begin
       Inc(n);
     end;
     Def.Count := n;
-    FMap.Add(abbrev, Def);
+    //todo: duby comment
+    //FMap.Add(abbrev, Def);
 
     Inc(pw);
   end;
@@ -2286,7 +2298,7 @@ end;
 
 procedure TDwarfAbbrevDecoder.Decode;
 var
-  Iter: TMapIterator;
+  //Iter: TMapIterator;
   Info: TDwarfAddressInfo;
   Scope: TDwarfScopeInfo;
 begin
@@ -2296,7 +2308,8 @@ begin
   InternalDecode(FCU.FInfoData, FCU.FInfoData + FCU.FLength);
 
   WriteLN('addresses: ');
-  Iter := TMapIterator.Create(FCU.FAddressMap);
+  //todo: duby comment
+  (*Iter := TMapIterator.Create(FCU.FAddressMap);
   while not Iter.EOM do
   begin
     Iter.GetData(Info);
@@ -2310,7 +2323,7 @@ begin
     WriteLN(Info.Name, ': $', IntToHex(Info.StartPC, FCU.FAddressSize * 2), '..$', IntToHex(Info.EndPC, FCU.FAddressSize * 2));
     Iter.Next;
   end;
-  Iter.Free;
+  Iter.Free; *)
 end;
 
 procedure TDwarfAbbrevDecoder.DecodeLocation(AData: PByte; ASize: QWord; const AIndent: String);

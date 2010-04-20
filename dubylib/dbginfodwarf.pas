@@ -15,7 +15,16 @@ type
 
   TDbgDwarf3Info = class(TDbgInfoReader)
   private
-    fSource : TDbgDataSource;
+    fSource   : TDbgDataSource;
+
+    fDbgInfo  : TDbgInfo;
+    lineinfo  : TLineInfoStateMachine;
+    curfile   : TDbgSymFile;
+    parent    : TDbgSymbol;
+    procedure ReadCompileUnit(entry: TDwarfEntry; var sym: TDbgSymbol);
+    procedure ReadSubPrograms(entry: TDwarfEntry; var sym: TDbgSymbol);
+    procedure ReadDwarfEntry(entry: TDwarfEntry);
+
     procedure dump_lineinfo(entry: TDwarfEntry; ParseSiblings: Boolean=True);
   public
     class function isPresent(ASource: TDbgDataSource): Boolean; override;
@@ -23,8 +32,6 @@ type
 
     function ReadDebugInfo(ASource: TDbgDataSource; Info: TDbgInfo): Boolean; override;
 
-    procedure dump_debug_abbrev;
-    procedure dump_debug_info;
     procedure dump_debug_info2;
   end;
 
@@ -46,48 +53,58 @@ begin
 end;
 
 function TDbgDwarf3Info.ReadDebugInfo(ASource: TDbgDataSource; Info: TDbgInfo): Boolean;
-begin
-  Result:=false;
-end;
-
-
-procedure TDbgDwarf3Info.dump_debug_abbrev;
-begin
-  writeln('dump_debug_abbrev undone!');
-end;
-
-procedure TDbgDwarf3Info.dump_debug_info;
 var
-  sz    : Int64;
-  buf   : Pointer;
-  dwarf : TDbgDwarf; 
-  sc    : TDwarfSection;
-  i     : Integer;
+  size    : Int64;
+  reader  : TDwarfReader;
+  entry   : TDwarfEntry;
+
+const
+  _debug_info   = '.debug_info';
+  _debug_abbrev = '.debug_abbrev';
+  _debug_line   = '.debug_line';
+
 begin
-  dwarf := TDbgDwarf.Create;
-  
-  if not fSource.GetSectionInfo('.debug_info', sz) then begin
-    writeln('no .debug_info section');
+  Result:=ASource.GetSectionInfo(_debug_info, size);
+  if not Result then begin
+    //writeln('no .debug_info');
     Exit;
   end;
-  
-  for sc:=low(sc) to High(sc) do begin
-    if fSource.GetSectionInfo(DWARF_SECTION_NAME[sc], sz) then begin
-      //todo: virtual address
-      buf:=dwarf.GetSectionData(sc, sz, 0);
-      sz:=fSource.GetSectionData(DWARF_SECTION_NAME[sc], 0, sz, PByteArray(buf)^);  
-    end else
-      dwarf.GetSectionData(sc, 0, 0);
+
+  reader:=TDwarfReader.Create;
+  try
+    reader.InfoSize:=size;
+    SetLength(reader.Info, size);
+    if size>0 then ASource.GetSectionData(_debug_info, 0, size, reader.Info);
+
+    if ASource.GetSectionInfo(_debug_abbrev, size) then begin
+      reader.AbbrevsSize:=size;
+      SetLength(reader.Abbrevs, size);
+      if size>0 then
+        ASource.GetSectionData(_debug_abbrev, 0, size, reader.Abbrevs);
+    end;
+
+    lineinfo:=TLineInfoStateMachine.Create;
+    if ASource.GetSectionInfo(_debug_line, size) then begin
+      SetLength(lineinfo.Data, size);
+      ASource.GetSectionData(_debug_line, 0, size, lineinfo.Data);
+    end;
+
+    Result:=reader.ReadDwarf;
+    if not Result then Exit;
+
+    entry:=reader.FirstEntry;
+    fDbgInfo:=Info;
+    while Assigned(entry) do begin
+      ReadDwarfEntry(entry);
+      entry:=entry.Next;
+    end;
+  finally
+    reader.Free;
   end;
 
-  dwarf.LoadCompilationUnits;
-  
-  for i:=0 to dwarf.Count-1 do begin
-    writeln('Filename: ', dwarf.CompilationUnits[i].FileName);
-  end;
-  
-  dwarf.Free;
 end;
+
+
 
 
 procedure WriteEntry(Entry: TDwarfEntry; const Prefix: AnsisTring);
@@ -127,13 +144,73 @@ begin
       writeln('line info at $', HexStr(ofs, 8));
       line.Reset(ofs);
       while line.NextLine do begin
-        writeln('line: ', line.Line,'  addr: ', HexStr(line.Address, sizeof(PtrUint)*2) );
+        writeln('line: ', line.Line,'  addr: ', HexStr(line.Address, sizeof(PtrUint)*2),' filename: ', line.FileNameId );
       end;
     end;
     entry:=entry.Next;
   until not Assigned(entry) or not ParseSiblings;
 
   line.Free;
+end;
+
+procedure TDbgDwarf3Info.ReadCompileUnit(entry:TDwarfEntry; var sym: TDbgSymbol);
+var
+  ofs32 : Integer;
+  ofs   : QWord;
+  name  : AnsiString;
+begin
+  // reading special compiled unit attributes
+  if entry.GetStr(DW_AT_name, name) then begin
+    curfile:=fDbgInfo.AddFile(name);
+  end else
+    curfile:=nil;
+
+  if not entry.GetInt32(DW_AT_stmt_list, ofs32) then Exit;
+  ofs:=ofs32;
+  lineinfo.Reset(ofs);
+
+  //todo: dfile search by filename
+  while lineinfo.NextLine do begin
+    if Assigned(curfile) and (lineinfo.Address<>0) then
+      curfile.AddLineInfo( lineinfo.Address, lineinfo.Line);
+  end;
+  sym:=curfile;
+end;
+
+procedure TDbgDwarf3Info.ReadSubPrograms(entry:TDwarfEntry; var sym: TDbgSymbol);
+var
+  f : TDbgSymFunc;
+begin
+  f:=fDbgInfo.AddSymbolFunc( DwarfName(entry),  parent);
+  sym:=f;
+end;
+
+procedure TDbgDwarf3Info.ReadDwarfEntry(entry:TDwarfEntry);
+var
+  sub   : TDwarfEntry;
+  loop  : Boolean;
+  par   : TDbgSymbol;
+  sym   : TDbgSymbol;
+begin
+  loop:=True;
+  sym:=nil;
+  case entry.Tag of
+    DW_TAG_compile_unit: ReadCompileUnit(entry, sym);
+    DW_TAG_subprogram: ReadSubPrograms(entry, sym);
+  end;
+  if loop then begin
+    if Assigned(sym) then begin
+      par:=parent;
+      parent:=sym;
+    end;
+
+    sub:=entry.Child;
+    while Assigned(sub) do begin
+      ReadDwarfEntry(sub);
+      sub:=sub.Next;
+    end;
+    if assigned(sym) then parent:=par;
+  end;
 end;
 
 procedure TDbgDwarf3Info.dump_debug_info2; 

@@ -647,6 +647,8 @@ begin
       fn:=st[i];
       if IgnoreCase then fn:=AnsiLowerCase(fn);
       fn:=FixSlashes(fn);
+      writeln('fn =  ', fn,' "', ExtractFileName(fn),'"');
+      writeln('chk = ', chk);
       if (length(fn)>=length(chk)) and ((ExtractFileName(fn)=chk) or isStrTail(ShortName, fn)) then begin
         Result:=st[i];
         Exit;

@@ -464,14 +464,6 @@ end;
 var
   bh: TBreakHandler = nil;
  
-procedure InitBreakCommands;
-begin
-  bh := TBreakHandler.Create;
-{  InstallHandler(@bh.BreakHandle);}
-  RegisterCommand(['break', 'b'], TSetBreak.Create);
-  RegisterCommand(['rmbreak', 'rb'], TRemoveBreak.Create);
-end;
-
 procedure ReleaseBreakCommands;
 begin
   bh.Free;
@@ -531,7 +523,7 @@ begin
   Result := false;
 end;
 
-procedure InitDebugCommands;
+procedure RegisterDebugCommands;
 begin
   DbgSources := TFPObjectList.Create(true);
   RegisterCommand(['where',  'w'], TWhereCommand.Create);
@@ -539,9 +531,16 @@ begin
   RegisterCommand(['value', 'l'], TIntValue.Create);
 end;
 
+procedure RegisterBreakCommands;
+begin
+  bh := TBreakHandler.Create;
+  RegisterCommand(['break', 'b'], TSetBreak.Create);
+  RegisterCommand(['rmbreak', 'rb'], TRemoveBreak.Create);
+end;
+
 initialization
-  InitDebugCommands;
-  InitBreakCommands;
+  RegisterDebugCommands;
+  RegisterBreakCommands;
 
 finalization
   ReleaseDebugCommands;

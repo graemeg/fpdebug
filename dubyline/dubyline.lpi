@@ -34,7 +34,7 @@
         <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <Units Count="12">
+    <Units Count="11">
       <Unit0>
         <Filename Value="dubyline.pas"/>
         <IsPartOfProject Value="True"/>
@@ -56,45 +56,40 @@
         <UnitName Value="cmdDbg"/>
       </Unit3>
       <Unit4>
-        <Filename Value="dbginfodwarfold.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="dbgInfoDwarfOld"/>
-      </Unit4>
-      <Unit5>
         <Filename Value="..\dubylib\dwarfproc.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dwarfProc"/>
-      </Unit5>
-      <Unit6>
+      </Unit4>
+      <Unit5>
         <Filename Value="..\dubylib\machodbgsource.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="machoDbgSource"/>
-      </Unit6>
-      <Unit7>
+      </Unit5>
+      <Unit6>
         <Filename Value="..\dubylib\machofile.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="machoFile"/>
-      </Unit7>
-      <Unit8>
+      </Unit6>
+      <Unit7>
         <Filename Value="..\dubylib\dbgbreakpoints.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgBreakPoints"/>
-      </Unit8>
-      <Unit9>
+      </Unit7>
+      <Unit8>
         <Filename Value="..\dubylib\dbgcpu.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgCPU"/>
-      </Unit9>
-      <Unit10>
+      </Unit8>
+      <Unit9>
         <Filename Value="..\dubylib\dbgi386.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgi386"/>
-      </Unit10>
-      <Unit11>
+      </Unit9>
+      <Unit10>
         <Filename Value="..\dubylib\dbgmain.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgMain"/>
-      </Unit11>
+      </Unit10>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

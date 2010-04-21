@@ -33,11 +33,29 @@ procedure ProcFastcall(a: Integer; var b: byte; p: Pointer; s: single; const k: 
 var
   bb : Integer;
   cc : Integer;
+  buf : array [0..4080] of byte;
+  dd  : Integer;
+  t1 : Integer;
+  t2 : Integer;
+  t3 : Integer;
+  t4 : Integer;
+  t5 : Integer;
+  t6 : Integer;
 begin	
   cc := a - 2;
   bb := b * cc;
   writeln('hello fastcall ', a, ' ', Integer(p), ' ',s, ' ', k);
   inc(b);
+  if b>0 then begin
+    FillChar(buf, sizeof(buf), 0);
+    t1:=buf[0];
+    t2:=t1; 
+    t3:=t2; 
+    t4:=t3;
+    t5:=t4;
+    t6:=t1+t2+t3+t4+t5;
+    writeln('t6 = ', t6);
+  end;
 end;
 {
 procedure ProcStdcall(a: Integer; var b: byte; p: Pointer; s: single; const k: string); stdcall;

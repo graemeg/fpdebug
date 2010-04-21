@@ -42,6 +42,255 @@ type
 
 implementation
 
+{function TDwarfAbbrevDecoder.MakeAddressString(AData: Pointer): string;
+begin
+  if FCU.FAddressSize = 4
+  then Result := '$'+IntToHex(PLongWord(AData)^, 8)
+  else Result := '$'+IntToHex(PQWord(AData)^, 16);
+end;}
+
+procedure DecodeLocation(AData: PByteArray; ASize: QWord);
+var
+  MaxData: PByte;
+  v : Int64;
+  i : Integer;
+begin
+  i:=0;
+  while i < ASize do
+  begin
+    case AData[i] of
+      DW_OP_addr: begin
+        Write('DW_OP_addr '{, MakeAddressString(@AData[1])});
+        Inc(i, 4);//todo!
+      end;
+      DW_OP_deref: begin
+        Write('DW_OP_deref');
+      end;
+      DW_OP_const1u: begin
+        Write('DW_OP_const1u ', AData[1]);
+        Inc(i, 1);
+      end;
+      DW_OP_const1s: begin
+        Write('DW_OP_const1s ', PShortInt(@AData[1])^);
+        Inc(i, 1);
+      end;
+      DW_OP_const2u: begin
+        Write('DW_OP_const2u ', PWord(@AData[1])^);
+        Inc(i, 2);
+      end;
+      DW_OP_const2s: begin
+        Write('DW_OP_const2s ', PSmallInt(@AData[1])^);
+        Inc(i, 2);
+      end;
+      DW_OP_const4u: begin
+        Write('DW_OP_const4u ', PLongWord(@AData[1])^);
+        Inc(i, 4);
+      end;
+      DW_OP_const4s: begin
+        Write('DW_OP_const4s ', PLongInt(@AData[1])^);
+        Inc(i, 4);
+      end;
+      DW_OP_const8u: begin
+        Write('DW_OP_const8u ', PQWord(@AData[1])^);
+        Inc(i, 8);
+      end;
+      DW_OP_const8s: begin
+        Write('DW_OP_const8s ', PInt64(@AData[1])^);
+        Inc(i, 8);
+      end;
+      DW_OP_constu: begin
+        Inc(i);
+        Write('DW_OP_constu ', ULEB128toOrdinal(AData^,i));
+        Dec(i);
+      end;
+      DW_OP_consts: begin
+        Inc(i);
+        Write('DW_OP_consts ', SLEB128toOrdinal(AData^,i));
+        Dec(i);
+      end;
+      DW_OP_dup: begin
+        Write('DW_OP_dup');
+      end;
+      DW_OP_drop: begin
+        Write('DW_OP_drop');
+      end;
+      DW_OP_over: begin
+        Write('DW_OP_over');
+      end;
+      DW_OP_pick: begin
+        Write('DW_OP_pick ', AData[1]);
+        Inc(i, 1);
+      end;
+      DW_OP_swap: begin
+        Write('DW_OP_swap');
+      end;
+      DW_OP_rot: begin
+        Write('DW_OP_rot');
+      end;
+      DW_OP_xderef: begin
+        Write('DW_OP_xderef');
+      end;
+      DW_OP_abs: begin
+        Write('DW_OP_abs');
+      end;
+      DW_OP_and: begin
+        Write('DW_OP_and');
+      end;
+      DW_OP_div: begin
+        Write('DW_OP_div');
+      end;
+      DW_OP_minus: begin
+        Write('DW_OP_minus');
+      end;
+      DW_OP_mod: begin
+        Write('DW_OP_mod');
+      end;
+      DW_OP_mul: begin
+        Write('DW_OP_mul');
+      end;
+      DW_OP_neg: begin
+        Write('DW_OP_neg');
+      end;
+      DW_OP_not: begin
+        Write('DW_OP_not');
+      end;
+      DW_OP_or: begin
+        Write('DW_OP_or');
+      end;
+      DW_OP_plus: begin
+        Write('DW_OP_plus');
+      end;
+      DW_OP_plus_uconst: begin
+        Inc(i);
+        Write('DW_OP_plus_uconst ', ULEB128toOrdinal(AData^, i));
+        Dec(AData);
+      end;
+      DW_OP_shl: begin
+        Write('DW_OP_shl');
+      end;
+      DW_OP_shr: begin
+        Write('DW_OP_shr');
+      end;
+      DW_OP_shra: begin
+        Write('DW_OP_shra');
+      end;
+      DW_OP_xor: begin
+        Write('DW_OP_xor');
+      end;
+      DW_OP_skip: begin
+        Write('DW_OP_skip ', PSmallInt(@AData[1])^);
+        Inc(i, 2);
+      end;
+      DW_OP_bra: begin
+        Write('DW_OP_bra ', PSmallInt(@AData[1])^);
+        Inc(i, 2);
+      end;
+      DW_OP_eq: begin
+        Write('DW_OP_eq');
+      end;
+      DW_OP_ge: begin
+        Write('DW_OP_ge');
+      end;
+      DW_OP_gt: begin
+        Write('DW_OP_gt');
+      end;
+      DW_OP_le: begin
+        Write('DW_OP_le');
+      end;
+      DW_OP_lt: begin
+        Write('DW_OP_lt');
+      end;
+      DW_OP_ne: begin
+        Write('DW_OP_ne');
+      end;
+      DW_OP_lit0..DW_OP_lit31: begin
+        Write('DW_OP_lit', AData[i] - DW_OP_lit0);
+      end;
+      DW_OP_reg0..DW_OP_reg31: begin
+        Write('DW_OP_reg', AData[i] - DW_OP_reg0);
+      end;
+      DW_OP_breg0..DW_OP_breg31: begin
+        Write('DW_OP_breg', AData[i] - DW_OP_breg0);
+        Inc(i);
+        v := SLEB128toOrdinal(AData^, i);
+        Dec(AData);
+        if v >= 0
+        then Write('+');
+        Write(v);
+      end;
+      DW_OP_regx: begin
+        Inc(i);
+        Write('DW_OP_regx ', ULEB128toOrdinal(AData^, i));
+        Dec(i);
+      end;
+      DW_OP_fbreg: begin
+        Inc(i);
+        Write('DW_OP_fbreg ', SLEB128toOrdinal(AData^, i));
+        Dec(i);
+      end;
+      DW_OP_bregx: begin
+        Inc(AData);
+        Write('DW_OP_bregx ', ULEB128toOrdinal(AData^,i));
+        v := SLEB128toOrdinal(AData^,i);
+        Dec(i);
+        if v >= 0
+        then Write('+');
+        Write(v);
+      end;
+      DW_OP_piece: begin
+        Inc(i);
+        Write('DW_OP_piece ', ULEB128toOrdinal(AData^, i));
+        Dec(i);
+      end;
+      DW_OP_deref_size: begin
+        Write('DW_OP_deref_size ', AData[1]);
+        Inc(i);
+      end;
+      DW_OP_xderef_size: begin
+        Write('DW_OP_xderef_size', AData[1]);
+        Inc(i);
+      end;
+      DW_OP_nop: begin
+        Write('DW_OP_nop');
+      end;
+      DW_OP_push_object_address: begin
+        Write('DW_OP_push_object_address');
+      end;
+      DW_OP_call2: begin
+        Write('DW_OP_call2 ', PWord(@AData[1])^);
+        Inc(i, 2);
+      end;
+      DW_OP_call4: begin
+        Write('DW_OP_call4 ', PLongWord(@AData[1])^);
+        Inc(i, 4);
+      end;
+      DW_OP_call_ref: begin
+        Write('DW_OP_call_ref '{, MakeAddressString(@AData[1])});
+        Inc(i, 4);
+      end;
+      DW_OP_form_tls_address: begin
+        Write('DW_OP_form_tls_address');
+      end;
+      DW_OP_call_frame_cfa: begin
+        Write('DW_OP_call_frame_cfa');
+      end;
+      DW_OP_bit_piece: begin
+        Inc(i);
+        Write('DW_OP_bit_piece ', ULEB128toOrdinal(AData^, i), ' ', ULEB128toOrdinal(AData^, i));
+        Dec(i);
+      end;
+      DW_OP_lo_user..DW_OP_hi_user: begin
+        Write('DW_OP_user=', AData[i]);
+      end;
+    else
+      Write('Unknown DW_OP_', AData[i]);
+    end;
+    Inc(i);
+    WriteLn;
+  end;
+end;
+
+
 { TDbgDwarf3Info }
 
 class function TDbgDwarf3Info.isPresent(ASource: TDbgDataSource): Boolean;
@@ -157,11 +406,19 @@ end;
 procedure TDbgDwarf3Info.dump_variables(entry:TDwarfEntry);
 var
   dw  : LongWord;
+  buf : array of byte;
 begin
   if not Assigned(entry) then Exit;
 
   if entry.Tag=DW_TAG_variable then begin
     writeln('name      = ', DwarfName(entry));
+    SetLength(buf, entry.GetAttrSize(DW_AT_location));
+    if length(buf)>0 then begin
+      writeln('  data size = ', length(buf));
+      entry.GetAttrData(DW_AT_location, buf[0], length(buf));
+      DecodeLocation(@buf[0], length(buf));
+      end;
+
     //todo:!
   end;
   dump_variables(entry.Child);

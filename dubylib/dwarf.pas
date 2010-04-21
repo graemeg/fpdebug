@@ -165,7 +165,6 @@ type
     function GetAttr(index: Integer; var AttrName, AttrForm: Integer): Boolean;
     function GetAttrData(AttrName: Integer; var Data; DataSize: Integer): Boolean;
     function GetAttrSize(AttrName: Integer): Integer;
-    function GetAttrForm(AttrName: Integer): Integer;
     function GetAttrCount: Integer;
     function GetInt32(AttrName: Integer; var Int32: Integer): Boolean;
     function GetBool(AttrName: Integer; var b: Boolean): Boolean;
@@ -651,18 +650,6 @@ begin
   for i:=0 to AttribCount-1 do
     if Attribs[i].Name=AttrName then begin
       Result:=Attribs[i].Size;
-      Exit;
-    end;
-  Result:=-1;
-end;
-
-function TDwarfEntry.GetAttrForm(AttrName:Integer):Integer;
-var
-  i : Integer;
-begin
-  for i:=0 to AttribCount-1 do
-    if Attribs[i].Name=AttrName then begin
-      Result:=Attribs[i].Form;
       Exit;
     end;
   Result:=-1;

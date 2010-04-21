@@ -148,13 +148,12 @@ type
     Attribs     : array of record
                     Offset : QWord;
                     Size   : Integer;
-                    Name   : INteger;
+                    Name   : Integer;
                     Form   : Integer;
                   end;
     AttribCount : Integer;
   protected
     procedure AddAttrib(AName, AForm: Integer; AOffset: QWord; AValSize: Integer);
-    function GetAttrData(AttrName: Integer; var Data: Integer; DataSize: Integer): Boolean;
   public
     Child     : TDwarfEntry;
     Next      : TDwarfEntry;  
@@ -164,8 +163,12 @@ type
     constructor Create(AOwner: TDwarfReader);
     function GetStr(AttrName: Integer; var Res: AnsiString): Boolean;
     function GetAttr(index: Integer; var AttrName, AttrForm: Integer): Boolean;
+    function GetAttrData(AttrName: Integer; var Data; DataSize: Integer): Boolean;
+    function GetAttrSize(AttrName: Integer): Integer;
+    function GetAttrForm(AttrName: Integer): Integer;
     function GetAttrCount: Integer;
     function GetInt32(AttrName: Integer; var Int32: Integer): Boolean;
+    function GetBool(AttrName: Integer; var b: Boolean): Boolean;
   end;
 
   { TDwarfReader }
@@ -189,6 +192,10 @@ type
     function ReadDwarf: Boolean;
   end;
 
+function DwarfStr(e: TDwarfEntry; AName: Integer; const Def: AnsiString = ''): AnsiString;
+function DwarfBool(e: TDwarfEntry; AName: Integer; Def: Boolean = False): Boolean;
+function DwarfInt32(e: TDwarfEntry; AName: Integer; Def: Integer = -1): Integer;
+
 function DwarfName(e: TDwarfEntry): AnsiString;
 
 implementation
@@ -200,11 +207,26 @@ type
   end;
   PDwarfHeader =  ^TDwarfHeader;
 
+function DwarfStr(e: TDwarfEntry; AName: Integer; const Def: AnsiString = ''): AnsiString;
+begin
+  if (not Assigned(e)) or (not e.GetStr(AName, Result)) then Result:=Def;
+end;
+
+function DwarfBool(e: TDwarfEntry; AName: Integer; Def: Boolean): Boolean;
+begin
+  if (not Assigned(e)) or (not e.GetBool(AName, Result)) then Result:=Def;
+end;
+
+function DwarfInt32(e: TDwarfEntry; AName: Integer; Def: Integer): Integer;
+begin
+  if (not Assigned(e)) or (not e.GetInt32(AName, Result)) then Result:=Def;
+end;
 
 function DwarfName(e: TDwarfEntry): AnsiString;
 begin
-  if (not Assigned(e)) or (not e.GetStr(DW_AT_name, Result)) then Result:='';
+  Result:=DwarfStr(e, DW_AT_name, '');
 end;
+
 
 { TDwarfReader }
 
@@ -571,16 +593,21 @@ begin
   inc(AttribCount);
 end;
 
-function TDwarfEntry.GetAttrData(AttrName:Integer;var Data:Integer;DataSize:
-  Integer):Boolean;
+function Min(a,b: INteger): Integer;
+begin
+  if a<b then Result:=a
+  else Result:=b;
+end;
+
+function TDwarfEntry.GetAttrData(AttrName:Integer;var Data;
+  DataSize: Integer):Boolean;
 var
   i : Integer;
 begin
   Result:=False;
   for i:=0 to AttribCount-1 do
     if Attribs[i].Name=AttrName then begin
-      if Attribs[i].Size<DataSize then Exit;
-      Move(fOwner.Info[Attribs[i].Offset], Data, DataSize);
+      Move(fOwner.Info[Attribs[i].Offset], Data, Min(DataSize, Attribs[i].Size) );
       Result:=True;
       Exit;
     end;
@@ -617,6 +644,30 @@ begin
   AttrForm:=Attribs[index].Form;
 end;
 
+function TDwarfEntry.GetAttrSize(AttrName:Integer):Integer;
+var
+  i : Integer;
+begin
+  for i:=0 to AttribCount-1 do
+    if Attribs[i].Name=AttrName then begin
+      Result:=Attribs[i].Size;
+      Exit;
+    end;
+  Result:=-1;
+end;
+
+function TDwarfEntry.GetAttrForm(AttrName:Integer):Integer;
+var
+  i : Integer;
+begin
+  for i:=0 to AttribCount-1 do
+    if Attribs[i].Name=AttrName then begin
+      Result:=Attribs[i].Form;
+      Exit;
+    end;
+  Result:=-1;
+end;
+
 function TDwarfEntry.GetAttrCount:Integer;
 begin
   Result:=AttribCount;
@@ -625,6 +676,15 @@ end;
 function TDwarfEntry.GetInt32(AttrName: Integer; var Int32: Integer): Boolean;
 begin
   Result:=GetAttrData(AttrName, Int32, sizeof(int32));
+end;
+
+function TDwarfEntry.GetBool(AttrName:Integer;var b:Boolean):Boolean;
+var
+  lb : LongBool;
+begin
+  lb :=False;
+  Result:=GetAttrData(AttrName, lb, sizeof(lb));
+  b:=lb;
 end;
 
 procedure TLineInfoStateMachine.FillLineInfo;

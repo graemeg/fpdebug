@@ -13,7 +13,7 @@ type
   end;
 var
   bb : byte;
-
+{
 procedure ProcCdecl(a: Integer; var b: byte; p: Pointer; s: single; const k: string); cdecl;
 var
   bb : Integer;
@@ -27,6 +27,7 @@ begin
   writeln('hello cdecl ', a, ' ', Integer(p), ' ',s, ' ', k);
   inc(b, bb+buf[0]+buf[4095]);
 end;
+}
 
 procedure ProcFastcall(a: Integer; var b: byte; p: Pointer; s: single; const k: string); 
 var
@@ -38,7 +39,7 @@ begin
   writeln('hello fastcall ', a, ' ', Integer(p), ' ',s, ' ', k);
   inc(b);
 end;
-
+{
 procedure ProcStdcall(a: Integer; var b: byte; p: Pointer; s: single; const k: string); stdcall;
 var
   bb : Integer;
@@ -60,17 +61,17 @@ procedure BreakPoint; assembler;
 asm
   int 3;
 end;
-
+}
 var
   my : MyType;
 
 begin
   bb := 1;	
   {BreakPoint;}
-  ProcCdecl(1, bb, nil, 0, 'test');
+  //ProcCdecl(1, bb, nil, 0, 'test');
   ProcFastCall(2, bb, nil, 0, 'test');
-  ProcStdCall(3, bb, nil, 0, 'test');
-  ProcCdecl2(8, bb, nil, 0, 'test');
+  //ProcStdCall(3, bb, nil, 0, 'test');
+  //ProcCdecl2(8, bb, nil, 0, 'test');
   writeln(GetHi);
   my.a := bb;
   writeln(my.a);

@@ -9,6 +9,10 @@ uses
   dbgTypes, dwarf,
   dwarfTypes, dwarfConst;
 
+var
+  DebugDwarf_LineInfo  : Boolean = False;
+  DebugDwarf_Variables : Boolean = True;
+
 type
 
   { TDbgDwarf3Info }
@@ -26,6 +30,7 @@ type
     procedure ReadDwarfEntry(entry: TDwarfEntry);
 
     procedure dump_lineinfo(entry: TDwarfEntry; ParseSiblings: Boolean=True);
+    procedure dump_variables(entry: TDwarfEntry);
   public
     class function isPresent(ASource: TDbgDataSource): Boolean; override;
     constructor Create(ASource: TDbgDataSource); override;
@@ -101,11 +106,7 @@ begin
   finally
     reader.Free;
   end;
-
 end;
-
-
-
 
 procedure WriteEntry(Entry: TDwarfEntry; const Prefix: AnsisTring);
 var
@@ -151,6 +152,20 @@ begin
   until not Assigned(entry) or not ParseSiblings;
 
   line.Free;
+end;
+
+procedure TDbgDwarf3Info.dump_variables(entry:TDwarfEntry);
+var
+  dw  : LongWord;
+begin
+  if not Assigned(entry) then Exit;
+
+  if entry.Tag=DW_TAG_variable then begin
+    writeln('name      = ', DwarfName(entry));
+    //todo:!
+  end;
+  dump_variables(entry.Child);
+  dump_variables(entry.Next);
 end;
 
 procedure TDbgDwarf3Info.ReadCompileUnit(entry:TDwarfEntry; var sym: TDbgSymbol);
@@ -240,7 +255,8 @@ begin
   dwarf.ReadDwarf;
   WriteEntry(dwarf.FirstEntry, '');
 
-  dump_lineinfo(dwarf.FirstEntry);
+  if DebugDwarf_LineInfo then dump_lineinfo(dwarf.FirstEntry);
+  if DebugDwarf_Variables then dump_variables(dwarf.FirstEntry);
 
   dwarf.Free;
 end;

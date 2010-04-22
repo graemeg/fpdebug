@@ -13,7 +13,7 @@ type
 {$endif}
 
 type
-  TDbgPtr      = PtrUInt;
+  TDbgPtr      = PtrUInt; //todo: the target ptrsize can be <> to the   host machine size
   PDbgPtr      = ^TDbgPtr;
   TDbgThreadID = TThreadID;
   TDbgProcessID = Longword;

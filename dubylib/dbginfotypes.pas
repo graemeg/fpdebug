@@ -5,7 +5,7 @@ unit dbgInfoTypes;
 interface
 
 uses
-  contnrs, SysUtils, Classes, dbgTypes, AVL_Tree;
+  contnrs, SysUtils, Classes, dbgTypes, AVL_Tree, dbgInfoAccess;
 
 const
   RootSymbol = nil;
@@ -42,6 +42,7 @@ type
 
   TDbgDataLocation = (ddlAbsolute, ddlFrameRel, ddlRegister);
 
+  //todo: REMOVE! replace by dbgInfoAccess
   TDbgDataPos = record
     Location : TDbgDataLocation;
     Addr     : TDbgPtr;

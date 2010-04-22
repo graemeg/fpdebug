@@ -27,6 +27,7 @@ type
     parent    : TDbgSymbol;
     procedure ReadCompileUnit(entry: TDwarfEntry; var sym: TDbgSymbol);
     procedure ReadSubPrograms(entry: TDwarfEntry; var sym: TDbgSymbol);
+    procedure ReadVar(entry: TDwarfEntry; var sym: TDbgSymbol);
     procedure ReadDwarfEntry(entry: TDwarfEntry);
 
     procedure dump_lineinfo(entry: TDwarfEntry; ParseSiblings: Boolean=True);
@@ -42,22 +43,125 @@ type
 
 implementation
 
-{function TDwarfAbbrevDecoder.MakeAddressString(AData: Pointer): string;
-begin
-  if FCU.FAddressSize = 4
-  then Result := '$'+IntToHex(PLongWord(AData)^, 8)
-  else Result := '$'+IntToHex(PQWord(AData)^, 16);
-end;}
-
-procedure DecodeLocation(AData: PByteArray; ASize: QWord);
+//todo: incomplete support!
+//todo: replace TDbgDataPos with dbgInfoTypes
+procedure RencodeLocation(AData: PByteArray; ASize: QWord; AddrSizeBytes: Integer; var Pos: TDbgDataPos);
 var
-  MaxData: PByte;
+  opcode  : Byte;
+  i       : Integer;
+begin
+  i:=0;
+  while i < ASize do
+  begin
+    opcode:=AData[i];
+    inc(i);
+    case opcode of
+      DW_OP_addr: begin
+        Pos.Addr:=0;
+        Move(AData[i], Pos.Addr, AddrSizeBytes);
+        Inc(i, AddrSizeBytes);
+      end;
+      DW_OP_deref:;
+      DW_OP_const1u: Inc(i,1);
+      DW_OP_const1s: Inc(i,1);
+      DW_OP_const2u: Inc(i,2);
+      DW_OP_const2s: Inc(i,2);
+      DW_OP_const4u: Inc(i,4);
+      DW_OP_const4s: Inc(i,4);
+      DW_OP_const8u: Inc(i,8);
+      DW_OP_const8s: Inc(i,8);
+      DW_OP_constu:  ULEB128toOrdinal(AData^,i);
+      DW_OP_consts:  SLEB128toOrdinal(AData^,i);
+      DW_OP_dup:  ;
+      DW_OP_drop: ;
+      DW_OP_over: ;
+      DW_OP_pick: inc(i);
+      DW_OP_swap: ;
+      DW_OP_rot:  ;
+      DW_OP_xderef: ;
+      DW_OP_abs:;
+      DW_OP_and:;
+      DW_OP_div:;
+      DW_OP_minus:;
+      DW_OP_mod:;
+      DW_OP_mul:;
+      DW_OP_neg:;
+      DW_OP_not:;
+      DW_OP_or:;
+      DW_OP_plus:;
+      DW_OP_plus_uconst: ULEB128toOrdinal(AData^, i);
+      DW_OP_shl: ;
+      DW_OP_shr: ;
+      DW_OP_shra: ;
+      DW_OP_xor: ;
+      DW_OP_skip: Inc(i, 2);
+      DW_OP_bra:  Inc(i, 2);
+      DW_OP_eq: ;
+      DW_OP_ge: ;
+      DW_OP_gt: ;
+      DW_OP_le: ;
+      DW_OP_lt: ;
+      DW_OP_ne: ;
+      DW_OP_lit0..DW_OP_lit31: begin
+        //Write('DW_OP_lit', AData[i] - DW_OP_lit0);
+      end;
+      DW_OP_reg0..DW_OP_reg31: begin
+        //Write('DW_OP_reg', AData[i] - DW_OP_reg0);
+      end;
+
+      DW_OP_breg0..DW_OP_breg31: begin
+        //Write('DW_OP_breg ', AData[i] - DW_OP_breg0);
+        Pos.RegName:=IntToStr(AData[i] - DW_OP_breg0);
+        Pos.Addr := SLEB128toOrdinal(AData^, i);
+
+        //todo: this is really stupid hack!
+        if Pos.RegName='5' then
+          Pos.Location:=ddlFrameRel
+        else
+          Pos.Location:=ddlFrameRel;
+      end;
+
+      DW_OP_regx: begin
+        ULEB128toOrdinal(AData^, i);
+      end;
+      DW_OP_fbreg: begin
+        SLEB128toOrdinal(AData^, i);
+      end;
+      DW_OP_bregx: begin
+        ULEB128toOrdinal(AData^,i);
+        SLEB128toOrdinal(AData^,i);
+      end;
+      DW_OP_piece:
+        ULEB128toOrdinal(AData^, i);
+      DW_OP_deref_size: Inc(i);
+      DW_OP_xderef_size: Inc(i);
+      DW_OP_nop:;
+      DW_OP_push_object_address:;
+      DW_OP_call2: Inc(i, 2);
+      DW_OP_call4: Inc(i, 4);
+      DW_OP_call_ref: Inc(i, AddrSizeBytes);
+      DW_OP_form_tls_address: ;
+      DW_OP_call_frame_cfa:   ;
+      DW_OP_bit_piece: begin
+        ULEB128toOrdinal(AData^, i);
+        ULEB128toOrdinal(AData^, i);
+      end;
+      DW_OP_lo_user..DW_OP_hi_user: ;
+    else
+      // DW_OP_unknown
+    end;
+  end;
+end;
+
+procedure DebugDecodeLocation(AData: PByteArray; ASize: QWord);
+var
   v : Int64;
   i : Integer;
 begin
   i:=0;
   while i < ASize do
   begin
+    Write('  ');
     case AData[i] of
       DW_OP_addr: begin
         Write('DW_OP_addr '{, MakeAddressString(@AData[1])});
@@ -210,12 +314,11 @@ begin
         Write('DW_OP_reg', AData[i] - DW_OP_reg0);
       end;
       DW_OP_breg0..DW_OP_breg31: begin
-        Write('DW_OP_breg', AData[i] - DW_OP_breg0);
+        Write('DW_OP_breg ', AData[i] - DW_OP_breg0);
         Inc(i);
         v := SLEB128toOrdinal(AData^, i);
         Dec(AData);
-        if v >= 0
-        then Write('+');
+        if v >= 0 then Write('+');
         Write(v);
       end;
       DW_OP_regx: begin
@@ -405,19 +508,18 @@ end;
 
 procedure TDbgDwarf3Info.dump_variables(entry:TDwarfEntry);
 var
-  dw  : LongWord;
   buf : array of byte;
 begin
   if not Assigned(entry) then Exit;
 
-  if entry.Tag=DW_TAG_variable then begin
+  if entry.Tag in [DW_TAG_variable, DW_TAG_formal_parameter] then begin
     writeln('name      = ', DwarfName(entry));
     SetLength(buf, entry.GetAttrSize(DW_AT_location));
     if length(buf)>0 then begin
       writeln('  data size = ', length(buf));
       entry.GetAttrData(DW_AT_location, buf[0], length(buf));
-      DecodeLocation(@buf[0], length(buf));
-      end;
+      DebugDecodeLocation(@buf[0], length(buf));
+    end;
 
     //todo:!
   end;
@@ -457,6 +559,24 @@ begin
   sym:=f;
 end;
 
+procedure TDbgDwarf3Info.ReadVar(entry: TDwarfEntry; var sym: TDbgSymbol);
+var
+  nm  : AnsiString;
+  v   : TDbgSymVar;
+  buf : array of byte;
+begin
+  nm:=DwarfName(entry);
+  v:=fDbgInfo.AddSymbol(nm, parent, TDbgSymVar) as TDbgSymVar;
+
+  SetLength(buf, entry.GetAttrSize(DW_AT_location));
+  if length(buf)>0 then begin
+    entry.GetAttrData(DW_AT_location, buf[0], length(buf));
+    //todo: use sizeof Target ptr instread of TDbgPtr
+    RencodeLocation(@buf[0], length(buf), SizeOf(TDbgPtr), v.DataPos);
+  end;
+  sym:=v;
+end;
+
 procedure TDbgDwarf3Info.ReadDwarfEntry(entry:TDwarfEntry);
 var
   sub   : TDwarfEntry;
@@ -469,6 +589,8 @@ begin
   case entry.Tag of
     DW_TAG_compile_unit: ReadCompileUnit(entry, sym);
     DW_TAG_subprogram: ReadSubPrograms(entry, sym);
+    DW_TAG_variable, DW_TAG_formal_parameter:
+      ReadVar(entry, sym);
   end;
   if loop then begin
     if Assigned(sym) then begin

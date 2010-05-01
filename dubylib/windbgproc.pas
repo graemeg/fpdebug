@@ -8,7 +8,19 @@ uses
   Windows, SysUtils, DbgTypes, dbgConsts, winTools32;
 
 type
-  PContext32 = ^TContext;
+  TFloatingSaveArea = packed record
+    ControlWord   : Cardinal;
+    StatusWord    : Cardinal;
+    TagWord       : Cardinal;
+    ErrorOffset   : Cardinal;
+    ErrorSelector : Cardinal;
+    DataOffset    : Cardinal;
+    DataSelector  : Cardinal;
+    RegisterArea  : array[0..79] of Byte;
+    Cr0NpxState   : Cardinal;
+  end;
+  PFloatingSaveArea = ^TFloatingSaveArea;
+
   TContext32 = record
   { The flags values within this flag control the contents of
     a CONTEXT record.
@@ -32,47 +44,153 @@ type
     set in ContextFlags.  Note that CONTEXT_DEBUG_REGISTERS is NOT
     included in CONTEXT_FULL. }
 
-    Dr0: DWORD;
-    Dr1: DWORD;
-    Dr2: DWORD;
-    Dr3: DWORD;
-    Dr6: DWORD;
-    Dr7: DWORD;
+    Dr0       : DWORD;
+    Dr1       : DWORD;
+    Dr2       : DWORD;
+    Dr3       : DWORD;
+    Dr6       : DWORD;
+    Dr7       : DWORD;
 
   { This section is specified/returned if the
     ContextFlags word contians the flag CONTEXT_FLOATING_POINT. }
 
-    FloatSave: TFloatingSaveArea;
+    FloatSave : TFloatingSaveArea;
 
   { This section is specified/returned if the
     ContextFlags word contians the flag CONTEXT_SEGMENTS. }
 
-    SegGs: DWORD;
-    SegFs: DWORD;
-    SegEs: DWORD;
-    SegDs: DWORD;
+    SegGs     : DWORD;
+    SegFs     : DWORD;
+    SegEs     : DWORD;
+    SegDs     : DWORD;
 
   { This section is specified/returned if the
     ContextFlags word contians the flag CONTEXT_INTEGER. }
 
-    Edi: DWORD;
-    Esi: DWORD;
-    Ebx: DWORD;
-    Edx: DWORD;
-    Ecx: DWORD;
-    Eax: DWORD;
+    Edi       : DWORD;
+    Esi       : DWORD;
+    Ebx       : DWORD;
+    Edx       : DWORD;
+    Ecx       : DWORD;
+    Eax       : DWORD;
 
   { This section is specified/returned if the
     ContextFlags word contians the flag CONTEXT_CONTROL. }
 
-    Ebp: DWORD;
-    Eip: DWORD;
-    SegCs: DWORD;
-    EFlags: DWORD;
-    Esp: DWORD;
-    SegSs: DWORD;
+    Ebp       : DWORD;
+    Eip       : DWORD;
+    SegCs     : DWORD;
+    EFlags    : DWORD;
+    Esp       : DWORD;
+    SegSs     : DWORD;
   end;
-  TContext = _CONTEXT;
+  PContext32 = ^TContext32;
+
+
+//
+// Context Frame
+//
+//  This frame has a several purposes: 1) it is used as an argument to
+//  NtContinue, 2) is is used to constuct a call frame for APC delivery,
+//  and 3) it is used in the user level thread creation routines.
+//
+//
+// The flags field within this record controls the contents of a CONTEXT
+// record.
+//
+// If the context record is used as an input parameter, then for each
+// portion of the context record controlled by a flag whose value is
+// set, it is assumed that that portion of the context record contains
+// valid context. If the context record is being used to modify a threads
+// context, then only that portion of the threads context is modified.
+//
+// If the context record is used as an output parameter to capture the
+// context of a thread, then only those portions of the thread's context
+// corresponding to set flags will be returned.
+//
+// CONTEXT_CONTROL specifies SegSs, Rsp, SegCs, Rip, and EFlags.
+//
+// CONTEXT_INTEGER specifies Rax, Rcx, Rdx, Rbx, Rbp, Rsi, Rdi, and R8-R15.
+//
+// CONTEXT_SEGMENTS specifies SegDs, SegEs, SegFs, and SegGs.
+//
+// CONTEXT_DEBUG_REGISTERS specifies Dr0-Dr3 and Dr6-Dr7.
+//
+// CONTEXT_MMX_REGISTERS specifies the floating point and extended registers
+//     Mm0/St0-Mm7/St7 and Xmm0-Xmm15).
+//
+
+//typedef struct DECLSPEC_ALIGN(16) _CONTEXT {
+type
+  TContext64 = record
+    // Register parameter home addresses.
+    //
+    // N.B. These fields are for convience - they could be used to extend the
+    //      context record in the future.
+    P1Home        : DWORD64;
+    P2Home        : DWORD64;
+    P3Home        : DWORD64;
+    P4Home        : DWORD64;
+    P5Home        : DWORD64;
+    P6Home        : DWORD64;
+
+    // Control flags.
+    ContextFlags  : DWORD;
+    MxCsr         : DWORD;
+
+    // Segment Registers and processor flags.
+    SegCs         : WORD;
+    SegDs         : WORD;
+    SegEs         : WORD;
+    SegFs         : WORD;
+    SegGs         : WORD;
+    SegSs         : WORD;
+    EFlags        : DWORD;
+
+    // Debug registers
+    Dr0           : DWORD64;
+    Dr1           : DWORD64;
+    Dr2           : DWORD64;
+    Dr3           : DWORD64;
+    Dr6           : DWORD64;
+    Dr7           : DWORD64;
+
+    // Integer registers.
+    Rax           : DWORD64;
+    Rcx           : DWORD64;
+    Rdx           : DWORD64;
+    Rbx           : DWORD64;
+    Rsp           : DWORD64;
+    Rbp           : DWORD64;
+    Rsi           : DWORD64;
+    Rdi           : DWORD64;
+    R8            : DWORD64;
+    R9            : DWORD64;
+    R10           : DWORD64;
+    R11           : DWORD64;
+    R12           : DWORD64;
+    R13           : DWORD64;
+    R14           : DWORD64;
+    R15           : DWORD64;
+
+    // Program counter.
+    Rip           : DWORD64;
+
+    // Floating point state.
+    FltSave       : XMM_SAVE_AREA32; // MWE: only translated the FltSave part of the union
+
+    // Vector registers.
+    VectorRegister  : array[0..25] of M128A;
+    VectorControl   : DWORD64;
+
+    // Special debug control registers.
+    DebugControl          : DWORD64;
+    LastBranchToRip       : DWORD64;
+    LastBranchFromRip     : DWORD64;
+    LastExceptionToRip    : DWORD64;
+    LastExceptionFromRip  : DWORD64;
+  end;
+
 
 const
   hexsize = sizeof(TDbgPtr)*2;
@@ -88,17 +206,61 @@ procedure WinEventToDbgEvent(const WinEvent: TDebugEvent; var Dbg: TDbgEvent);
 function DoReadThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
 function DoWriteThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
 
+function DoReadThreadRegs64(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
+function DoWriteThreadRegs64(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
+
 function SetThread32SingleStep(ThreadHandle: THandle): Boolean;
 
 function SuspendProcess(AProcID: LongWord): Boolean;
 function ResumeProcess(AProcID: LongWord): Boolean;
 
+var
+  Wow64GetThreadContext : function( hThread: THANDLE; var lpContext ): LongBool; stdcall = nil;
+  Wow64SuspendThread    : function( hThread: THANDLE ): DWORD; stdcall = nil;
+  Wow64SetThreadContext : function ( hThread: THANDLE; const lpContext ): LongBool; stdcall = nil;
+
 implementation
 
 const
-  CONTEXT32_ALL = //todo:  {CONTEXT_FLOATING_POINT or} 
-                CONTEXT_DEBUG_REGISTERS or 
-                CONTEXT_SEGMENTS or CONTEXT_INTEGER or CONTEXT_CONTROL;
+  SIZE_OF_80387_REGISTERS = 80;
+  { Values for contextflags  }
+  CONTEXT_i386 = $10000;    // this assumes that i386 and
+  CONTEXT_i486 = $10000;    // i486 have identical context records
+
+  CONTEXT32_CONTROL            = CONTEXT_i386 or 1;              // SS:SP, CS:IP, FLAGS, BP
+  CONTEXT32_INTEGER            = CONTEXT_i386 or 2;              // AX, BX, CX, DX, SI, DI
+  CONTEXT32_SEGMENTS           = CONTEXT_i386 or 4;             // DS, ES, FS, GS
+  CONTEXT32_FLOATING_POINT     = CONTEXT_i386 or 8;       // 387 state
+  CONTEXT32_DEBUG_REGISTERS    = CONTEXT_i386 or $10;    // DB 0-3,6,7
+  CONTEXT32_EXTENDED_REGISTERS = CONTEXT_i386 or $20; // cpu specific extensions
+  CONTEXT32_FULL               = (CONTEXT32_CONTROL or CONTEXT32_INTEGER) or CONTEXT32_SEGMENTS;
+  { our own invention  }
+  CONTEXT32_DEBUGGER           = CONTEXT32_FULL or CONTEXT32_FLOATING_POINT;
+  CONTEXT32_ALL = //todo:  {CONTEXT32_FLOATING_POINT or}
+                CONTEXT32_DEBUG_REGISTERS or
+                CONTEXT32_SEGMENTS or CONTEXT32_INTEGER or CONTEXT32_CONTROL;
+  FLAG32_TRACE_BIT = $100;
+
+const
+  INITIAL_MXCSR = $1f80;            // initial MXCSR value
+  INITIAL_FPCSR = $027f;            // initial FPCSR value
+
+  CONTEXT_AMD64 = $100000;
+
+  CONTEXT64_CONTROL         = (CONTEXT_AMD64 or $00000001);
+  CONTEXT64_INTEGER         = (CONTEXT_AMD64 or $00000002);
+  CONTEXT64_SEGMENTS        = (CONTEXT_AMD64 or $00000004);
+  CONTEXT64_FLOATING_POINT  = (CONTEXT_AMD64 or $00000008);
+  CONTEXT64_DEBUG_REGISTERS = (CONTEXT_AMD64 or $00000010);
+
+  CONTEXT64_FULL            = (CONTEXT64_CONTROL or CONTEXT64_INTEGER or CONTEXT64_FLOATING_POINT);
+  CONTEXT64_ALL             = (CONTEXT64_CONTROL or CONTEXT64_INTEGER or CONTEXT64_SEGMENTS or
+                               CONTEXT64_FLOATING_POINT or CONTEXT64_DEBUG_REGISTERS);
+
+  CONTEXT64_EXCEPTION_ACTIVE    = $08000000;
+  CONTEXT64_SERVICE_ACTIVE      = $10000000;
+  CONTEXT64_EXCEPTION_REQUEST   = $40000000;
+  CONTEXT64_EXCEPTION_REPORTING = $80000000;
                 
 function DoReadThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
 var
@@ -180,17 +342,29 @@ begin
   //  WriteLn('SetThreadContext = ', GetLastError);
 end;
 
+function DoReadThreadRegs64(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
+var
+  ctx   : TCONTEXT;
+begin
+  Result:=False;
+end;
+
+function DoWriteThreadRegs64(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
+begin
+  Result:=False;
+end;
+
 function SetThread32SingleStep(ThreadHandle: THandle): Boolean;
 var
   ctx : TContext32;
 begin
   FillChar(ctx, sizeof(ctx), 0);
-  ctx.ContextFlags := CONTEXT_CONTROL;
+  ctx.ContextFlags := CONTEXT32_CONTROL;
   Result := GetThreadContext(ThreadHandle, @ctx);
   if not Result then Exit;
   
-  ctx.ContextFlags := CONTEXT_CONTROL;
-  ctx.EFlags := ctx.EFlags or FLAG_TRACE_BIT;  
+  ctx.ContextFlags := CONTEXT32_CONTROL;
+  ctx.EFlags := ctx.EFlags or FLAG32_TRACE_BIT;
   
   // PContext(@ctx)^ is a bit hacky 
   Result := SetThreadContext(ThreadHandle, PContext(@ctx)^);
@@ -213,6 +387,7 @@ var
 begin
   i := 0;
   SetLength(buf, 0);
+  Result:='';
   repeat
     if i >= length(buf) then begin
       if length(buf) = 0 then SetLength(buf, 1024)
@@ -357,7 +532,7 @@ begin
       Result := Result+#10#13+
         Format('Code:   %s', [DebugWinExcpetionCode(Win.Exception.ExceptionRecord.ExceptionCode)])+' '+
         Format('Flags:  %d', [Win.Exception.ExceptionRecord.ExceptionFlags])+' '+
-        Format('Addr:   %x', [Integer(Win.Exception.ExceptionRecord.ExceptionAddress)])+' '+
+        Format('Addr:   %x', [PtrUInt(Win.Exception.ExceptionRecord.ExceptionAddress)])+' '+
         Format('Params: %d', [Win.Exception.ExceptionRecord.NumberParameters]);
     end;
     CREATE_THREAD_DEBUG_EVENT: begin
@@ -457,6 +632,9 @@ begin
   end;
   CloseHandle(Snap);
 end;
+
+initialization
+
 
 end.
 

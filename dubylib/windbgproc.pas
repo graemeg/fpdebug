@@ -122,6 +122,38 @@ type
 
 //typedef struct DECLSPEC_ALIGN(16) _CONTEXT {
 type
+  {$note todo, fix alignment}
+  M128A = record
+    Low   : ULONGLONG;
+    High  : LONGLONG;
+  end;
+  _M128A = M128A;
+  TM128A = M128A;
+  PM128A = TM128A;
+
+  XMM_SAVE_AREA32 = record
+    ControlWord     : WORD;
+    StatusWord      : WORD;
+    TagWord         : BYTE;
+    Reserved1       : BYTE;
+    ErrorOpcode     : WORD;
+    ErrorOffset     : DWORD;
+    ErrorSelector   : WORD;
+    Reserved2       : WORD;
+    DataOffset      : DWORD;
+    DataSelector    : WORD;
+    Reserved3       : WORD;
+    MxCsr           : DWORD;
+    MxCsr_Mask      : DWORD;
+    FloatRegisters  : array[0..7] of M128A;
+    XmmRegisters    : array[0..16] of M128A;
+    Reserved4       : array[0..95] of BYTE;
+  end;
+  _XMM_SAVE_AREA32 = XMM_SAVE_AREA32;
+  TXmmSaveArea = XMM_SAVE_AREA32;
+  PXmmSaveArea = ^TXmmSaveArea;
+
+
   TContext64 = record
     // Register parameter home addresses.
     //
@@ -343,8 +375,8 @@ begin
 end;
 
 function DoReadThreadRegs64(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
-var
-  ctx   : TCONTEXT;
+{var
+  ctx   : TContext64;}
 begin
   Result:=False;
 end;

@@ -3,6 +3,9 @@ unit dbgdisasm;
 
 interface
 
+uses
+  dbgTypes;
+
 type
   TDisasmElem = class(TObject)
     Instr  : String;

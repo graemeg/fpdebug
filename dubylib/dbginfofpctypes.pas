@@ -2,6 +2,8 @@ unit dbgInfoFPCTypes;
 
 interface
 
+{$mode objfpc}{$h+}
+
 uses
   dbgTypes, dbgInfoTypes;
 

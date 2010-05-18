@@ -2,6 +2,8 @@ unit dbgAsyncMain;
 
 interface
 
+{$mode objfpc}{$h+}
+
 uses
   SysUtils, Classes, syncobjs,
   dbgTypes, dbgMain;

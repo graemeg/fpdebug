@@ -2,6 +2,8 @@ unit dbgInfoAccess;
 
 interface
 
+{$mode objfpc}{$h+}
+
 type
   { TAccessEntry }
 

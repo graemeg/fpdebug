@@ -1,0 +1,9 @@
+It doesn't work yet :)
+
+== Installation duby to Lazarus == 
+
+1. Copy all files from dubylib directory to Lazarus/debugger/ dir.
+2. Copy "dubylazinit.pp", "dubydebugger.pp" from dubylaz/ dir to Lazarus/debugger/ dir.
+3. Add dubydebugger to DebugManager.pas uses section. Rebuild IDE
+
+

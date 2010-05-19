@@ -9,7 +9,7 @@ uses
   dbgTypes, dbgMain;
 
 type
-  TDbgMainState = (mstStopped, mstExecuting, mstError);
+  TDbgMainState = (mstStopped, mstExecuting, mstError, mstTerminated);
 
   TDbgEventStateChange = procedure (Sender: TObject; NewState: TDbgMainState) of object;
   TDbgASyncProc = function (Main: TDbgMain; AProcData: TObject): Integer of object;
@@ -221,7 +221,11 @@ begin
       if not fMain.WaitNextEvent(event) then
         newState:=mstError
       else begin
-        newState:=mstStopped;
+        if event.Kind=dek_ProcessTerminated then
+          //todo: Check if MainProcess being terminated
+          newState:=mstTerminated
+        else
+          newState:=mstStopped;
         SetLastEvent(event);
       end;
     end;

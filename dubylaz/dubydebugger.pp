@@ -28,17 +28,40 @@ unit DubyDebugger;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Process, Debugger, LCLProc, DebugUtils,
-  BaseDebugManager, Dialogs, ProcessList,
-  dbgTypes, dbgMain, dbgAsyncMain, dubyLazInit;
+  Classes, SysUtils, LMessages, FileUtil, Process, Debugger,
+  LCLProc, LCLIntf, DebugUtils,
+  BaseDebugManager, Dialogs, ProcessList, Forms,
+  dbgTypes, dbgMain, dbgAsyncMain, dubyLazInit, ProcessDebugger;
 
 type
+  TDubyDebugger = class;
+
+  { TDubySyncForm }
+
+  TDubySyncForm = class(TCustomForm)
+  protected
+    fDuby : TDubyDebugger;
+    procedure WndProc(var msg: TLMessage); override;
+  end;
+
+  { TDubyCallback }
+
+  TDubyCallback = class(TDbgASyncCallback)
+  private
+    fSyncForm   : TDubySyncForm;
+  public
+    constructor Create(ADuby: TDubyDebugger);
+    destructor Destroy; override;
+    procedure StateChanged; override;
+  end;
+
   { TDubyDebugger }
 
   TDubyDebugger = class(TDebugger)
   private
-    async     : TDbgAsyncMain;
-    fcallback : TObject;
+    async       : TDbgAsyncMain;
+    fCallback   : TDubyCallback;
+    Terminated  : Boolean;
     function  ProcessEnvironment(const AVariable: String; const ASet: Boolean): Boolean;
     function  ProcessRun: Boolean;
     function  ProcessStop: Boolean;
@@ -50,18 +73,9 @@ type
   public
     class function Caption: String; override;
     class function HasExePath: boolean; override;
+    constructor Create(const AExternalDebugger: String); override;
     destructor Destroy; override;
   published
-  end;
-
-  { TDubyCallback }
-
-  TDubyCallback = class(TDbgASyncCallback)
-  private
-    fDebugger: TDubyDebugger;
-  public
-    constructor Create(ADebugger: TDubyDebugger);
-    procedure StateChanged; override;
   end;
 
 implementation
@@ -105,7 +119,7 @@ begin
     Result := False;
     Exit;
   end;
-  if not Assigned(fcallback) then fcallback:=TDubyCallback.Create(Self);
+  if not Assigned(fCallback) then fCallback:=TDubyCallback.Create(Self);
 
   trg:=DebugProcessStart( UTF8Decode('"'+FileName+'"'));
   if not Assigned(trg) then begin
@@ -113,8 +127,10 @@ begin
     Result:=False;
     Exit;
   end;
+  writeln('launching: ', FileName);
   async:=TDbgAsyncMain.Create(TDbgAsyncCallback(fcallback));
   async.Main:=TDbgMain.Create(trg, 0);
+  async.Resume;
 
   SetState(dsRun);
   Result := True;
@@ -143,7 +159,11 @@ end;
 
 procedure TDubyDebugger.ASyncStateChanged;
 begin
+  if Terminated then Exit;
 
+  Terminated:=async.State=mstTerminated;
+  async.Resume;
+  if Terminated then SetState(dsStop);
 end;
 
 class function TDubyDebugger.Caption: String;
@@ -156,6 +176,11 @@ begin
   Result:= False; // no need to have a valid exe path for the process debugger
 end;
 
+constructor TDubyDebugger.Create(const AExternalDebugger:String);
+begin
+  inherited Create(AExternalDebugger);
+end;
+
 destructor TDubyDebugger.Destroy;
 begin
   fcallback.Free;
@@ -164,15 +189,31 @@ end;
 
 { TDubyCallback }
 
-constructor TDubyCallback.Create(ADebugger:TDubyDebugger);
+constructor TDubyCallback.Create(ADuby: TDubyDebugger);
 begin
   inherited Create;
-  fDebugger:=ADebugger;
+  fSyncForm:=TDubySyncForm.Create(Application);
+  fSyncForm.FDuby:=ADuby;
+end;
+
+destructor TDubyCallback.Destroy;
+begin
+  fSyncForm.Free;
+  inherited Destroy;
 end;
 
 procedure TDubyCallback.StateChanged;
 begin
-  fDebugger.AsyncStateChanged;
+  writeln('changin state!');
+  PostMessage(fSyncForm.Handle, WM_USER, 0, 0);
+end;
+
+{ TDubySyncForm }
+
+procedure TDubySyncForm.WndProc(var msg: TLMessage);
+begin
+  if msg.msg=WM_USER then fDuby.ASyncStateChanged;
+  inherited WndProc(msg);
 end;
 
 initialization

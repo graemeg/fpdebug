@@ -1,4 +1,4 @@
-It doesn't work yet :)
+It works only for the first launch on Windows
 
 == Installation duby to Lazarus == 
 

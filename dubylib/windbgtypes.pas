@@ -121,6 +121,9 @@ end;
 
 destructor TWinDbgTarget.Destroy;  
 begin
+  writeln('Releasing handle!');
+  if fMainProc.hThread<>0 then CloseHandle(fMainProc.hThread);
+  if fMainProc.hProcess<>0 then CloseHandle(fMainProc.hProcess);
   inherited Destroy;  
 end;
 

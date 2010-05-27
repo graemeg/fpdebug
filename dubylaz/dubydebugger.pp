@@ -69,13 +69,13 @@ type
     function  GetSupportedCommands: TDBGCommands; override;
     function  RequestCommand(const ACommand: TDBGCommand; const AParams: array of const): Boolean; override;
 
+    procedure TerminateMain;
     procedure ASyncStateChanged;
   public
     class function Caption: String; override;
     class function HasExePath: boolean; override;
     constructor Create(const AExternalDebugger: String); override;
     destructor Destroy; override;
-  published
   end;
 
 implementation
@@ -129,7 +129,7 @@ begin
   end;
   writeln('launching: ', FileName);
   async:=TDbgAsyncMain.Create(TDbgAsyncCallback(fcallback));
-  async.Main:=TDbgMain.Create(trg, 0);
+  async.SetMain(TDbgMain.Create(trg, 0, true));
   async.Resume;
 
   SetState(dsRun);
@@ -157,13 +157,38 @@ begin
   end;
 end;
 
+procedure TDubyDebugger.TerminateMain;
+var
+  m   : TDbgMain;
+  ev  : TDbgEvent;
+begin
+  m:=async.Main;
+  writeln('terminating MAIN');
+  async.SetMain(nil);
+  // the next even should be "terminated"
+  writeln('Freeing Main!');
+  m.WaitNextEvent(ev);
+  m.Terminate;
+  m.Free;
+
+  writeln('Freeing async!');
+  async.WaitFor;
+  async.Free;
+  async:=nil;
+end;
+
 procedure TDubyDebugger.ASyncStateChanged;
 begin
   if Terminated then Exit;
 
   Terminated:=async.State=mstTerminated;
   async.Resume;
-  if Terminated then SetState(dsStop);
+
+  if Terminated then begin
+    SetState(dsStop);
+    TerminateMain;
+    SetState(dsNone);
+  end;
 end;
 
 class function TDubyDebugger.Caption: String;

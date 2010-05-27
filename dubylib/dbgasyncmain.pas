@@ -61,6 +61,7 @@ type
     procedure Lock;
     procedure Unlock;
 
+    procedure ThreadWorkLoop(WorkMain: TDbgMain);
     procedure ThreadLoop;
 
     procedure ResumeExec(AProc: TDbgASyncProc; AData: TObject);
@@ -71,16 +72,22 @@ type
     function GetState:TDbgMainState;
     procedure SetState(AState: TDbgMainState);
     procedure FinishExecute;
+
   public
     constructor Create(ACallback: TDbgASyncCallback);
     destructor Destroy; override;
+
+    function SetMain(AMain: TDbgMain): Boolean;
+
     function ExecuteASync(AProc: TDbgASyncProc; AProcData: TObject): Boolean;
     function GetAsyncResult(var AProcData: TObject; var RetValue: Integer): Boolean; overload;
     function GetAsyncResult(var RetValue: Integer): Boolean; overload;
+
     procedure Resume;
     procedure Terminate;
+    procedure WaitFor;
     property State: TDbgMainState read GetState;
-    property Main: TDbgMain read fMain write fMain; //todo: need thread-safer!
+    property Main: TDbgMain read fMain;
     property LastEvent: TDbgEvent read GetLastEvent;
     property Callback: TDbgASyncCallback read fCallback;
 
@@ -147,6 +154,13 @@ begin
 
 end;
 
+procedure TDbgAsyncMain.WaitFor;
+begin
+  fQuitLoop:=True;
+  fExeLock.SetEvent;
+  fThread.WaitFor;
+end;
+
 function TDbgAsyncMain.GetState:TDbgMainState;
 begin
   Lock;
@@ -175,6 +189,21 @@ begin
   fThread.WaitFor;
 end;
 
+function TDbgAsyncMain.SetMain(AMain:TDbgMain): Boolean;
+begin
+  //todo: Don't allow Main change while being processed
+  //      a user must terminate the execution of the previouse main
+  //      before changing
+  Result:=True;
+  Lock;
+  try
+    fMain:=AMain;
+    if Assigned(fMain) then fExeLock.SetEvent;
+  finally
+    Unlock;
+  end;
+end;
+
 procedure TDbgAsyncMain.Lock;
 begin
   fLock.Enter;
@@ -183,6 +212,33 @@ end;
 procedure TDbgAsyncMain.Unlock;
 begin
   fLock.Leave;
+end;
+
+procedure TDbgAsyncMain.ThreadWorkLoop(WorkMain:TDbgMain);
+var
+  event     : TDbgEvent;
+  newState  : TDbgMainState;
+begin
+  if Assigned(fExeProc) then begin
+    try
+      fExeRet:=fExeProc(fMain, fExeData);
+    except
+    end;
+    fExeLock.ResetEvent;
+  end else begin
+    if not fMain.WaitNextEvent(event) then
+      newState:=mstError
+    else begin
+      if event.Kind=dek_ProcessTerminated then
+        //todo: Check if MainProcess being terminated
+        newState:=mstTerminated
+      else
+        newState:=mstStopped;
+      SetLastEvent(event);
+    end;
+    fExeLock.ResetEvent;
+  end;
+  SetState(newState);
 end;
 
 procedure TDbgAsyncMain.ResumeExec(AProc:TDbgASyncProc;AData:TObject);
@@ -200,36 +256,23 @@ end;
 
 procedure TDbgAsyncMain.ThreadLoop;
 var
-  event     : TDbgEvent;
-  newState  : TDbgMainState;
+  WorkMain  : TDbgMain;
 begin
   while not fQuitLoop do begin
     fExeLock.WaitFor(INFINITE);
-    fExeLock.ResetEvent;
     if fQuitLoop then Break;
-    if not Assigned(fMain) then begin
-      Sleep(100);
-      Continue;
+    Lock;
+    try
+      if not Assigned(fMain) then begin
+        fExeLock.ResetEvent;
+        WorkMain:=nil;
+      end else
+        WorkMain:=fMain;
+    finally
+      Unlock;
     end;
-
-    if Assigned(fExeProc) then begin
-      try
-        fExeRet:=fExeProc(fMain, fExeData);
-      except
-      end;
-    end else begin
-      if not fMain.WaitNextEvent(event) then
-        newState:=mstError
-      else begin
-        if event.Kind=dek_ProcessTerminated then
-          //todo: Check if MainProcess being terminated
-          newState:=mstTerminated
-        else
-          newState:=mstStopped;
-        SetLastEvent(event);
-      end;
-    end;
-    SetState(newState);
+    if Assigned(fMain) then
+      ThreadWorkLoop(fMain);
   end;
 end;
 

@@ -132,7 +132,7 @@ end;
 procedure InitDebugInfoExCommands;
 begin
   RegisterCommand(['dbginfos'], TdbgInfoFilesCommand.Create);
-  RegisterCommand(['dbgsrc'], TdbgSourceFilesCommand.Create);
+  RegisterCommand(['enumfiles'], TdbgSourceFilesCommand.Create);
   RegisterCommand(['enumfilesym'], TdbgEnumFileSymCommand.Create);
 end;
 

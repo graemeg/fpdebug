@@ -146,8 +146,9 @@ type
 
   TDbgMain = class(TObject)
   private
-    fTarget   : TDbgTarget;
-    fProcList : TFPObjectList;
+    fTarget     : TDbgTarget;
+    fProcList   : TFPObjectList;
+    fOwnTarget  : Boolean;
 
     fReadHandlers  : TFPObjectList;
     fWriteHandlers : TFPObjectList;
@@ -157,7 +158,6 @@ type
     fSteppers   : TFPList;
     fStepper    : TDbgProcess; // the process that must make a SINGLE step in SINGLE thread
     fStepThread : TDbgThreadID;
-
   protected
     function DoAddProcess(AProcessID: TDbgProcessID): TDbgProcess;
     procedure DoRemoveProcess(AProcessID: TDbgProcessID);
@@ -170,7 +170,8 @@ type
 
     procedure AddEventHandler(AHandle: TDbgHandleEvent);
   public
-    constructor Create(ATarget: TDbgTarget; AProcessID: TDbgProcessID);
+    constructor Create(ATarget: TDbgTarget; AProcessID: TDbgProcessID;
+      OwnTarget: Boolean = False);
     destructor Destroy; override;
     function WaitNextEvent(var Event: TDbgEvent): Boolean;  
     function FindProcess(processID: TDbgProcessID): TDbgProcess;
@@ -369,7 +370,8 @@ begin
   end;
 end;
 
-constructor TDbgMain.Create(ATarget: TDbgTarget; AProcessID: TDbgProcessID); 
+constructor TDbgMain.Create(ATarget: TDbgTarget; AProcessID: TDbgProcessID;
+  OwnTarget: Boolean);
 begin
   inherited Create;
   fTarget:=ATarget;
@@ -379,7 +381,8 @@ begin
   fReadHandlers  := TFPObjectList.Create(true);
   fWriteHandlers := TFPObjectList.Create(true);
   fEventHandlers := TFPObjectList.Create(true);
-    
+  fOwnTarget := OwnTarget;
+
   DoAddProcess(AProcessID);
 end;
 
@@ -391,6 +394,8 @@ begin
   
   fProcList.Free;
   fSteppers.Free;
+
+  if fOwnTarget then fTarget.Free;
   inherited Destroy;  
 end;
 

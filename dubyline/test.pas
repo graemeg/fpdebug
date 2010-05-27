@@ -5,6 +5,9 @@
 {$else}
 {$apptype console}
 {$endif}
+var
+  I : Integer;
+
 procedure DoBreak; assembler;
 asm
   int 3;
@@ -59,10 +62,8 @@ type
   end;
 
 begin
-  //TestIntelBreak;
-  //TestAccessViolation;
+  I:=5;
   TestLoop(10, 20, 30);
   ExitCode := 55;
-  //writeln('exiting with error code = ', ExitCode);
-  //readln;
+  writeln('I = ', I);
 end.

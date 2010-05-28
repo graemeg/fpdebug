@@ -18,8 +18,8 @@ procedure LoadExeDebugInfo(const cmdLine: string);
 function GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: Integer): Boolean;
 
 var
-  DbgSources : TFPObjectList;
-  CommonInfo : TDbgInfo = nil;
+  CommonInfo   : TDbgInfo = nil;
+  DbgInfoFiles : TStringList = nil;
 
 implementation
 
@@ -426,11 +426,6 @@ begin
   Result:='returns current execution address of main thread (if possible: filename and line number/line)';
 end;
 
-procedure ReleaseDebugCommands;
-begin
-  DbgSources.Free;
-end;
-
 type
   TBreakHandler = class(TObject)
     procedure BreakHandle(Process: TDbgTarget; Event : TDbgEvent);
@@ -471,30 +466,11 @@ end;
 
   
 procedure LoadDebugInfo(const FileName: string);
-var
-  source   : TDbgDataSource;
-  //infolist : TFPList;
-  //i        : Integer;
 begin
-  source := GetDataSource(FileName);  
-  if not Assigned(source) then 
-    writeln('[LoadDebugInfo] cannot find reader for the file: ', FileName);
-  //writeln('[LoadDebugInfo] source file accepted: ', FileName);
-  DbgSources.Add(source);
-
-  if Assigned(CommonInfo) then CommonInfo.Free;
-  CommonInfo := TDbgInfo.Create;
-  LoadDebugInfoFromFile(CommonInfo, FileName);
-  //infolist := TFPList.Create;
-  {GetDebugInfos(source, infolist);
-  if infolist.Count > 0 then 
-    CommonInfo := TDbgInfo(infolist[0]);}
-  {for i := 0 to infolist.Count - 1 do begin
-    //writeln('[LoadDebugInfo] debug info found: ', TDbgInfo(infolist[i]).ClassName );
-    DbgInfos.Add( TObject(infolist[i]));
-  end;}
-  //infolist.Free;
-end;  
+  if not Assigned(CommonInfo) then CommonInfo := TDbgInfo.Create;
+  if LoadDebugInfoFromFile(CommonInfo, FileName) then
+    DbgInfoFiles.Add(FileName);
+end;
 
 procedure LoadExeDebugInfo(const cmdLine: string);
 var
@@ -525,7 +501,6 @@ end;
 
 procedure RegisterDebugCommands;
 begin
-  DbgSources := TFPObjectList.Create(true);
   RegisterCommand(['where',  'w'], TWhereCommand.Create);
   RegisterCommand(['addr', '@'], TAddrOf.Create);
   RegisterCommand(['value', 'l'], TIntValue.Create);
@@ -541,10 +516,13 @@ end;
 initialization
   RegisterDebugCommands;
   RegisterBreakCommands;
+  DbgInfoFiles := TStringList.Create;
 
 finalization
-  ReleaseDebugCommands;
   ReleaseBreakCommands;
+
+  if Assigned(CommonInfo) then CommonInfo.Free;
+  DbgInfoFiles.Free;
 
 end.
 

@@ -31,6 +31,9 @@ function RegisterCommand(const Keys: array of String; ACommand: TCommand): Boole
 function FindCommand(const Key: String): TCommand;
 function ExecuteCommand(Params: TStrings; var Env: TCommandEnvironment; var ExecutedCommand: TCommand): Boolean;
 
+var
+  QuitCommand : Boolean;
+
 implementation
 
 var 
@@ -57,7 +60,7 @@ type
 
 procedure TExitCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 begin
-  Halt;
+  QuitCommand:=True;
 end;
 
 procedure TExitCommand.PrintHelp;  
@@ -131,8 +134,11 @@ begin
 end;  
 
 procedure ReleaseCommands;
+var
+  i : Integer;
 begin
   keyslist.Free;
+  for i:=0 to cmdlist.Count-1 do TObject(cmdlist[i]).Free;
   cmdlist.Free;
 end;
 

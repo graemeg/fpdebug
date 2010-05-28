@@ -5,7 +5,7 @@ unit dbgInfoTypes;
 interface
 
 uses
-  contnrs, SysUtils, Classes, dbgTypes, AVL_Tree, dbgInfoAccess;
+  contnrs, SysUtils, Classes, dbgTypes, AVL_Tree;
 
 const
   RootSymbol = nil;
@@ -32,7 +32,7 @@ type
   public
     class function isPresent(ASource: TDbgDataSource): Boolean; virtual; abstract;
 
-    constructor Create(ASource: TDbgDataSource); virtual; 
+    constructor Create; virtual;
 
     function ReadDebugInfo(ASource: TDbgDataSource; Info: TDbgInfo): Boolean; virtual; abstract;
   end;
@@ -154,7 +154,7 @@ type
 
   TDbgInfo = class(TObject)
   private
-    fGlobalList : TFPObjectList;
+    fGlobalList : TList;
     fGlobalHash : TFPObjectHashTable;
 
   protected
@@ -201,7 +201,7 @@ function FindLineAddr(info: TDbgInfo; const FullFileName: AnsiString; LineNum: I
 function AddAliasToSymbol(info: TDbgInfo; const AliasName: String; AliasParent, AOriginalSymbol: TDbgSymbol): TDbgSymAlias;
 function AddGlobalSimpleType(info: TDbgInfo; const TypeName: String; AType : TDbgSimpleType): TDbgSymSimpleType;
 
-procedure LoadDebugInfoFromFile(info: TDbgInfo; const FileName: UnicodeString);
+function LoadDebugInfoFromFile(info: TDbgInfo; const FileName: UnicodeString): Boolean;
 
 implementation
 
@@ -209,7 +209,7 @@ var
   SrcClasses  : TFPList;
   InfoClasses : TFPList;
 
-procedure LoadDebugInfoFromFile(info: TDbgInfo; const FileName: UnicodeString);
+function LoadDebugInfoFromFile(info: TDbgInfo; const FileName: UnicodeString): Boolean;
 var
   source      : TDbgDataSource;
   i           : Integer;
@@ -218,13 +218,13 @@ var
 
 begin
   source := GetDataSource(FileName);
-  if not Assigned(source) then
-   { writeln('[LoadDebugInfo] cannot find reader for the file: ', FileName)};
+  Result:=Assigned(source);
+  if not Result then Exit;
 
   for i := 0 to InfoClasses.Count - 1 do begin
     readerclass := TDbgInfoReaderClass(InfoClasses[i]);
     if readerclass.isPresent(Source) then begin
-      reader := ReaderClass.Create(Source);
+      reader := ReaderClass.Create;
       try
         reader.ReadDebugInfo(Source, info);
       finally
@@ -232,6 +232,7 @@ begin
       end;
     end;
   end;
+
   source.Free;
 end;
 
@@ -257,7 +258,7 @@ begin
   for i := 0 to infoclasses.Count - 1 do begin
     readerclass := TDbgInfoReaderClass(infoclasses[i]);
     if readerclass.isPresent(Source) then begin
-      reader := readerclass.Create(Source);
+      reader := readerclass.Create;
       info := TDbgInfo.Create;
       reader.ReadDebugInfo(Source, info);
       List.Add(info);
@@ -339,7 +340,7 @@ end;
 
 { TDbgInfoReader }
 
-constructor TDbgInfoReader.Create(ASource: TDbgDataSource);
+constructor TDbgInfoReader.Create;
 begin
   inherited Create;
 end;
@@ -372,16 +373,20 @@ end;
 constructor TDbgInfo.Create;
 begin
   inherited Create;
-  fGlobalList := TFPObjectList.Create(true);
-  fGlobalHash := TFPObjectHashTable.Create(false);
+  fGlobalList := TList.Create;
+  fGlobalHash := TFPObjectHashTable.Create(True);
   Root:=TDbgSymbol.Create('', nil);
 end;
 
 destructor TDbgInfo.Destroy;
+var
+  i : Integer;
 begin
   Root.Free;
-  fGlobalList.Free;
   fGlobalHash.Free;
+  for i:=0 to fGlobalList.Count-1 do
+    TObject(fGlobalList[i]).Free;
+  fGlobalList.Free;
   inherited Destroy;
 end;
 
@@ -508,7 +513,7 @@ begin
   fName := AName;
   fParent := AParentSym;
   subList := TFPObjectList.Create(False);
-  subHash := TFPObjectHashTable.Create(false);
+  subHash := TFPObjectHashTable.Create(False);
 
   if Assigned(fParent) then begin
     fParent.subHash.Items[AName]:=Self;
@@ -548,6 +553,7 @@ end;
 
 destructor TDbgSymFile.Destroy;
 begin
+  AddrToLines.FreeAndClear;
   AddrToLines.Free;
   LinesToAddr.Free;
   inherited Destroy;

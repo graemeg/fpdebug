@@ -91,8 +91,6 @@ type
     fStream     : TStream;
     fOwnStream  : Boolean;
     fLoaded     : Boolean;
-  protected
-    procedure LoadSections;
   public
     class function isValid(ASource: TStream): Boolean; override;
     class function UserName: AnsiString; override;
@@ -124,9 +122,10 @@ end;
 
 constructor TPEFileSource.Create(ASource: TStream; OwnSource: Boolean);  
 begin
-  fLoader := TDbgWinPEImageLoader.Create(ASource, false);
-  fStream := ASource;
-  fOwnStream := OwnSource;
+  fLoader := TDbgWinPEImageLoader.Create(ASource, False);
+  fLoaded:=True;
+  fStream:=ASource;
+  fOwnStream:=OwnSource;
   inherited Create(ASource, OwnSource);  
 end;
 
@@ -141,8 +140,6 @@ function TPEFileSource.GetSectionInfo(const SectionName: AnsiString; var Size: i
 var
   section : PDbgImageSection;
 begin
-  if not fLoaded then LoadSections;
-
   section := fLoader.Section[SectionName];
   Result := Assigned(section);
   if not Result then Exit;
@@ -157,7 +154,6 @@ var
   sz      : Integer;
 begin
   Result := 0;
-  if not fLoaded then LoadSections;
   
   section := fLoader.Section[SectionName];
   if not Assigned(section) then Exit;
@@ -169,12 +165,6 @@ begin
   data := PByteArray(section^.RawData);
   Move(data^[Offset], Buf[0], sz);
   Result := sz;
-end;
-
-procedure TPEFileSource.LoadSections; 
-begin
-  fLoader.LoadSections;
-  fLoaded:=true;
 end;
 
 class function TPEFileSource.isValid(ASource: TStream): Boolean;  
@@ -217,8 +207,9 @@ var
   n: integer;
 begin
   UnloadSections;
-  for n := 0 to FSections.Count - 1 do
+  for n := 0 to FSections.Count - 1 do begin
     Dispose(PDbgImageSection(FSections.Objects[n]));
+  end;
   FSections.Clear;
   FreeAndNil(FSections);
   inherited Destroy;

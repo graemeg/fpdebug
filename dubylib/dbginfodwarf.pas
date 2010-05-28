@@ -34,7 +34,7 @@ type
     procedure dump_variables(entry: TDwarfEntry);
   public
     class function isPresent(ASource: TDbgDataSource): Boolean; override;
-    constructor Create(ASource: TDbgDataSource); override;
+    constructor Create; override;
 
     function ReadDebugInfo(ASource: TDbgDataSource; Info: TDbgInfo): Boolean; override;
 
@@ -403,10 +403,9 @@ begin
   Result := Assigned(ASource) and (ASource.GetSectionInfo('.debug_info', sz)) and (sz > 0);
 end;
 
-constructor TDbgDwarf3Info.Create(ASource: TDbgDataSource);
+constructor TDbgDwarf3Info.Create;
 begin
-  fSource:=ASource;
-  inherited Create(ASource);
+  inherited Create;
 end;
 
 function TDbgDwarf3Info.ReadDebugInfo(ASource: TDbgDataSource; Info: TDbgInfo): Boolean;
@@ -421,6 +420,7 @@ const
   _debug_line   = '.debug_line';
 
 begin
+  fSource:=ASource;
   Result:=ASource.GetSectionInfo(_debug_info, size);
   if not Result then begin
     //writeln('no .debug_info');

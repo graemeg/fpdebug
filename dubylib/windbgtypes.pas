@@ -39,12 +39,14 @@ type
   private
     fList   : array of TWinHandleIDPair;
     fCount  : Integer;
-    procedure DeleteByIndex(i: Integer; FreeTag: Boolean);
+    procedure DeleteByIndex(i: Integer; FreeTag: Boolean = True);
     function FindByID(ID: DWORD): Integer;
   public
+    destructor Destroy; override;
+    // Tag is owned by THandleList and freed on destruction!
     procedure Add(AHandle: THandle; ID: DWORD; Tag: TObject);
-    procedure DeleteByID(ID: DWORD; FreeTag: Boolean=False);
-    procedure DeleteByHandle(AHandle: THandle; FreeTag: Boolean=False);
+    procedure DeleteByID(ID: DWORD);
+    procedure DeleteByHandle(AHandle: THandle);
     function HandleByID(ID: DWORD): THandle;
     function TagByID(ID: DWORD): TObject;
   end;
@@ -124,7 +126,9 @@ begin
   writeln('Releasing handle!');
   if fMainProc.hThread<>0 then CloseHandle(fMainProc.hThread);
   if fMainProc.hProcess<>0 then CloseHandle(fMainProc.hProcess);
-  inherited Destroy;  
+  fProcesses.Free;
+  fThreads.Free;
+  inherited Destroy;
 end;
 
 function TWinDbgTarget.ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
@@ -373,6 +377,14 @@ begin
   Result:=-1;
 end;
 
+destructor THandleList.Destroy;
+var
+  i : Integer;
+begin
+  for i:=0 to fCount-1 do fList[i].Tag.Free;
+  inherited Destroy;
+end;
+
 procedure THandleList.Add(AHandle: THandle; ID: DWORD; Tag: TObject); 
 begin
   if fCount=length(fList) then begin
@@ -385,24 +397,24 @@ begin
   inc(fCount);
 end;
 
-procedure THandleList.DeleteByID(ID: DWORD; FreeTag: Boolean); 
+procedure THandleList.DeleteByID(ID: DWORD);
 var
   i : Integer;
 begin
   for i:=0 to fCount-1 do
     if fList[i].ID=ID then begin
-      DeleteByIndex(i, FreeTag);
+      DeleteByIndex(i);
       Exit;
     end;
 end;
 
-procedure THandleList.DeleteByHandle(AHandle: THandle; FreeTag: Boolean); 
+procedure THandleList.DeleteByHandle(AHandle: THandle);
 var
   i : Integer;
 begin
   for i:=0 to fCount-1 do
     if fList[i].Hnd=AHandle then begin
-      DeleteByIndex(i, FreeTag);
+      DeleteByIndex(i);
       Exit;
     end;
 end;

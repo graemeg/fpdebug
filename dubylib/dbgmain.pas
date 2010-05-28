@@ -5,7 +5,7 @@ unit dbgMain;
 interface                      
 
 uses
-  Classes, contnrs, dbgTypes, dbgCPU, dbgUtils;
+  Classes, SysUtils, dbgTypes, dbgCPU, dbgUtils;
   
 type
   TDbgMain = class;
@@ -93,9 +93,9 @@ type
   private
     fOwner    : TDbgMain;
     fID       : TDbgProcessID;
-    fThreads  : TFPObjectList;
+    fThreads  : TList;
     fState    : TDbgProcessState;
-    fBreaks   : TFPObjectList;
+    fBreaks   : TList;
   protected
     function DbgTarget: TDbgTarget;
 
@@ -147,12 +147,8 @@ type
   TDbgMain = class(TObject)
   private
     fTarget     : TDbgTarget;
-    fProcList   : TFPObjectList;
+    fProcList   : TFPList;
     fOwnTarget  : Boolean;
-
-    fReadHandlers  : TFPObjectList;
-    fWriteHandlers : TFPObjectList;
-    fEventHandlers : TFPObjectList;
 
     //the list of the stepper processes, for multi-process debugging
     fSteppers   : TFPList;
@@ -167,8 +163,6 @@ type
 
     procedure UpdateProcThreadState;
     procedure DoHandleEvent(Event: TDbgEvent; var ReportToUser: Boolean);
-
-    procedure AddEventHandler(AHandle: TDbgHandleEvent);
   public
     constructor Create(ATarget: TDbgTarget; AProcessID: TDbgProcessID;
       OwnTarget: Boolean = False);
@@ -281,8 +275,11 @@ end;
 
 function TDbgMain.DoAddProcess(AProcessID: TDbgProcessID): TDbgProcess;
 begin
-  Result := TDbgProcess.Create(Self, AProcessID);
-  fProcList.Add(Result);
+  Result:=FindProcess(AProcessID);
+  if not Assigned(Result) then begin
+    Result := TDbgProcess.Create(Self, AProcessID);
+    fProcList.Add(Result);
+  end;
 end;
 
 procedure TDbgMain.DoRemoveProcess(AProcessID: TDbgProcessID);
@@ -291,6 +288,7 @@ var
 begin
   proc:=FindProcess(AProcessID);
   fProcList.Remove(proc);
+  proc.Free;
 end;
 
 function TDbgMain.GetProcessCount: Integer;
@@ -375,28 +373,28 @@ constructor TDbgMain.Create(ATarget: TDbgTarget; AProcessID: TDbgProcessID;
 begin
   inherited Create;
   fTarget:=ATarget;
-  fProcList:=TFPObjectList.Create;
+  fProcList:=TFPList.Create;
   fSteppers:=TFPList.Create;
   
-  fReadHandlers  := TFPObjectList.Create(true);
-  fWriteHandlers := TFPObjectList.Create(true);
-  fEventHandlers := TFPObjectList.Create(true);
   fOwnTarget := OwnTarget;
 
+  writeln('adding process = ', AProcessID);
   DoAddProcess(AProcessID);
 end;
 
-destructor TDbgMain.Destroy;  
+destructor TDbgMain.Destroy;
+var
+  i : Integer;
 begin
-  fReadHandlers.Free;
-  fWriteHandlers.Free;
-  fEventHandlers.Free;
-  
+  for i:=0 to fProcList.Count-1 do begin
+    writeln('freeing process: ',TDbgProcess(fProcList[i]).ID);
+      TDbgProcess(fProcList[i]).Free;
+  end;
   fProcList.Free;
   fSteppers.Free;
 
   if fOwnTarget then fTarget.Free;
-  inherited Destroy;  
+  inherited Destroy;
 end;
 
 function TDbgMain.WaitNextEvent(var Event: TDbgEvent): Boolean;  
@@ -476,11 +474,6 @@ begin
   fTarget.Terminate;
 end;
 
-procedure TDbgMain.AddEventHandler(AHandle: TDbgHandleEvent);
-begin
-  fEventHandlers.Add(TDbgHandleObject.Create(AHandle));
-end;
-
 { TDbgProcess }
 
 constructor TDbgProcess.Create(AOwner: TDbgMain; AProcessID: TDbgProcessID); 
@@ -492,8 +485,8 @@ begin
   
   fOwner:=AOwner;
   fID := AProcessID;
-  fThreads:=TFPObjectList.Create(true);
-  fBreaks:=TFPObjectList.Create(true);
+  fThreads:=TList.Create;
+  fBreaks:=TList.Create;
 
   {filling existing threads}
   for i:=0 to DbgTarget.GetThreadsCount(fID) - 1 do begin
@@ -502,8 +495,11 @@ begin
   end;
 end;
 
-destructor TDbgProcess.Destroy;  
+destructor TDbgProcess.Destroy;
+var
+  i : Integer;
 begin
+  for i:=0 to fThreads.Count-1 do TDbgThread(fThreads[i]).Free;
   fThreads.Free;
   fBreaks.Free;
   inherited Destroy;  
@@ -525,6 +521,7 @@ var
 begin
   t:=FindThread(threadid);
   fThreads.Remove(t);
+  t.Free;
 end;
 
 function TDbgProcess.GetThread(i: Integer): TDbgThread; 

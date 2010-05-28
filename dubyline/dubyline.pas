@@ -7,6 +7,7 @@ program dubyline;
 {$endif}
 
 uses
+  heaptrc,
   SysUtils,
   dbgTypes,
 
@@ -70,7 +71,7 @@ begin
   LoadDebugInfo(cmd);
 
   dbg:=DebugProcessStart(cmd);
-  main:=TDbgMain.Create(dbg, 0);
+  main:=TDbgMain.Create(dbg, 0, True);
   if not Assigned(dbg) then begin
     writeln('cannot start debug process');
     Exit;
@@ -81,7 +82,6 @@ begin
       //SetCommandLine(cmd);
       RunLoop(main);
     finally
-      dbg.Free;
     end;
   except
     writeln('main loop exception');
@@ -90,6 +90,8 @@ begin
 end;
 
 begin
+  DeleteFile('leak.trc');
+  SetHeapTraceOutput('leak.trc');
   try
     RunDebugger;
   except

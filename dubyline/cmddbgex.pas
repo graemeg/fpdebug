@@ -43,8 +43,8 @@ var
   i : Integer;
 begin
   writeln('debug info files used: ');
-  for i:=0 to DbgSources.Count-1 do
-    writeln('  ', TDbgDataSource(DbgSources[i]).UserName);
+  for i:=0 to DbgInfoFiles.Count-1 do
+    writeln('  ', DbgInfoFiles[i]);
   writeln;
 end;
 

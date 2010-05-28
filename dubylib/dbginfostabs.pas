@@ -24,7 +24,7 @@ type
     procedure DoReadSymbols;
     function AllocCallback: TStabsCallback;
   public
-    constructor Create(ASource: TDbgDataSource); override;
+    constructor Create; override;
 
     class function isPresent(ASource: TDbgDataSource): Boolean; override;
     function ReadDebugInfo(ASource: TDbgDataSource; AInfo: TDbgInfo): Boolean; override;
@@ -381,6 +381,7 @@ end;
 function TDbgStabsInfo.ReadDebugInfo(ASource: TDbgDataSource; AInfo: TDbgInfo): Boolean;
 begin
   try
+    fSource := ASource;
     fInfo := AInfo;
     DoReadSymbols;
     Result := true;
@@ -389,10 +390,9 @@ begin
   end;
 end;
 
-constructor TDbgStabsInfo.Create(ASource: TDbgDataSource);
+constructor TDbgStabsInfo.Create;
 begin
-  inherited Create(ASource);
-  fSource := ASource;
+  inherited Create;
 end;
 
 procedure TDbgStabsInfo.dump_symbols;

@@ -434,6 +434,7 @@ begin
     stabt:=AddType(num, stArray);
     stabt.ArrPacked:=isPacked;
     if ParseSymTypeSubRangeVal(rngval, typenum, lowr, highr) then begin
+      if Assigned(stabt) then stabt.Free;
       stabt.ArrIndType:=TStabTypeDescr.Create(stRange);
       stabt.LowRange:=Lowr;
       stabt.HighRange:=highr;

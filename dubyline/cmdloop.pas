@@ -181,44 +181,44 @@ begin
   Result:='runs the process';
 end;
 
-function GetNextWord(const s: AnsiString; var index: Integer): String;
+function GetNextWord(const s: AnsiString; var index: Integer): AnsiString;
 const
   WhiteSpace = [' ',#8,#10];
   Literals   = ['"',''''];
 var
-  Wstart,wend : Integer;
+  wStart,wEnd : Integer;
   InLiteral   : Boolean;
   LastLiteral : AnsiChar;
 
 begin
-  WStart:=index;
-  while (WStart<=Length(S)) and (S[WStart] in WhiteSpace) do
-    Inc(WStart);
+  wStart:=index;
+  while (wStart<=Length(S)) and (S[wStart] in WhiteSpace) do
+    Inc(wStart);
 
-  WEnd:=WStart;
+  wEnd:=wStart;
   InLiteral:=False;
   LastLiteral:=#0;
-  while (Wend<=Length(S)) and (not (S[Wend] in WhiteSpace) or InLiteral) do begin
-    if S[Wend] in Literals then
+  while (wEnd<=Length(S)) and (not (S[wEnd] in WhiteSpace) or InLiteral) do begin
+    if S[wEnd] in Literals then
       If InLiteral then
-        InLiteral:=not (S[Wend]=LastLiteral)
+        InLiteral:=not (S[wEnd]=LastLiteral)
       else begin
         InLiteral:=True;
-        LastLiteral:=S[Wend];
+        LastLiteral:=S[wEnd];
       end;
-    inc(wend);
+    inc(wEnd);
   end;
 
-  Result:=Copy(S,WStart,WEnd-WStart);
+  Result:=Copy(S,wStart,wEnd-wStart);
 
   if (Length(Result) > 0)
      and (Result[1] = Result[Length(Result)]) // if 1st char = last char and..
      and (Result[1] in Literals) then // it's one of the literals, then
     Result:=Copy(Result, 2, Length(Result) - 2); //delete the 2 (but not others in it)
 
-  while (WEnd<=Length(S)) and (S[Wend] in WhiteSpace) do
-    inc(Wend);
-  index := Wend;
+  while (wEnd<=Length(S)) and (S[wEnd] in WhiteSpace) do
+    inc(wEnd);
+  index := wEnd;
 end;
 
 procedure ParseCommand(const Cmd: String; items: Tstrings);
@@ -237,8 +237,8 @@ end;
   
 procedure ExecuteNextCommand(Env: TCommandEnvironment);
 var
-  s : string;
-  p : TStringList;
+  s   : string;
+  p   : TStringList;
   cmd : TCommand;
 begin
   write(CmdPrefix);
@@ -250,15 +250,18 @@ begin
 
   if s <> '' then begin
     p := TStringList.Create;
-    ParseCommand(s, p);
-    if not ExecuteCommand(p, Env, cmd) then 
-      writeln('unknown command ', p[0])
-    else begin
-      LastCommand := s;
-      if cmd.ResetParamsCache then 
-        LastCommand := p[0];
+    try
+      ParseCommand(s, p);
+      if not ExecuteCommand(p, Env, cmd) then
+        writeln('unknown command ', p[0])
+      else begin
+        LastCommand := s;
+        if cmd.ResetParamsCache then
+          LastCommand := p[0];
+      end;
+    finally
+      p.Free;
     end;
-    p.Free;
   end;
 end;
 
@@ -278,44 +281,48 @@ begin
     Exit;
   end;
   Env:=TDebugEnvironment.Create;
+  try
+    ProcTerm := false;
+    StopForUser := true;
 
-  ProcTerm := false;
-  StopForUser := true;
+    while not QuitCommand do begin
+      if StopForUser then begin
+        WaitForNext := false;
+        ExecuteNextCommand(Env);
+      end else
+        WaitForNext := true;
+      StopForUser  := true;
 
-  while true do begin
-    if StopForUser then begin
-      WaitForNext := false;
-      ExecuteNextCommand(Env);
-    end else
-      WaitForNext := true;
-    StopForUser  := true;
+      if WaitForNext and not ProcTerm then begin
+        if not Target.WaitNextEvent(DbgEvent) then begin
+          writeln('the process terminated? (type "quit" to quit)');
+        end else begin
+          //HandleEvent( Process, DbgEvent);
 
-    if WaitForNext and not ProcTerm then begin
-      if not Target.WaitNextEvent(DbgEvent) then begin
-        writeln('the process terminated? (type "quit" to quit)');
-      end else begin
-        //HandleEvent( Process, DbgEvent);
-        
-        case DbgEvent.Kind of
-          dek_SysExc:;
-          dek_SingleStep:;
-            //writeln('single step');
-          dek_BreakPoint:;
-            //writeln('breakpoint');
-          dek_SysCall:
-          begin
-            //writeln('system call: ', DbgEvent.Debug);
-            StopForUser := StopOnSysCall;
+          case DbgEvent.Kind of
+            dek_SysExc:;
+            dek_SingleStep:;
+              //writeln('single step');
+            dek_BreakPoint:;
+              //writeln('breakpoint');
+            dek_SysCall:
+            begin
+              //writeln('system call: ', DbgEvent.Debug);
+              StopForUser := StopOnSysCall;
+            end;
           end;
+          writeln('even:    ',  dekStr[DbgEvent.Kind]);
+          writeln('process: ',  DbgEvent.Process);
+          writeln('thread:  ',  PtrUInt(DbgEvent.Thread));
+          writeln('addr:    $', HexAddr(DbgEvent.Addr), ' / ', DbgEvent.Addr);
         end;
-        writeln('even:    ',  dekStr[DbgEvent.Kind]);
-        writeln('process: ',  DbgEvent.Process);
-        writeln('thread:  ',  PtrUInt(DbgEvent.Thread));
-        writeln('addr:    $', HexAddr(DbgEvent.Addr), ' / ', DbgEvent.Addr);
+        if DbgEvent.Kind = dek_ProcessTerminated then
+          writeln('process has been terminated');
       end;
-      if DbgEvent.Kind = dek_ProcessTerminated then
-        writeln('process has been terminated');
     end;
+  finally
+    writeln('freeing Env!');
+    Env.Free;
   end;
 end;
 

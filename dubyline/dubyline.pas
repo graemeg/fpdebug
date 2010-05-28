@@ -7,7 +7,6 @@ program dubyline;
 {$endif}
 
 uses
-  heaptrc,
   SysUtils,
   dbgTypes,
 
@@ -90,8 +89,6 @@ begin
 end;
 
 begin
-  DeleteFile('leak.trc');
-  SetHeapTraceOutput('leak.trc');
   try
     RunDebugger;
   except

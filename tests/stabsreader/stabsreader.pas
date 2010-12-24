@@ -11,6 +11,7 @@ uses
 procedure ReadStabsData(source : TDbgDataSource);
 var
   stabs : TDbgStabsInfo;
+  info  : TDbgInfo;
 begin
   if not TDbgStabsInfo.isPresent(source) then begin
     writeln('stabs debug data is not present');
@@ -18,7 +19,14 @@ begin
   end;
   writeln('stabs data found');
   writeln('reading stabs...');
-  stabs := TDbgStabsInfo.Create(source);
+  stabs := TDbgStabsInfo.Create;
+  info := TDbgInfo.Create;
+  try
+    stabs.ReadDebugInfo(source, info);
+  finally
+    info.Free;
+  end;
+
   writeln('stabs read.');  
 
   stabs.dump_symbols;

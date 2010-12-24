@@ -371,7 +371,7 @@ begin
   fState:=mdsStartProc;
 end;
 
-function MachDebugProcessStart(const ACmdLine: String): TDbgTarget;
+function MachDebugProcessStart(const ACmdLine: UnicodeString): TDbgTarget;
 var
   machdbg : TMacDbgTarget;
 begin

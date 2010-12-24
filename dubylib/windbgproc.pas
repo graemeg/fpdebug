@@ -5,7 +5,8 @@ unit winDbgProc;
 interface
 
 uses
-  Windows, SysUtils, DbgTypes, dbgConsts, winTools32;
+  JwaWinBase, JwaTlHelp32, Windows, SysUtils, DbgTypes, dbgConsts;
+  {, winTools32 - use FPC package, instead of custom tool}
 
 type
   TFloatingSaveArea = packed record
@@ -251,6 +252,10 @@ var
   Wow64SuspendThread    : function( hThread: THANDLE ): DWORD; stdcall = nil;
   Wow64SetThreadContext : function ( hThread: THANDLE; const lpContext ): LongBool; stdcall = nil;
 
+function IntGetThreadContext(hThread: HANDLE; var lpContext): BOOL; stdcall; external kernel32 name 'GetThreadContext';
+function IntSetThreadContext(hThread: THandle; const lpContext): BOOL; external kernel32 name 'SetThreadContext';
+
+
 implementation
 
 const
@@ -293,7 +298,11 @@ const
   CONTEXT64_SERVICE_ACTIVE      = $10000000;
   CONTEXT64_EXCEPTION_REQUEST   = $40000000;
   CONTEXT64_EXCEPTION_REPORTING = $80000000;
-                
+
+
+const
+  kernel32 = 'kernel32.dll';
+
 function DoReadThreadRegs32(ThreadHandle: THandle; Regs: TDbgDataList): Boolean;
 var
   ctx32 : TContext32;
@@ -301,7 +310,7 @@ begin
   FillChar(ctx32, sizeof(ctx32), 0);
   ctx32.ContextFlags := CONTEXT32_ALL;
 
-  Result := GetThreadContext(ThreadHandle, PContext(@ctx32)^);
+  Result := IntGetThreadContext(ThreadHandle, ctx32);
   if not Result then Exit;
 
   with ctx32 do begin
@@ -369,7 +378,7 @@ begin
     Dr7 := Regs.Reg[_Dr7].UInt32;
   end;
 
-  Result := SetThreadContext(ThreadHandle, PContext(@ctx32)^);
+  Result := IntSetThreadContext(ThreadHandle, ctx32);
   //if not Result then
   //  WriteLn('SetThreadContext = ', GetLastError);
 end;
@@ -392,14 +401,14 @@ var
 begin
   FillChar(ctx, sizeof(ctx), 0);
   ctx.ContextFlags := CONTEXT32_CONTROL;
-  Result := GetThreadContext(ThreadHandle, @ctx);
+  Result := IntGetThreadContext(ThreadHandle, ctx);
   if not Result then Exit;
   
   ctx.ContextFlags := CONTEXT32_CONTROL;
   ctx.EFlags := ctx.EFlags or FLAG32_TRACE_BIT;
   
   // PContext(@ctx)^ is a bit hacky 
-  Result := SetThreadContext(ThreadHandle, PContext(@ctx)^);
+  Result := IntSetThreadContext(ThreadHandle, ctx);
 end;
 
 
@@ -627,9 +636,8 @@ var
 begin
   //any hacks?
   Result:=False;
-  if not Assigned(CreateToolhelp32Snapshot) then Exit;
+  //if not Assigned(CreateToolhelp32Snapshot) then Exit;
 
-  //todo: check 64-bit compatibility
   Snap:=CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, AProcID);
   if Snap<>0 then Exit;
 
@@ -637,7 +645,7 @@ begin
   thr:=OpenThread(THREAD_SUSPEND_RESUME, True, entry.th32ThreadID);
   if thr<>INVALID_HANDLE_VALUE then begin
     SuspendThread(thr);
-    CloseThread(thr);
+    CloseHandle(thr);
   end;
   CloseHandle(Snap);
 end;
@@ -650,7 +658,7 @@ var
 begin
   //any hacks?
   Result:=False;
-  if not Assigned(CreateToolhelp32Snapshot) then Exit;
+  //if not Assigned(CreateToolhelp32Snapshot) then Exit;
 
   //todo: check 64-bit compatibility
   Snap:=CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, AProcID);
@@ -660,7 +668,7 @@ begin
   thr:=OpenThread(THREAD_SUSPEND_RESUME, True, entry.th32ThreadID);
   if thr<>INVALID_HANDLE_VALUE then begin
     ResumeThread(thr);
-    CloseThread(thr);
+    CloseHandle(thr);
   end;
   CloseHandle(Snap);
 end;

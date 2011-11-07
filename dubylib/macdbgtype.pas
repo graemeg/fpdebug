@@ -7,7 +7,7 @@ interface
 uses
   SysUtils,
   BaseUnix, Unix, machapi, mach_port, machexc,
-  dbgTypes, macPtrace, macDbgProc;
+  dbgTypes, macPtrace, macDbgProc, macDbgUtils;
 
 type
   TMacDebugState = (mdsStartProc, mdsStartThread, mdsNormal, mdsTerminated);
@@ -56,7 +56,6 @@ implementation
 
 var
   catchedthread : Integer;
-
 
 function TMacDbgTarget.GetThreadsCount(AProcess: TDbgProcessID): Integer;
 var
@@ -215,26 +214,6 @@ procedure TMacDbgTarget.Terminate;
 begin
 end;
 
-procedure DebugExptMsg(const msg: __Request__exception_raise_t);
-var
-  i : Integer;
-begin
-  writeln('msg.head.id:    ', msg.head.msgh_id);
-  writeln('msg.body:       ', msg.msgh_body.msgh_descriptor_count);
-  writelN('exception type: ', msg.exception, ' ', ExceptionType(msg.exception));
-  writelN('exception at: ');
-  writeln('  process: ', msg.task.name);
-  writeln('  thread:  ', msg.thread.name);
-  writeln('Code Count = ', msg.codeCnt);
-  for i := 0 to msg.codeCnt - 1 do begin
-    write(msg.code[i],' ');
-    if msg.code[i] >= $10000 then write('uxcode = ', msg.code[i] -$10000);
-    writeln(';');
-  end;
-  writeln;
-end;
-
-
 function catch_exception_raise (exception_port, thread, task : mach_port_t;
 	exception  : exception_type_t;
 	code       : exception_data_t;
@@ -244,7 +223,8 @@ begin
   writeln('--- catch_exception_raise called! ---');
   writeln('  exc_port  = ', exception_port);
   writeln('  thread    = ', thread);
-  writeln('  exception = ', exception, ' ', ExceptionType(exception));
+  writeln('  exception = ', exception, ' ', debugExceptionType(exception));
+  writeln('  code      = ', code^, ' ptr = ', PtrUInt(code), ' ', hexStr(code^, 8));
   writeln('  codeCnt   = ', codeCnt);
   // for i := 0 to codeCnt - 1 do  writeln('code[',i,'] = ', code[i]);
   if (exception = EXC_SOFTWARE) and (CodeCnt = 2) and (code[0] = EXC_SOFT_SIGNAL) then begin
@@ -341,7 +321,7 @@ begin
   writeln('id = ', recvmsg.head.msgh_id);
   if recvmsg.head.msgh_id = msgid_exception_raise then begin
     writeln('exception raise');
-    DebugExptMsg(recvmsg.exc_raise);
+    debugExcReqRaise(recvmsg.exc_raise);
   end;
 
 end;
@@ -397,4 +377,5 @@ initialization
   InitMachDebug;
 
 end.
+
 

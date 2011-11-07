@@ -9,7 +9,7 @@ interface
 uses
   BaseUnix, Unix,
   Classes, SysUtils,
-  machapi, machexc, mach_port, macPtrace;
+  machapi, machexc, mach_port, macPtrace, macDbgUtils;
 
 // == utility functions ==
 
@@ -41,7 +41,6 @@ function debugout_kret(err: kern_return_t; const comment: AnsiString): kern_retu
 
 function GetSigStr(sig: Integer): string;
 function kern_err_str(err: Integer): string;
-function ExceptionType(exc_type: Integer): string;
 function ExcMaskStr(excMask: Integer): string;
 
 procedure PrintTaskBasicInfo32(task: task_t);
@@ -484,25 +483,6 @@ begin
   end;
 end;
 
-function ExceptionType(exc_type: Integer): String;
-begin
-  case exc_type of
-    EXC_BAD_ACCESS            :Result := 'EXC_BAD_ACCESS';
-    EXC_BAD_INSTRUCTION       :Result := 'EXC_BAD_INSTRUCTION';
-    EXC_ARITHMETIC            :Result := 'EXC_ARITHMETIC';
-    EXC_EMULATION             :Result := 'EXC_EMULATION';
-    EXC_SOFTWARE              :Result := 'EXC_SOFTWARE';
-    EXC_BREAKPOINT            :Result := 'EXC_BREAKPOINT';
-    EXC_SYSCALL               :Result := 'EXC_SYSCALL';
-    EXC_MACH_SYSCALL          :Result := 'EXC_MACH_SYSCALL';
-    EXC_RPC_ALERT             :Result := 'EXC_RPC_ALERT';
-    EXC_CRASH                 :Result := 'EXC_CRASH';
-  else
-    Result := 'Unknown ' + IntToHex(exc_type, 8);
-  end;
-
-end;
-
 function ExcMaskStr(excMask: Integer): string;
 var
   i : integer;
@@ -510,7 +490,7 @@ begin
   Result:='';
   for i:=EXC_BAD_ACCESS to EXC_CRASH do
     if (excMask and (1 shl i))>0 then
-      Result:=Result+ExceptionType(i)+' ';
+      Result:=Result+debugExceptionType(i)+' ';
 end;
 
 function isTaskSuspended(atask: mach_port_t; var Suspended: Boolean): Boolean;

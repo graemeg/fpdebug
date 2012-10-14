@@ -99,7 +99,7 @@ type
 
 implementation
 
-function WinDebugProcessStart(const ACommandLine: UnicodeString): TDbgTarget;
+function WinDebugProcessStart(const ACommandLine: String): TDbgTarget;
 var
   win : TWinDbgTarget;
 begin

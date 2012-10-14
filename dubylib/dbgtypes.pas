@@ -120,11 +120,11 @@ type
   end;
 
 var
-  DebugProcessStart: function(const ACmdLine: UnicodeString): TDbgTarget = nil;
+  DebugProcessStart: function(const ACmdLine: String): TDbgTarget = nil;
 
 implementation
 
-function DummyDebugProcessStart(const ACmdLine: UnicodeString): TDbgTarget;
+function DummyDebugProcessStart(const ACmdLine: String): TDbgTarget;
 begin
   Result := nil;
 end;

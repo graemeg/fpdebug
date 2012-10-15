@@ -362,8 +362,8 @@ function ptraceSingleStep(pid: TPid): Boolean;
 {* SIGTRAP si_codes}
 
 const
-  TRAP_BRKPT 	= 1;	{* process breakpoint *}
-  TRAP_TRACE	= 2;	{* process trace trap *}
+  TRAP_BRKPT  = 1;  {* process breakpoint *}
+  TRAP_TRACE  = 2;  {* process trace trap *}
                     {* flag is set on singlestepping *}
   TRAP_BRANCH = 3;  {* process taken branch trap *}
   TRAP_HWBKPT = 4;  {* hardware breakpoint/watchpoint *}
@@ -378,9 +378,9 @@ end;}
 
 function ptraceCont(pid: TPid; Signal: Integer): TPtraceWord;
 var
-  sigptr  : PtrInt;
+  sigptr: PtrInt;
 begin
-  sigptr:=Signal;
+  sigptr := Signal;
   Result := ptrace(PTRACE_CONT, pid, nil, Pointer(sigptr));
 end;
 

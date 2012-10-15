@@ -1,3 +1,6 @@
+{
+       THIS UNIT IS CURRENTLY NOT USED ANYWHERE
+}
 unit debugStabs;
 
 {$mode objfpc}{$H+}

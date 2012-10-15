@@ -1,24 +1,28 @@
-hello
+Free Pascal Debugger
+====================
+This project is trying to create a Object Pascal written debugger for the
+Free Pascal Compiler project. It will read DWARF debug information and be
+cross-platform. Initially I will only target Linux and Windows. As soon as I
+see good progress, I'll start introducing other platforms too.
 
-this project is my graduation work. So, generally i'm the most interested in getting this project done :)
-
-the second, and probably even more important task, is to implement FreePascal based debugger, so it can be
-used by any object-pascal (FreePascal) based application.
-
-whole code will be written in {$mode delphi}, so, at least, windows version should be delphi 7 compatible.
-i will soon upload source file.
-
-the project is inspired, by fpdbg - simple 64-bit Win debugger by Marc Weustnik (fpc/lazarus team developer)
-you can find his project at Lazarus/debugger
-
-
-thanks,
-dmitry aka skalogryz
+This is a fork of the Duby project. The Duby project has stalled in
+development, which is a shame. Also my goals are different to Dmitry's,
+so instead of bothering him or trying to convince him otherwise, I am going to
+continue the work under a new project name. Dmitry is of course wellcome to
+pull changes from here.
 
 
-=== Notes ===
+History
+-------
+The project originally started a graduation work by Dmitry Boyarintsev back in
+2009. His original goal was to create a debugger for Object Pascal based
+application, written in Object Pascal, and that can work with Free Pascal and
+Delphi 7.
 
-the project structures is the following
+
+Notes
+-----
+The project structures is the following
 
 dubylib/     - dir containg all libraries used for 
   dbg*       - common debugging unit. Usually contains classes/types declarations
@@ -37,7 +41,8 @@ more to come:
   bsd* - BSD Unix specifi units
   other processors support
 
-debugger/    - A small command-line debugger, implemented using dubylib
+dubyline/    - A small command-line debugger, implemented using dubylib
 
   
- 
+        -------------------  END  ---------------------
+

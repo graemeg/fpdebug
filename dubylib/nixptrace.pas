@@ -19,7 +19,7 @@
 
 unit nixPtrace;
 
-{$ifdef fpc}{$mode delphi}{$h+}{$endif}
+{$mode objfpc}{$h+}
 
 interface
 

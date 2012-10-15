@@ -146,7 +146,7 @@ end;
 
 function TStepCommand.ShortHelp: String;  
 begin
-  Result:='makes a single step in (the mainthead) process';
+  Result:='makes a single step in the (main thread) process';
 end;
 
 { TContinueCommand }
@@ -321,7 +321,7 @@ begin
       end;
     end;
   finally
-    writeln('freeing Env!');
+    writeln('freeing environment.');
     Env.Free;
   end;
 end;

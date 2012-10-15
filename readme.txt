@@ -1,30 +1,31 @@
 Free Pascal Debugger
 ====================
-This project is trying to create a Object Pascal written debugger for the
+This project is trying to create a debugger written in Object Pascal, for the
 Free Pascal Compiler project. It will read DWARF debug information and be
 cross-platform. Initially I will only target Linux and Windows. As soon as I
 see good progress, I'll start introducing other platforms too.
 
-This is a fork of the Duby project. The Duby project has stalled in
-development, which is a shame. Also my goals are different to Dmitry's,
-so instead of bothering him or trying to convince him otherwise, I am going to
-continue the work under a new project name. Dmitry is of course wellcome to
-pull changes from here.
+
+License
+-------
+This project uses the BSD 2-clause license. Please see the LICENSE.txt for more
+details.
 
 
 History
 -------
-The project originally started a graduation work by Dmitry Boyarintsev back in
-2009. His original goal was to create a debugger for Object Pascal based
-application, written in Object Pascal, and that can work with Free Pascal and
-Delphi 7.
+The project was originally started by Dmitry Boyarintsev back in 2009 under
+the name Duby. His original goal was to create a debugger written in Object Pascal for
+Object Pascal based applications. He also wanted it to work with Free Pascal and
+Delphi 7. The project unfortunately quickly died down, which was a shame, as it
+showed potential.
 
 
 Notes
 -----
 The project structures is the following
 
-dubylib/     - dir containg all libraries used for 
+debuglib/     - dir containg all libraries used for 
   dbg*       - common debugging unit. Usually contains classes/types declarations
 
   win*       - Windows specific units
@@ -36,7 +37,7 @@ dubylib/     - dir containg all libraries used for
 
   *dwarf*    - DWARF specific units 
   *stabs*    - Legacy STABS debuf info units
-  
+
 more to come:
   bsd* - BSD Unix specifi units
   other processors support

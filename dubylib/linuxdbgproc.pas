@@ -137,7 +137,7 @@ end;
 
 function SetSingleStepx86_64(pid: Integer; isEnabled: Boolean): Boolean;
 begin
-  //todo!
+  { TODO : Implement 64-bit Linux single stepping }
   Result:=False;
 end;
 

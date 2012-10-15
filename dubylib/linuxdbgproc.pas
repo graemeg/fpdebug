@@ -121,7 +121,6 @@ end;
 function SetSingleStepi386(pid: Integer; isEnabled: Boolean): Boolean;
 var
   regs32  : user_32;
-  mask    : LongWord;
 const
   TF_FLAG = 1 shl 8;
 begin

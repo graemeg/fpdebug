@@ -5,7 +5,7 @@ unit cmdDbg;
 interface
 
 uses
-  Classes, SysUtils, contnrs, 
+  Classes, SysUtils,
   dbgTypes, dbgUtils, dbgConsts,
   dbgCPU, dbgInfoTypes, dbgInfoUtils, dbgDataRead,
   cmdlineutils,

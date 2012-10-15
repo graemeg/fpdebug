@@ -32,7 +32,7 @@ unit dwarf;
 interface
 
 uses
-  SysUtils, Classes, contnrs,
+  SysUtils, Classes,
   dwarfConst, dwarfTypes;
 
 type

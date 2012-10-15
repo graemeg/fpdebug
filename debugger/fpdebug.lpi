@@ -55,27 +55,27 @@
         <UnitName Value="cmdDbg"/>
       </Unit2>
       <Unit3>
-        <Filename Value="..\dubylib\dwarfproc.pas"/>
+        <Filename Value="..\debuglib\dwarfproc.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dwarfProc"/>
       </Unit3>
       <Unit4>
-        <Filename Value="..\dubylib\dbgbreakpoints.pas"/>
+        <Filename Value="..\debuglib\dbgbreakpoints.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgBreakPoints"/>
       </Unit4>
       <Unit5>
-        <Filename Value="..\dubylib\dbgcpu.pas"/>
+        <Filename Value="..\debuglib\dbgcpu.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgCPU"/>
       </Unit5>
       <Unit6>
-        <Filename Value="..\dubylib\dbgi386.pas"/>
+        <Filename Value="..\debuglib\dbgi386.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgi386"/>
       </Unit6>
       <Unit7>
-        <Filename Value="..\dubylib\dbgmain.pas"/>
+        <Filename Value="..\debuglib\dbgmain.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgMain"/>
       </Unit7>

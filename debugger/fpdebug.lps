@@ -7,11 +7,12 @@
         <Filename Value="fpdebug.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="fpdebug"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="13"/>
-        <CursorPos X="1" Y="6"/>
-        <UsageCount Value="35"/>
+        <TopLine Value="1"/>
+        <CursorPos X="72" Y="24"/>
+        <UsageCount Value="37"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -20,8 +21,8 @@
         <UnitName Value="cmdlineutils"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
-        <UsageCount Value="35"/>
+        <CursorPos X="1" Y="12"/>
+        <UsageCount Value="37"/>
       </Unit1>
       <Unit2>
         <Filename Value="cmddbg.pas"/>
@@ -29,62 +30,50 @@
         <UnitName Value="cmdDbg"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="21" Y="8"/>
-        <UsageCount Value="35"/>
+        <CursorPos X="1" Y="12"/>
+        <UsageCount Value="37"/>
       </Unit2>
       <Unit3>
-        <Filename Value="../dubylib/dwarfproc.pas"/>
+        <Filename Value="../debuglib/dwarfproc.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dwarfProc"/>
-        <UsageCount Value="35"/>
+        <UsageCount Value="20"/>
       </Unit3>
       <Unit4>
-        <Filename Value="../dubylib/dbgbreakpoints.pas"/>
+        <Filename Value="../debuglib/dbgbreakpoints.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgBreakPoints"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="1" Y="1"/>
-        <UsageCount Value="35"/>
+        <UsageCount Value="20"/>
       </Unit4>
       <Unit5>
-        <Filename Value="../dubylib/dbgcpu.pas"/>
+        <Filename Value="../debuglib/dbgcpu.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgCPU"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="11" Y="26"/>
-        <UsageCount Value="35"/>
+        <UsageCount Value="20"/>
       </Unit5>
       <Unit6>
-        <Filename Value="../dubylib/dbgi386.pas"/>
+        <Filename Value="../debuglib/dbgi386.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgi386"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="3" Y="72"/>
-        <UsageCount Value="35"/>
+        <UsageCount Value="20"/>
       </Unit6>
       <Unit7>
-        <Filename Value="../dubylib/dbgmain.pas"/>
+        <Filename Value="../debuglib/dbgmain.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgMain"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="3" Y="726"/>
-        <UsageCount Value="35"/>
+        <UsageCount Value="20"/>
       </Unit7>
       <Unit8>
         <Filename Value="cmdloop.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="cmdloop"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
-        <UsageCount Value="28"/>
-        <Loaded Value="True"/>
+        <CursorPos X="1" Y="12"/>
+        <UsageCount Value="30"/>
       </Unit8>
       <Unit9>
         <Filename Value="commands.pas"/>
@@ -92,8 +81,8 @@
         <UnitName Value="commands"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
-        <UsageCount Value="28"/>
+        <CursorPos X="1" Y="12"/>
+        <UsageCount Value="30"/>
       </Unit9>
     </Units>
     <General>

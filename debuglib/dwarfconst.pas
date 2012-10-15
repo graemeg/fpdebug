@@ -1,29 +1,13 @@
-{ $Id: dbgdwarfconst.pas 18302 2009-01-16 00:26:10Z marc $ }
 {
- ---------------------------------------------------------------------------
- dwarfconst.pas  -  Freepascal debugger - Dwarf constants
- ---------------------------------------------------------------------------
+    fpDebug  -  A debugger for the Free Pascal Compiler.
 
- This unit contains the constants defined for the dward debugging format.
+    Copyright (c) 2012 by Graeme Geldenhuys.
 
- ---------------------------------------------------------------------------
+    See the file LICENSE.txt, included in this distribution,
+    for details about redistributing fpDebug.
 
- @created(Fri Jul 7th WET 2006)
- @lastmod($Date: 2009-01-16 03:26:10 +0300 (пт, 16 янв 2009) $)
- @author(Marc Weustink <marc@@dommelstein.nl>)
-
- *****************************************************************************
- *                                                                           *
- *  This file is part of the Lazarus Project                                 *
- *                                                                           *
- *  See the file COPYING.modifiedLGPL.txt, included in this distribution,        *
- *  for details about the copyright.                                         *
- *                                                                           *
- *  This program is distributed in the hope that it will be useful,          *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                     *
- *                                                                           *
- *****************************************************************************
+    Description:
+      Contains the constants defined for the DWARF debugging format.
 }
 unit dwarfConst;
 

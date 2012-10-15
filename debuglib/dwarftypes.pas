@@ -1,38 +1,15 @@
-{ $Id: dbgdwarf.pas 18302 2009-01-16 00:26:10Z marc $ }
 {
- ---------------------------------------------------------------------------
- dwarfTypes.pas  -  Native Freepascal debugger - Dwarf symbol reader
- ---------------------------------------------------------------------------
+    fpDebug  -  A debugger for the Free Pascal Compiler.
 
- This unit contains helper classes for loading and resolving of DWARF debug
- symbols
+    Copyright (c) 2006 by Marc Weustink <marc@dommelstein.nl>
+    Copyright (c) 2012 by Graeme Geldenhuys.
 
- ---------------------------------------------------------------------------
+    See the file LICENSE.txt, included in this distribution,
+    for details about redistributing fpDebug.
 
- @created(Mon Aug 1st WET 2006)
- @lastmod($Date: 2009-01-16 03:26:10 +0300 (пт, 16 янв 2009) $)
- @author(Marc Weustink <marc@@dommelstein.nl>)
-
- ***************************************************************************
- *                                                                         *
- *   This source is free software; you can redistribute it and/or modify   *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This code is distributed in the hope that it will be useful, but      *
- *   WITHOUT ANY WARRANTY; without even the implied warranty of            *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU     *
- *   General Public License for more details.                              *
- *                                                                         *
- *   A copy of the GNU General Public License is available on the World    *
- *   Wide Web at <http://www.gnu.org/copyleft/gpl.html>. You can also      *
- *   obtain it by writing to the Free Software Foundation,                 *
- *   Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.        *
- *                                                                         *
- ***************************************************************************
-
-the code adapted for the dubylib
+    Description:
+      This unit contains helper classes for loading and resolving of
+      DWARF debug symbols.
 }
 unit dwarfTypes;
 

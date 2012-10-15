@@ -1,30 +1,13 @@
 {
- ---------------------------------------------------------------------------
- dbgpetypes.pp  
- ---------------------------------------------------------------------------
+    fpDebug  -  A debugger for the Free Pascal Compiler.
 
- This unit contains the types needed for reading PE images.
- At some time this may go to be part of the rtl ?
+    Copyright (c) 2012 by Graeme Geldenhuys.
 
- ---------------------------------------------------------------------------
+    See the file LICENSE.txt, included in this distribution,
+    for details about redistributing fpDebug.
 
- @created(Thu May 4th WET 2006)
- @author(Marc Weustink <marc@@dommelstein.nl>)
-
- @update (2th july 2009). Removed "Uses Windows" by dmitry boyarintsev.
-
- *****************************************************************************
- *                                                                           *
- *  This file is part of the Lazarus Project                                 *
- *                                                                           *
- *  See the file COPYING.modifiedLGPL.txt, included in this distribution,    *
- *  for details about the copyright.                                         *
- *                                                                           *
- *  This program is distributed in the hope that it will be useful,          *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                     *
- *                                                                           *
- *****************************************************************************
+    Description:
+      This unit contains the types needed for reading PE images under Windows.
 }
 unit dbgPETypes;
 

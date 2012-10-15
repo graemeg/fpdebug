@@ -1,3 +1,14 @@
+{
+    fpDebug  -  A debugger for the Free Pascal Compiler.
+
+    Copyright (c) 2012 by Graeme Geldenhuys.
+
+    See the file LICENSE.txt, included in this distribution,
+    for details about redistributing fpDebug.
+
+    Description:
+      .
+}
 unit dbgMain;
 
 {$mode objfpc}{$H+}

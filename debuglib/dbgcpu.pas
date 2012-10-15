@@ -1,4 +1,15 @@
-unit dbgCPU; 
+{
+    fpDebug  -  A debugger for the Free Pascal Compiler.
+
+    Copyright (c) 2012 by Graeme Geldenhuys.
+
+    See the file LICENSE.txt, included in this distribution,
+    for details about redistributing fpDebug.
+
+    Description:
+      .
+}
+unit dbgCPU;
 
 {$mode objfpc}{$H+}
 // low-level CPU information. Currently it returns the information about the host.

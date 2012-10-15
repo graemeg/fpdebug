@@ -14,7 +14,7 @@
       </Flags>
       <SessionStorage Value="InProjectDir"/>
       <MainUnit Value="0"/>
-      <Title Value="dubyline"/>
+      <Title Value="fpdebug"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
     </General>
@@ -38,85 +38,69 @@
         <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <Units Count="13">
+    <Units Count="10">
       <Unit0>
-        <Filename Value="dubyline.pas"/>
+        <Filename Value="fpdebug.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dubyline"/>
+        <UnitName Value="fpdebug"/>
       </Unit0>
       <Unit1>
-        <Filename Value="..\dubylib\macdbgproc.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="macDbgProc"/>
-      </Unit1>
-      <Unit2>
         <Filename Value="cmdlineutils.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="cmdlineutils"/>
-      </Unit2>
-      <Unit3>
+      </Unit1>
+      <Unit2>
         <Filename Value="cmddbg.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="cmdDbg"/>
-      </Unit3>
-      <Unit4>
+      </Unit2>
+      <Unit3>
         <Filename Value="..\dubylib\dwarfproc.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dwarfProc"/>
-      </Unit4>
-      <Unit5>
-        <Filename Value="..\dubylib\machodbgsource.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="machoDbgSource"/>
-      </Unit5>
-      <Unit6>
-        <Filename Value="..\dubylib\machofile.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="machoFile"/>
-      </Unit6>
-      <Unit7>
+      </Unit3>
+      <Unit4>
         <Filename Value="..\dubylib\dbgbreakpoints.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgBreakPoints"/>
-      </Unit7>
-      <Unit8>
+      </Unit4>
+      <Unit5>
         <Filename Value="..\dubylib\dbgcpu.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgCPU"/>
-      </Unit8>
-      <Unit9>
+      </Unit5>
+      <Unit6>
         <Filename Value="..\dubylib\dbgi386.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgi386"/>
-      </Unit9>
-      <Unit10>
+      </Unit6>
+      <Unit7>
         <Filename Value="..\dubylib\dbgmain.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgMain"/>
-      </Unit10>
-      <Unit11>
+      </Unit7>
+      <Unit8>
         <Filename Value="cmdloop.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="cmdloop"/>
-      </Unit11>
-      <Unit12>
+      </Unit8>
+      <Unit9>
         <Filename Value="commands.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="commands"/>
-      </Unit12>
+      </Unit9>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value=".\dubyline"/>
+      <Filename Value=".\fpdebug"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\dubylib"/>
+      <OtherUnitFiles Value="..\debuglib"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
-      <SrcPath Value="..\dubylib"/>
     </SearchPaths>
     <Parsing>
       <Style Value="1"/>

@@ -1,9 +1,8 @@
-program dubyline;
+program fpdebug;
 
-{$ifdef fpc}
-{$mode delphi}{$H+}
-{$else}
-{$apptype CONSOLE}
+{$mode objfpc}{$H+}
+{$ifdef windows}
+  {$apptype CONSOLE}
 {$endif}
 
 uses

@@ -57,7 +57,7 @@ begin
 end;
   
 const
-  CmdPrefix = 'duby> ';
+  CmdPrefix = 'fpd> ';
   HexSize   = sizeof(TDbgPtr) * 2;
 
 type

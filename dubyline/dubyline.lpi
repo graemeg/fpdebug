@@ -34,7 +34,7 @@
         <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <Units Count="11">
+    <Units Count="13">
       <Unit0>
         <Filename Value="dubyline.pas"/>
         <IsPartOfProject Value="True"/>
@@ -90,6 +90,16 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="dbgMain"/>
       </Unit10>
+      <Unit11>
+        <Filename Value="cmdloop.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="cmdloop"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="commands.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="commands"/>
+      </Unit12>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

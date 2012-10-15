@@ -42,8 +42,8 @@ more to come:
   bsd* - BSD Unix specifi units
   other processors support
 
-dubyline/    - A small command-line debugger, implemented using dubylib
+debugger/    - A small command-line debugger, implemented using debuglib
 
-  
+
         -------------------  END  ---------------------
 

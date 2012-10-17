@@ -55,14 +55,17 @@ end;
 var
   dbgInfoSrc : TDbgDataSource;
   info : AnsiString;
+  f: AnsiString;
 begin
-  if Paramcount < 1 then begin
+  if ParamCount < 1 then begin
     writeln('please specify dwarf debug-info file name');
     Exit;
   end;
-  dbgInfoSrc := GetDataSource(ParamStr(1));
-  if not Assigned(dbgInfoSrc) then begin
-    writeln('file '+ ParamStr(1)+ ' is of unknow format');
+  f := ExpandFileName(ParamStr(1));
+  dbgInfoSrc := GetDataSource(f);
+  if not Assigned(dbgInfoSrc) then
+  begin
+    writeln('file <'+f+'> is of unknown format');
     Exit;
   end;
   writeln('File format: ', dbgInfoSrc.UserName);
@@ -70,11 +73,12 @@ begin
   ReadDwarfData(dbgInfoSrc);
   dbgInfoSrc.Free;
 
-  info:=GetExternalDebugInfo(ParamStr(1));
+  info:=GetExternalDebugInfo(f);
   if info<>'' then begin
     dbgInfoSrc := GetDataSource(info);
-    if not Assigned(dbgInfoSrc) then begin
-      writeln('file '+ info+ ' is of unknown format');
+    if not Assigned(dbgInfoSrc) then
+    begin
+      writeln('file <'+info+'> is of unknown format');
       Exit;
     end;
     writeln('File format: ', dbgInfoSrc.UserName);

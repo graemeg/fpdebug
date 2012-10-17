@@ -135,6 +135,7 @@ var
 const
   TF_FLAG = 1 shl 8;
 begin
+  { TODO : Couldn't this also be replaced by ptraceSingleStep()? }
   Result:=ReadUser32(pid, regs32);
   if Result then begin
     if isEnabled then
@@ -147,8 +148,8 @@ end;
 
 function SetSingleStepx86_64(pid: Integer; isEnabled: Boolean): Boolean;
 begin
-  { TODO : Implement 64-bit Linux single stepping }
-  Result:=False;
+  { TODO : Implement 64-bit Linux single stepping - EXPERIMENTAL }
+  Result := ptraceSingleStep(pid);
 end;
 
 function ReadRegsx64(pid: Integer; regs: TDbgDataList): Boolean;

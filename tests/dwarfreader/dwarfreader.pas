@@ -3,11 +3,14 @@ program dwarfreader;
 {$mode objfpc}{$H+}
 
 uses
-  {$IFDEF UNIX}{$IFDEF UseCThreads}
+  {$IFDEF UNIX}
   cthreads,
-  {$ENDIF}{$ENDIF}
+  {$ENDIF}
   SysUtils, Classes, dbgInfoTypes, dbgInfoDwarf,
-  PESource, machoDbgSource;
+  // include file types we can read/support
+  elfDbgSource,
+  PESource,
+  machoDbgSource;
 
 procedure ReadDwarfData(source : TDbgDataSource);
 var

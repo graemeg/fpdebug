@@ -15,12 +15,19 @@ uses
 procedure ReadDwarfData(source : TDbgDataSource);
 var
   dwarf : TDbgDwarf3Info;
+  info: TDbgInfo;
 begin
   if not TDbgDwarf3Info.isPresent(source) then begin
     writeln('dwarf debug data is not present');
     Exit;
   end;
-  dwarf := TDbgDwarf3Info.Create(source);
+  dwarf := TDbgDwarf3Info.Create;
+  info := TDbgInfo.Create;
+  try
+    dwarf.ReadDebugInfo(source, info);
+  finally
+    info.Free;
+  end;
 
 
   writeln('dwarf data found');

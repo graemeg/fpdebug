@@ -25,7 +25,7 @@ Notes
 -----
 The project structures is the following
 
-debuglib/     - dir containg all libraries used for 
+debuglib/     - dir containg all libraries used for
   dbg*       - common debugging unit. Usually contains classes/types declarations
 
   win*       - Windows specific units
@@ -35,8 +35,8 @@ debuglib/     - dir containg all libraries used for
   *i386*     - Intel x86 CPU specific units (usually x86 types and disassmebler)
   *amd64*    - AMD64 (x86_64) CPU specific units (usually amd64 types and disassembler)
 
-  *dwarf*    - DWARF specific units 
-  *stabs*    - Legacy STABS debuf info units
+  *dwarf*    - DWARF specific units
+  *stabs*    - Legacy STABS debug info units
 
 more to come:
   bsd* - BSD Unix specifi units

@@ -54,6 +54,11 @@ type
 
 implementation
 
+const
+  _debug_info   = '.debug_info';
+  _debug_abbrev = '.debug_abbrev';
+  _debug_line   = '.debug_line';
+
 //todo: incomplete support!
 //todo: replace TDbgDataPos with dbgInfoTypes
 procedure RencodeLocation(AData: PByteArray; ASize: QWord; AddrSizeBytes: Integer; var Pos: TDbgDataPos);
@@ -411,7 +416,7 @@ class function TDbgDwarf3Info.isPresent(ASource: TDbgDataSource): Boolean;
 var
   sz  : Int64;
 begin
-  Result := Assigned(ASource) and (ASource.GetSectionInfo('.debug_info', sz)) and (sz > 0);
+  Result := Assigned(ASource) and (ASource.GetSectionInfo(_debug_info, sz)) and (sz > 0);
 end;
 
 constructor TDbgDwarf3Info.Create;
@@ -424,12 +429,6 @@ var
   size    : Int64;
   reader  : TDwarfReader;
   entry   : TDwarfEntry;
-
-const
-  _debug_info   = '.debug_info';
-  _debug_abbrev = '.debug_abbrev';
-  _debug_line   = '.debug_line';
-
 begin
   fSource:=ASource;
   Result:=ASource.GetSectionInfo(_debug_info, size);

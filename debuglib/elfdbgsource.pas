@@ -33,7 +33,7 @@ type
 
   TElfFile = class(TObject)
   protected
-    function Load32BitFile(Stream: TStream): Boolean;
+    function Load32BitFile(AStream: TStream): Boolean;
     procedure AddSection(const name: AnsiString; FileOffset, Address, Size: Qword);
   public
     sections  : array of TElfSection;
@@ -63,7 +63,7 @@ implementation
 
 { TElfFile }
 
-function TElfFile.Load32BitFile(Stream: TStream): Boolean;
+function TElfFile.Load32BitFile(AStream: TStream): Boolean;
 var
   hdr   : Elf32_Ehdr;
   sect  : array of Elf32_shdr;
@@ -72,29 +72,33 @@ var
   sz    : LongWord;
   strs  : array of byte;
 begin
-  Result := Stream.Read(hdr, sizeof(hdr)) = sizeof(hdr);
-  if not Result then Exit;
+  Result := AStream.Read(hdr, sizeof(hdr)) = sizeof(hdr);
+  if not Result then
+    Exit;
 
   SetLength(sect, hdr.e_shnum);
-  Stream.Position := hdr.e_shoff;
-
+  AStream.Position := hdr.e_shoff;
 
   sz := hdr.e_shetsize * hdr.e_shnum;
   if sz > LongWord(length(sect)*sizeof(Elf32_shdr)) then
     sz := LongWord(length(sect)*sizeof(Elf32_shdr));
-  Stream.Read(sect[0], sz);
+  AStream.Read(sect[0], sz);
 
   i := sect[hdr.e_shstrndx].sh_offset;
   j := sect[hdr.e_shstrndx].sh_size;
   SetLength(strs, j);
-  Stream.Position:=i;
-  Stream.Read(strs[0], j);
+  AStream.Position:=i;
+  AStream.Read(strs[0], j);
 
   for i := 0 to hdr.e_shnum - 1 do
-    with sect[i] do begin
+  begin
+    with sect[i] do
+    begin
       nm := PChar( @strs[sh_name] );
       AddSection(nm, sh_offset, sh_addr, sh_size );
     end;
+  end;
+end;
 
 end;
 

@@ -16,19 +16,19 @@ unit elf;
 interface
 
 type
-  Elf32_Addr  = LongWord; // Unsigned program address
-  Elf32_Half  = Word;     // Unsigned medium integer  
-  Elf32_Off   = LongWord; // Usigned file offset
-  Elf32_Sword = Integer;  // Signed large integer
-  Elf32_Word  = LongWord; // Usigned large integer
+  Elf32_Addr  = UInt32; // Unsigned program address
+  Elf32_Half  = UInt16; // Unsigned medium integer
+  Elf32_Off   = UInt32; // Usigned file offset
+  Elf32_Sword = Int32;  // Signed large integer
+  Elf32_Word  = UInt32; // Usigned large integer
   
-  Elf64_Addr   = Qword;    // Unsigned program address 
-  Elf64_Off    = QWord;    // Unsigned ﬁle offset 
-  Elf64_Half   = Word;     // Unsigned medium integer 
-  Elf64_Word   = LongWord; // Unsigned integer 
-  Elf64_Sword  = Integer;  // Signed integer 
-  Elf64_Xword  = QWord;    // Unsigned long integer 
-  Elf64_Sxword = Int64;    // Signed long integer 
+  Elf64_Addr   = UInt64; // Unsigned program address
+  Elf64_Off    = UInt64; // Unsigned ﬁle offset
+  Elf64_Half   = UInt16; // Unsigned medium integer
+  Elf64_Word   = UInt32; // Unsigned integer
+  Elf64_Sword  = Int32;  // Signed integer
+  Elf64_Xword  = UInt64; // Unsigned long integer
+  Elf64_Sxword = Int64;  // Signed long integer
 
 const
   EINDENT = 16;  

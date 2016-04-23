@@ -32,7 +32,7 @@ type
 
   TLinuxProcess = class(TDbgTarget)
   private
-    fChild      : TPid;
+    fChild      : TPid; // the process being debuged
     fContSig    : Integer;
     fTerminated : Boolean;
     fWaited     : Boolean;
@@ -74,13 +74,15 @@ const
 
 function DebugLinuxProcessStart(const ACmdLine: String): TDbgTarget;
 var
-  dbg : TLinuxProcess;
+  dbg: TLinuxProcess;
 begin
   dbg := TLinuxProcess.Create;
-  if not dbg.StartProcess(ACmdLine) then begin
+  if not dbg.StartProcess(ACmdLine) then
+  begin
     dbg.Free;
     Result := nil;
-  end else
+  end
+  else
     Result := dbg;
 end;
 

@@ -102,10 +102,40 @@ begin
 end;
 
 function TElfFile.Load64BitFile(AStream: TStream): Boolean;
+var
+  hdr   : Elf64_Ehdr;
+  sect  : array of Elf64_shdr;
+  i, j  : integer;
+  nm    : string;
+  sz    : LongWord;
+  strs  : array of byte;
 begin
-  Result := false;
-  // TODO:
-  raise Exception.Create('TElfFile.Load64BitFile() not yet implemented');
+  Result := AStream.Read(hdr, sizeof(hdr)) = sizeof(hdr);
+  if not Result then
+    Exit;
+
+  SetLength(sect, hdr.e_shnum);
+  AStream.Position := hdr.e_shoff;
+
+  sz := hdr.e_shentsize * hdr.e_shnum;
+  if sz > LongWord(length(sect)*sizeof(Elf64_shdr)) then
+    sz := LongWord(length(sect)*sizeof(Elf64_shdr));
+  AStream.Read(sect[0], sz);
+
+  i := sect[hdr.e_shstrndx].sh_offset;
+  j := sect[hdr.e_shstrndx].sh_size;
+  SetLength(strs, j);
+  AStream.Position:=i;
+  AStream.Read(strs[0], j);
+
+  for i := 0 to hdr.e_shnum - 1 do
+  begin
+    with sect[i] do
+    begin
+      nm := PChar( @strs[sh_name] );
+      AddSection(nm, sh_offset, sh_addr, sh_size );
+    end;
+  end;
 end;
 
 procedure TElfFile.AddSection(const name: AnsiString; FileOffset, Address,

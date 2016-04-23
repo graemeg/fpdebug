@@ -1,1 +1,1 @@
-fpc fpdebugger.pas -Fu../dubylib/
+fpc fpdebug.pas -Fu../debuglib/ -FUunits/

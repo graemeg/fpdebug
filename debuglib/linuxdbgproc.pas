@@ -21,7 +21,7 @@ uses
   BaseUnix, Unix, nixPtrace,
   dbgTypes, dbgConsts;
 
-function ForkAndDebugProcess(const ACmdLine: String; var childid: TPid): Boolean;
+function ForkAndDebugProcess(const ACmdLine: String; out childid: TPid): Boolean;
 function WaitStatusToDbgEvent(WaitedPid, EventPid: TPid; Status: Integer; var event: TDbgEvent): Boolean;
 
 function isTerminated(Status: Integer; var TermSignal: Integer): Boolean;
@@ -288,7 +288,7 @@ begin
   Str(i, result);
 end;
 
-function ForkAndDebugProcess(const ACmdLine: String; var childid: TPid): Boolean;
+function ForkAndDebugProcess(const ACmdLine: String; out childid: TPid): Boolean;
 var
   res     : TPtraceWord;
 begin

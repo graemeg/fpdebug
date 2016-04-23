@@ -15,21 +15,13 @@ unit dbgTypes;
 
 interface
 
-{$ifndef fpc}
-type
-  PtrUInt = LongWord;
-  PtrInt  = Integer;
-  TThreadID = Integer;
-  QWord     = Int64;
-{$endif}
-
 type
   TDbgPtr      = PtrUInt; //todo: the target ptrsize can be <> to the   host machine size
   PDbgPtr      = ^TDbgPtr;
   TDbgThreadID = TThreadID;
-  TDbgProcessID = Longword;
-  
-  
+  TDbgProcessID = UInt32;
+
+
   { TDbgData }
 
   TDbgData = class(TObject)

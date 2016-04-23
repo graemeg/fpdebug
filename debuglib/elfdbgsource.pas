@@ -80,7 +80,7 @@ begin
   SetLength(sect, hdr.e_shnum);
   AStream.Position := hdr.e_shoff;
 
-  sz := hdr.e_shetsize * hdr.e_shnum;
+  sz := hdr.e_shentsize * hdr.e_shnum;
   if sz > LongWord(length(sect)*sizeof(Elf32_shdr)) then
     sz := LongWord(length(sect)*sizeof(Elf32_shdr));
   AStream.Read(sect[0], sz);

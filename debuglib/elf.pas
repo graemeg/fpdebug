@@ -89,7 +89,7 @@ type
     e_ehsize      : Elf32_Half;   { ELF header size }
     e_phentsize   : Elf32_Half;   { Size of program header entry }
     e_phnum       : Elf32_Half;   { Number of program header entries }
-    e_shetsize    : Elf32_Half;   { Size of section header entry }
+    e_shentsize   : Elf32_Half;   { Size of section header entry }
     e_shnum       : Elf32_Half;   { Number of section header entries }
     e_shstrndx    : Elf32_Half;   { Section name string table index }
   end;
@@ -169,7 +169,7 @@ type
     sh_name      : Elf64_Word;   // Section name
     sh_type      : Elf64_Word;   // Section type
     sh_flags     : Elf64_Xword;  // Section attributes
-    sh_address   : Elf64_Addr;   // Virtual address in memory
+    sh_addr      : Elf64_Addr;   // Virtual address in memory
     sh_offset    : Elf64_Off;    // Offset in file
     sh_size      : Elf64_Xword;  // Size of section
     sh_link      : Elf64_Word;   // Link to other section

@@ -34,6 +34,7 @@ type
   TElfFile = class(TObject)
   protected
     function Load32BitFile(AStream: TStream): Boolean;
+    function Load64BitFile(AStream: TStream): Boolean;
     procedure AddSection(const name: AnsiString; FileOffset, Address, Size: Qword);
   public
     sections  : array of TElfSection;
@@ -100,6 +101,11 @@ begin
   end;
 end;
 
+function TElfFile.Load64BitFile(AStream: TStream): Boolean;
+begin
+  Result := false;
+  // TODO:
+  raise Exception.Create('TElfFile.Load64BitFile() not yet implemented');
 end;
 
 procedure TElfFile.AddSection(const name: AnsiString; FileOffset, Address,
@@ -132,11 +138,20 @@ begin
               (ident[EI_MAG3] = byte('F'));
     if not Result then Exit;
 
-    Result := ident[EI_CLASS] = ELFCLASS32;
-    if not Result then Exit; //todo: 64-bit
-
+    Result := False;
     Stream.Position := p;
-    Result := Load32BitFile(Stream);
+
+    if ident[EI_CLASS] = ELFCLASS32 then
+    begin
+      Result := Load32BitFile(Stream);
+      Exit;
+    end;
+
+    if ident[EI_CLASS] = ELFCLASS64 then
+    begin
+      Result := Load64BitFile(Stream);
+      Exit;
+    end;
 
   except
     Result := false;

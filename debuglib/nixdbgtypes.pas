@@ -11,16 +11,20 @@
 }
 unit nixDbgTypes;
 
-{ Linux base debugging type }
+{ Linux/FreeBSD base debugging type }
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  SysUtils, BaseUnix, Unix,
-  nixPtrace, linuxDbgProc,
-  dbgTypes, dbgCPU, dbgUtils, dbgConsts;
+  SysUtils,
+  BaseUnix,
+  Unix,
+  nixPtrace,
+  linuxDbgProc,
+  dbgTypes,
+  dbgCPU;
 
 type
   TCpuType = (cpi386, cpx64);

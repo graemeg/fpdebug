@@ -11,9 +11,11 @@
 }
 unit linuxDbgProc;
 
-{ Linux base debugging utility function(s) }
+{ Linux/FreeBSD base debugging utility function(s) }
 
 {$mode objfpc}{$H+}
+
+{.$define gdebug}
 
 interface
 
@@ -290,17 +292,33 @@ end;
 
 function ForkAndDebugProcess(const ACmdLine: String; out childid: TPid): Boolean;
 var
-  res     : TPtraceWord;
+  res: TPtraceWord;
 begin
   childid := FpFork;
-  if childid < 0 then begin
+  if childid < 0 then
+  begin
+    {$IFDEF gDEBUG}
+    writeln('an error <'+IntToStr(fpgeterrno) +'> occured with FpFork');
+    {$ENDIF}
     Result := false;
-  end else if childid = 0 then begin
+  end
+  else if childid = 0 then
+  begin
+    {$IFDEF gDEBUG}
+    writeln('ready to run the child process');
+    {$ENDIF}
     res := ptraceMe;
     if res < 0 then Exit; // process cannot be traced
+    // TODO: change this to TProcess - probably move it out of this unit too.
     FpExecVE(ACmdLine, nil, nil);
-  end else
+  end
+  else
+  begin
+    {$IFDEF gDEBUG}
+    writeln('ready to run the debugger');
+    {$ENDIF}
     Result := true;
+  end;
 end;
 
 function isTerminated(Status: Integer; var TermSignal: Integer): Boolean;

@@ -27,8 +27,8 @@ uses
   dbgInfoPascal,
   dbgInfoDwarf,  // dwarf debug information
   dbgInfoStabs,  // stabs debug information
-  
-  PESource,        // Win (PE), Linux (elf), MacOSX (macho) executable files
+
+  PESource,        // Win (PE), Linux/FreeBSD (elf), MacOSX (macho) executable files
   elfdbgsource,    // the implementation is cross-platform, so there's no need
   machoDbgSource,  // to cover them in {$ifdefs}
 
@@ -40,11 +40,12 @@ uses
 
   // turn the unit off, if you don't want to debug debug-info loading
   cmdDbgEx
-  
+
   {$ifdef mswindows},winDbgTypes{$endif}          // windows debug API
   {$ifdef darwin},macDbgType{$endif} // macosx debug API
   {$ifdef linux},nixDbgTypes{$endif}              // linux debug API
-  
+  {$ifdef freebsd},nixDbgTypes{$endif}            // freebsd debug API
+
   {$ifdef CPUI386}  ,dbgi386{$endif} // i386 CPU routines
   {$ifdef CPUx86_64},dbgi386{$endif}  //  x64 CPU routines
   ,dbgMain
@@ -74,7 +75,7 @@ begin
     writeln('debugging process: ', cmd);
 
   if not FileExists(cmd) then begin
-    writeln('file doesn''t exists or not available: "',cmd,'"');
+    writeln('file doesn''t exists or not available: <',cmd,'>');
     Exit;
   end;
   LoadDebugInfo(cmd);
@@ -85,7 +86,7 @@ begin
     writeln('cannot start debug process');
     Exit;
   end;
-  
+
   try
     try
       //SetCommandLine(cmd);

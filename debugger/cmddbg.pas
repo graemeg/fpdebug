@@ -478,7 +478,8 @@ end;
   
 procedure LoadDebugInfo(const FileName: string);
 begin
-  if not Assigned(CommonInfo) then CommonInfo := TDbgInfo.Create;
+  if not Assigned(CommonInfo) then
+    CommonInfo := TDbgInfo.Create;
   if LoadDebugInfoFromFile(CommonInfo, FileName) then
     DbgInfoFiles.Add(FileName);
 end;

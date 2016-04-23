@@ -177,7 +177,11 @@ var
   buf : array [0..3] of byte;
 begin
   try
+    {$IFDEF CPU32}
     Result := Assigned(ASource) and (ASource.size > sizeof(Elf32_EHdr));
+    {$ELSE}
+    Result := Assigned(ASource) and (ASource.size > sizeof(Elf64_EHdr));
+    {$ENDIF}
     if not Result then Exit;
 
     ASource.Read(buf, sizeof(buf));

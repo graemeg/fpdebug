@@ -102,9 +102,9 @@ function TLinuxProcess.GetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThread
 begin
   case fcputype of
     cpi386:
-      Result := ReadRegsi386(ThreadId, Registers);
+      Result := ReadRegsi386(procID, Registers);
     cpx64:
-      Result := ReadRegsx64(ThreadId, Registers);
+      Result := ReadRegsx64(procID, Registers);
   else
     Result := false;
   end;
@@ -114,9 +114,9 @@ function TLinuxProcess.SetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThread
 begin
   case fcputype of
     cpi386:
-      Result := WriteRegsi386(ThreadId, Registers);
+      Result := WriteRegsi386(procID, Registers);
     cpx64:
-      Result := WriteRegsx64(ThreadId, Registers);
+      Result := WriteRegsx64(procID, Registers);
   else
     Result := false;
   end;

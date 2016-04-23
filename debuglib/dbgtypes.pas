@@ -50,27 +50,27 @@ type
     function isFloatPoint: Boolean; virtual; abstract;
     function isReadOnly: Boolean; virtual; abstract;
     function BitSize: Integer; virtual; abstract;
-    
+
     procedure SetValue(const Value; ValueBitSize: Integer); virtual; abstract;
     procedure GetValue(var Value; ValueBitSize: Integer); virtual; abstract;
-    
+
     property SInt64: Int64 read GetSInt64 write SetSInt64;
     property UInt64: QWord read GetUInt64 write SetUInt64;
-    
+
     property SInt32: Integer  read GetSInt32 write SetSInt32;
     property UInt32: LongWord read GetUInt32 write SetUInt32;
 
     property SInt16: ShortInt read GetSInt16 write SetSInt16;
     property UInt16: Word read GetUInt16 write SetUInt16;
-    
+
     property SInt8: SmallInt read GetSInt8 write SetSInt8;
     property UInt8: Byte read GetUInt8 write SetUInt8;
-    
+
     property DbgPtr: TDbgPtr read GetDbgPtr write SetDbgPtr;
-  
+
     property Name: String read GetName;
   end;
-  
+
   TDbgDataList = class(TObject)
   protected
     function GetCount: Integer; virtual; abstract;
@@ -80,23 +80,23 @@ type
     property Reg[const Name: String]: TDbgData read GetRegister; default;
     function RegByIndex(idx: Integer): TDbgData; virtual; abstract;
   end;
-  
+
   TDbgEventKind = (
-    dek_Other, dek_SysExc, dek_SingleStep, dek_BreakPoint, 
+    dek_Other, dek_SysExc, dek_SingleStep, dek_BreakPoint,
     dek_ProcessStart, dek_ProcessTerminated,
     dek_ThreadStart, dek_ThreadTerminated,
     dek_SysCall);
-  
+
   TDbgEvent = record
     Addr    : TDbgPtr;
     Process : TDbgProcessID;
     Thread  : TDbgThreadID;
     Kind    : TDbgEventKind;
     Debug   : String;
-  end;   
-  
+  end;
+
   TDbgRunMode = (drm_Normal, drm_Suspended, drm_SingleStep);
-  
+
   { TDbgTarget }
 
   TDbgTarget = class(TObject) {TDbgSysAPI}
@@ -115,9 +115,9 @@ type
 
     function SetSingleStep(AProcess: TDbgProcessID; ThreadID: TDbgThreadID): Boolean; virtual; abstract;
 
-    //todo: remove 
+    //todo: remove
     function MainThreadID(AProcess: TDbgProcessID=0): TDbgThreadID; virtual;
-    
+
     function ReadMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; virtual; abstract;
     function WriteMem(AProcess: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; virtual; abstract;
   end;
@@ -140,7 +140,7 @@ end;
 
 { TDbgRegister }
 
-function TDbgData.GetUInt8: Byte; 
+function TDbgData.GetUInt8: Byte;
 begin
   GetValue(Result, 8);
 end;
@@ -210,7 +210,7 @@ begin
   SetValue(AValue, 8);
 end;
 
-procedure TDbgData.SetUInt8(const AValue: Byte); 
+procedure TDbgData.SetUInt8(const AValue: Byte);
 begin
   SetValue(AValue, 8);
 end;
@@ -225,7 +225,7 @@ begin
   SetValue(AValue, 32);
 end;
 
-procedure TDbgData.SetUInt64(const AValue: QWord); 
+procedure TDbgData.SetUInt64(const AValue: QWord);
 begin
   SetValue(AValue, 64);
 end;

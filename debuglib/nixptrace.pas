@@ -378,7 +378,7 @@ end;
 
 function ptraceMe: TPtraceWord;
 begin
-  Result := ptrace(PTRACE_TRACEME, FpGetpid, nil, nil);
+  Result := ptrace(PTRACE_TRACEME, 0, nil, nil);
 end;
 
 function ptraceGetSigInfo(pid: TPid; var siginfo: tsiginfo): TPtraceWord;

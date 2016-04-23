@@ -28,10 +28,10 @@ function isTerminated(Status: Integer; var TermSignal: Integer): Boolean;
 function isStopped(Status: Integer; var StopSignal: Integer): Boolean;
 function isExited(Status: Integer; var ExitStatus: Integer): Boolean;
 
-function ReadProcMem(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
-function WriteProcMem(pid: Integer; Offset: TDbgPtr; Size: Integer; const Data: array of Byte): Integer;
-function ReadProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
-function WriteProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
+function ReadProcMem(pid: TDbgProcessID; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
+function WriteProcMem(pid: TDbgProcessID; Offset: TDbgPtr; Size: Integer; const Data: array of Byte): Integer;
+function ReadProcMemUser(pid: TDbgProcessID; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
+function WriteProcMemUser(pid: TDbgProcessID; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
 
 type
   TCPUState = record
@@ -41,21 +41,21 @@ type
 
 { i386 }
 
-function ReadUser32(pid: Integer; var data: user_32): Boolean;
-function WriteUser32(pid: Integer; const data: user_32): Boolean;
-function ReadRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
-function WriteRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
+function ReadUser32(pid: TDbgProcessID; var data: user_32): Boolean;
+function WriteUser32(pid: TDbgProcessID; const data: user_32): Boolean;
+function ReadRegsi386(pid: TDbgProcessID; regs: TDbgDataList): Boolean;
+function WriteRegsi386(pid: TDbgProcessID; regs: TDbgDataList): Boolean;
 function ReadRegEIP(pid: Integer; var CPUState: TCPUState): Boolean;
 
 { x86_64 (amd64) }
 
-function ReadRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
-function WriteRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
-function ReadRegRIP(pid: Integer; var CPUState: TCPUState): Boolean;
+function ReadRegsx64(pid: TDbgProcessID; regs: TDbgDataList): Boolean;
+function WriteRegsx64(pid: TDbgProcessID; regs: TDbgDataList): Boolean;
+function ReadRegRIP(pid: TDbgProcessID; var CPUState: TCPUState): Boolean;
 
 var
-  GetExecInstrAddr: function(pid: Integer; var State: TCPUState): Boolean = nil;
-  EnableSingleStep: function(pid: Integer; EnableSingleStep: Boolean): Boolean = nil;
+  GetExecInstrAddr: function(pid: TDbgProcessID; var State: TCPUState): Boolean = nil;
+  EnableSingleStep: function(pid: TDbgProcessID; EnableSingleStep: Boolean): Boolean = nil;
   SoftBreakSize   : Integer;
 
 implementation
@@ -64,17 +64,17 @@ type
   TByteArray = array [word] of byte;
   PByteArray = ^TByteArray;
 
-function ReadUser32(pid: Integer; var data: user_32): Boolean;
+function ReadUser32(pid: TDbgProcessID; var data: user_32): Boolean;
 begin
   Result := ReadProcMemUser(pid, 0, sizeof(data), PByteArray(@data)^) = sizeof(data);
 end;
 
-function WriteUser32(pid: Integer; const data: user_32): Boolean;
+function WriteUser32(pid: TDbgProcessID; const data: user_32): Boolean;
 begin
   Result:=WriteProcMemUser(pid, 0, sizeof(data), PByteArray(@data)^) = sizeof(data);
 end;
 
-function ReadRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
+function ReadRegsi386(pid: TDbgProcessID; regs: TDbgDataList): Boolean;
 var
   user    : user_32;
 begin
@@ -104,7 +104,7 @@ begin
   end;
 end;
 
-function WriteRegsi386(pid: Integer; regs: TDbgDataList): Boolean;
+function WriteRegsi386(pid: TDbgProcessID; regs: TDbgDataList): Boolean;
 var
   regs32  : user_regs_struct_32;
   res     : Integer;
@@ -129,7 +129,7 @@ begin
   Result := res = sizeof(regs32);
 end;
 
-function SetSingleStepi386(pid: Integer; isEnabled: Boolean): Boolean;
+function SetSingleStepi386(pid: TDbgProcessID; isEnabled: Boolean): Boolean;
 var
   regs32  : user_32;
 const
@@ -146,13 +146,13 @@ begin
   end;
 end;
 
-function SetSingleStepx86_64(pid: Integer; isEnabled: Boolean): Boolean;
+function SetSingleStepx86_64(pid: TDbgProcessID; isEnabled: Boolean): Boolean;
 begin
   { TODO : Implement 64-bit Linux single stepping - EXPERIMENTAL }
   Result := ptraceSingleStep(pid);
 end;
 
-function ReadRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
+function ReadRegsx64(pid: TDbgProcessID; regs: TDbgDataList): Boolean;
 var
   regs64  : user_64;
   res     : Integer;
@@ -197,13 +197,13 @@ begin
 
 end;
 
-function WriteRegsx64(pid: Integer; regs: TDbgDataList): Boolean;
+function WriteRegsx64(pid: TDbgProcessID; regs: TDbgDataList): Boolean;
 begin
   //todo:!
   Result:=False;
 end;
 
-function ReadProcMem(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
+function ReadProcMem(pid: TDbgProcessID; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
 var
   i   : LongWord;
   j   : Integer;
@@ -226,7 +226,7 @@ begin
   end;
 end;
 
-function WriteProcMem(pid: Integer; Offset: TDbgPtr; Size: Integer; const Data: array of Byte): Integer;
+function WriteProcMem(pid: TDbgProcessID; Offset: TDbgPtr; Size: Integer; const Data: array of Byte): Integer;
 var
   i   : Integer;
   j   : LongWord;
@@ -247,7 +247,8 @@ begin
   Result := Size;
 end;
 
-function ReadProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
+function ReadProcMemUser(pid: TDbgProcessID; Offset: TDbgPtr; Size: Integer; var Data: array of Byte
+  ): Integer;
 var
   i   : Integer;
   w   : array [0..sizeof(TPtraceWord)-1] of byte;
@@ -268,7 +269,8 @@ begin
   Result := i;
 end;
 
-function WriteProcMemUser(pid: Integer; Offset: TDbgPtr; Size: Integer; var Data: array of Byte): Integer;
+function WriteProcMemUser(pid: TDbgProcessID; Offset: TDbgPtr; Size: Integer; var Data: array of Byte
+  ): Integer;
 var
   i   : Integer;
 begin
@@ -336,7 +338,7 @@ begin
   if Result then CPUState.InstrAddr:=reg32.eip;
 end;
 
-function ReadRegRIP(pid: Integer; var CPUState: TCPUState): Boolean;
+function ReadRegRIP(pid: TDbgProcessID; var CPUState: TCPUState): Boolean;
 var
   reg64 : user_regs_struct_64;
 begin

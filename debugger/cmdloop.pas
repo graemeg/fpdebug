@@ -56,7 +56,7 @@ type
   end;
 
 
-procedure RunLoop(ATarget: TDbgMain);
+procedure RunLoop(ADebugger: TDbgMain);
 
 {type
   TEventHandler = procedure (Process: TDbgTarget; Event : TDbgEvent) of object;
@@ -74,9 +74,9 @@ var
   DbgEvent      : TDbgEvent;
   uDebugger     : TDbgMain;
 
-  Running       : Boolean = False;
-  WaitForNext   : Boolean = False;
-  StopOnSysCall : Boolean = False;
+  uRunning      : Boolean = False;
+  uWaitForNext   : Boolean = False;
+  uStopOnSysCall : Boolean = False;
 
 const
   CmdPrefix = 'fpd> ';
@@ -148,12 +148,12 @@ procedure TStepCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   Success: Boolean;
 begin
-  if not Running then WriteLn('not running');
+  if not uRunning then WriteLn('not running');
     
   Success:=Assigned(Env.Thread) and Env.Thread.NextSingleStep;
   if not Success then writeln('unable to make a step');
   
-  WaitForNext := true;
+  uWaitForNext := true;
 end;
 
 function TStepCommand.ShortHelp: String;  
@@ -165,10 +165,10 @@ end;
 
 procedure TContinueCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 begin
-  if not Running then
+  if not uRunning then
     writeln('not running')
   else
-    WaitForNext := true;
+    uWaitForNext := true;
 end;
 
 function TContinueCommand.ShortHelp: String;  
@@ -180,14 +180,14 @@ end;
 
 procedure TRunCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 begin
-  if not Running then
+  if not uRunning then
   begin
-    running := true;
+    uRunning := true;
     writeln('starting process');
-    WaitForNext := true;
+    uWaitForNext := true;
   end
   else
-    writelN('process already started');
+    writeln('process already started');
 end;
 
 function TRunCommand.ShortHelp: String;  
@@ -279,7 +279,7 @@ begin
   end;
 end;
 
-procedure DoRunLoop(Target: TDbgMain);
+procedure DoRunLoop(ADebugger: TDbgMain);
 var
   ProcTerm     : Boolean;
   StopForUser  : Boolean;
@@ -290,7 +290,7 @@ const
     'Other', 'SysExc', 'Single step', 'Breakpoint', 
     'Process Start', 'Process Terminated', 'Thread Start', 'Thread Terminate', 'SysCall');
 begin
-  if not Assigned(Target) then
+  if not Assigned(ADebugger) then
   begin
     writeln('no process to debug (internal error?)');
     Exit;
@@ -304,15 +304,15 @@ begin
     begin
       if StopForUser then
       begin
-        WaitForNext := false;
+        uWaitForNext := false;
         ExecuteNextCommand(Env);
       end else
-        WaitForNext := true;
+        uWaitForNext := true;
       StopForUser  := true;
 
-      if WaitForNext and not ProcTerm then
+      if uWaitForNext and not ProcTerm then
       begin
-        if not Target.WaitNextEvent(DbgEvent) then
+        if not ADebugger.WaitNextEvent(DbgEvent) then
         begin
           writeln('the process terminated? (type "quit" to quit)');
         end
@@ -329,7 +329,7 @@ begin
             dek_SysCall:
             begin
               //writeln('system call: ', DbgEvent.Debug);
-              StopForUser := StopOnSysCall;
+              StopForUser := uStopOnSysCall;
             end;
           end;
           writeln('event:   ',  dekStr[DbgEvent.Kind]);
@@ -347,11 +347,11 @@ begin
   end;
 end;
 
-procedure RunLoop(ATarget: TDbgMain);
+procedure RunLoop(ADebugger: TDbgMain);
 begin
   try
-    uDebugger:=ATarget;
-    DoRunLoop(ATarget);
+    uDebugger := ADebugger;
+    DoRunLoop(ADebugger);
   except
   end;
 end;

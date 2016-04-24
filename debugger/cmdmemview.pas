@@ -7,11 +7,11 @@
     for details about redistributing fpDebug.
 
     Description:
-      .
+      This unit defines some memory related commands.
 }
 unit cmdmemview;
 
-{$ifdef fpc}{$mode delphi}{$H+}{$endif}
+{$mode objfpc}{$H+}
 
 interface
 
@@ -22,69 +22,48 @@ uses
 
 type
 
-  { TViewMemCommand }
-
   TViewMemCommand = class(TCommand)
+  private
+    procedure PrintProcessMem(AProcess: TDbgProcess; Offset: TDbgPtr);
+    function BufToStr(const buf: array of byte; index, Count: Integer): string;
+    function BufToHex(const buf: array of byte; index, Count: Integer): string;
+  public
     procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ResetParamsCache: Boolean; override;
     function ShortHelp: String; override;
   end;
 
-  { TRegistersView }
 
   TRegistersView = class(TCommand)
+  private
+    { 64-bit registers }
+    procedure PrintAllRegs(list: TDbgDataList);
+    { 32-bit registers }
+    procedure PrintI386Regs(list: TDbgDataList);
+  public
     procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
 
-  { TStackView }
+
   TStackView  = class(TCommand)
     procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
 
-procedure PrintI386Regs(list: TDbgDataList);
-  
+
 implementation
 
-
 var
-  LastReadOfs : TDbgPtr = 0;
+  uLastReadOfs : TDbgPtr = 0;
 
-function BufToStr(const buf: array of byte; index, Count: Integer): string;
-var
-  i : Integer;
-  j : Integer;
-begin
-  SetLength(Result, Count);
-  j := 1;
-  for i := index to index + Count - 1 do begin
-    if buf[i] < 32 then Result[j] := '.'
-    else Result[j] := char(Buf[i]);
-    inc(j);
-  end;
-end;
 
-function BufToHex(const buf: array of byte; index, Count: Integer): string;
-var
-  i : Integer;
-  j : Integer;
-const 
-  hexd : array [0..$F] of char = ('0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F');
-begin
-  SetLength(Result, Count*3);
-  j := 1;
-  for i := index to index + Count - 1 do begin
-    Result[j] := hexd[buf[i] shr 4];  inc(j);
-    Result[j] := hexd[buf[i] and $F]; inc(j);
-    Result[j] := #32; inc(j);
-  end;
-end;
+{ TViewMemCommand }
 
-procedure PrintProcessMem(AProcess: TDbgProcess; Offset: TDbgPtr);
+procedure TViewMemCommand.PrintProcessMem(AProcess: TDbgProcess; Offset: TDbgPtr);
 var
   buf : array [0..32*16-1]of byte;
-  ofs : String; 
+  ofs : String;
   hex : String;
   bin : String;
   i   : Integer;
@@ -105,7 +84,35 @@ begin
   end;
 end;
 
-{ TViewMemCommand }
+function TViewMemCommand.BufToStr(const buf: array of byte; index, Count: Integer): string;
+var
+  i : Integer;
+  j : Integer;
+begin
+  SetLength(Result, Count);
+  j := 1;
+  for i := index to index + Count - 1 do begin
+    if buf[i] < 32 then Result[j] := '.'
+    else Result[j] := char(Buf[i]);
+    inc(j);
+  end;
+end;
+
+function TViewMemCommand.BufToHex(const buf: array of byte; index, Count: Integer): string;
+var
+  i : Integer;
+  j : Integer;
+const
+  hexd : array [0..$F] of char = ('0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F');
+begin
+  SetLength(Result, Count*3);
+  j := 1;
+  for i := index to index + Count - 1 do begin
+    Result[j] := hexd[buf[i] shr 4];  inc(j);
+    Result[j] := hexd[buf[i] and $F]; inc(j);
+    Result[j] := #32; inc(j);
+  end;
+end;
 
 procedure TViewMemCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
@@ -113,7 +120,7 @@ var
   err : Integer;
 begin
   if CmdParams.Count <= 1 then 
-    ofs := LastReadOfs
+    ofs := uLastReadOfs
   else begin
     Val(CmdParams[1], ofs, err);
     if err <> 0 then begin
@@ -124,7 +131,7 @@ begin
   try
     writeln('env process ID = ', Env.Process.ID);
     PrintProcessMem(Env.Process, ofs);
-    LastReadOfs := ofs + 32*16;
+    uLastReadOfs := ofs + 32*16;
   except
     writeln('exception while reading process memory');
   end;
@@ -142,7 +149,7 @@ end;
 
 { TRegistersView }
 
-procedure PrintAllRegs(list: TDbgDataList);
+procedure TRegistersView.PrintAllRegs(list: TDbgDataList);
 var
   i     : Integer;
   data  : TDbgData;
@@ -158,9 +165,9 @@ begin
   end;
 end;
 
+procedure TRegistersView.PrintI386Regs(list: TDbgDataList);
 
-procedure PrintI386Regs(list: TDbgDataList);
-
+  { find the register value and format it as result }
   function StrHex(const regname: String): string;
   begin
     Result := IntToHex(list[regname].UInt32, 8);
@@ -211,8 +218,6 @@ var
   regs  : TDbgDataBytesList;
   esp   : TDbgPtr;
   i     : Integer;
-
-  eval  : LongWord;
   addr  : LongWord;
   buf   : array [0..4] of byte;
 begin

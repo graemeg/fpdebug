@@ -7,7 +7,7 @@
     for details about redistributing fpDebug.
 
     Description:
-      .
+      This unit defines some basic debugging commands.
 }
 unit cmdDbg;
 
@@ -22,11 +22,50 @@ uses
   cmdlineutils,
   commands, cmdloop; 
 
+type
+
+  TWhereCommand = class(TCommand)
+  public
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
+
+  TAddrOf = class(TCommand)
+  public
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
+
+  TIntValue = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
+
+  TListSymbols = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
+
+  TSetBreak = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
+
+  TRemoveBreak = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
+
 //todo: remove debug info loading to some common units
 procedure LoadDebugInfo(const FileName: string);
 procedure LoadExeDebugInfo(const cmdLine: string);
-
-function GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: Integer): Boolean;
+function  GetLineInfo(Addr: TDbgPtr; var FileName: WideString; var LineNum: Integer): Boolean;
 
 var
   CommonInfo   : TDbgInfo = nil;
@@ -34,51 +73,6 @@ var
 
 implementation
 
-type
-  
-  { TWhereCommand }
-
-  TWhereCommand = class(TCommand)
-  public
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    function ShortHelp: String; override;
-  end;  
-  
-  { TAddrOf }
-
-  TAddrOf = class(TCommand)
-  public
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    function ShortHelp: String; override;
-  end;
-  
-  { TIntValue }
-
-  TIntValue = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    function ShortHelp: String; override;
-  end;
-  
-  { TListSymbols }
-
-  TListSymbols = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    function ShortHelp: String; override;
-  end;
-  
-  { TSetBreak }
-
-  TSetBreak = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    function ShortHelp: String; override;
-  end;
-  
-  { TRemoveBreak }
-
-  TRemoveBreak = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    function ShortHelp: String; override;
-  end;
 
 { TIntValue }
 

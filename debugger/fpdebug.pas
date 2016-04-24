@@ -54,7 +54,8 @@ uses
 function FixFileName(const FileName: string): string;
 begin
   Result:=FileName;
-  if not FileExists(FileName) then begin
+  if not FileExists(FileName) then
+  begin
     Result:=FileName+'.exe';
     if not FileExists(Result) then
       Result:=FileName;
@@ -64,39 +65,39 @@ end;
 procedure RunDebugger;
 var
   dbg  : TDbgTarget;
-  main : TDbgMain;
+  lDebugger : TDbgMain;
   cmd  : String;
 begin
   cmd := FixFileName(ParamStr(1));
-  if cmd = '' then begin
+  if cmd = '' then
+  begin
     writeln('executable is not specified');
     Exit;
-  end else
+  end
+  else
     writeln('debugging process: ', cmd);
 
-  if not FileExists(cmd) then begin
+  if not FileExists(cmd) then
+  begin
     writeln('file doesn''t exists or not available: <',cmd,'>');
     Exit;
   end;
   LoadDebugInfo(cmd);
 
-  dbg:=DebugProcessStart(cmd);
-  main:=TDbgMain.Create(dbg, 0, True);
-  if not Assigned(dbg) then begin
+  dbg := DebugProcessStart(cmd);
+  lDebugger := TDbgMain.Create(dbg, 0, True);
+  if not Assigned(dbg) then
+  begin
     writeln('cannot start debug process');
     Exit;
   end;
 
   try
-    try
-      //SetCommandLine(cmd);
-      RunLoop(main);
-    finally
-    end;
+    RunLoop(lDebugger);
   except
     writeln('main loop exception');
   end;
-  main.Free;
+  lDebugger.Free;
 end;
 
 begin

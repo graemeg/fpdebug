@@ -22,7 +22,8 @@ uses
 
 type
   TCommandEnvironment = class
-    function Main: TDbgMain; virtual; abstract;
+  public
+    function Debugger: TDbgMain; virtual; abstract;
     function Process: TDbgProcess; virtual; abstract; // process where stopped
     function Thread: TDbgThread; virtual; abstract; // thread there stopped
   end;

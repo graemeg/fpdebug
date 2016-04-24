@@ -337,8 +337,7 @@ type
   TPtraceWord = PtrInt;
   PPtraceWord = ^TPtraceWord;
 
-function ptrace(request: Tptrace_request; pid: TPid; addr, data: Pointer): TPtraceWord;
- cdecl; external name 'ptrace';
+function ptrace(request: Tptrace_request; pid: TPid; addr, data: Pointer): TPtraceWord; cdecl; external name 'ptrace';
 
 function ptraceMe: TPtraceWord;
 function ptraceCont(pid: TPid; Signal: Integer): TPtraceWord;

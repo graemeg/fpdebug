@@ -397,42 +397,49 @@ function TDbgMain.WaitNextEvent(var Event: TDbgEvent): Boolean;
 var
   loopdone : Boolean;
   i        : Integer;
-  ReportToUser  : Boolean;
+  ReportToUser: Boolean;
   stepthr : TDbgThread;
 begin
-
   repeat
-
-    loopdone:=False;
+    loopdone := False;
     UpdateProcThreadState;
 
-    if Assigned(fStepper) then begin
+    if Assigned(fStepper) then
+    begin
       stepthr:=fStepper.FindThread(fStepThread);
-      if Assigned(stepthr) then begin
+      if Assigned(stepthr) then
+      begin
         fSteppers.Add(fStepper);
-        for i:=0 to fStepper.ThreadsCount-1 do begin
+        for i := 0 to fStepper.ThreadsCount-1 do
+        begin
           if fStepper.Thread[i].ID<>fStepThread then
+          begin
             //todo: suspend thread
             {fStepper.Thread[i].Suspend;}
-            ;
+          end;
         end;
 
         //todo: remove...
         //writeln('#enabling single step for the 2nd time!');
         //stepthr.NextSingleStepInt(False);
-      end else
+      end
+      else
+      begin
         // stepping thread wad removed... for some reason?!
         // can't step the process
-        ;
-      fStepper:=nil;
+      end;
+      fStepper := nil;
     end;
 
-    Result:=fTarget.WaitNextEvent(Event);
-    if Result then begin
+    Result := fTarget.WaitNextEvent(Event);
+    if Result then
+    begin
       DoHandleEvent(Event, ReportToUser);
-      if ReportToUser then loopdone:=True;
-    end else
-      loopdone:=True;
+      if ReportToUser then
+        loopdone := True;
+    end
+    else
+      loopdone := True;
 
   until loopdone;
 end;

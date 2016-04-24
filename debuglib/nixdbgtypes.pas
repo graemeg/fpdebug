@@ -182,31 +182,39 @@ var
   Status : Integer;
   fCh    : TPid;
 begin
-  if fChild = 0 then begin
+  if fChild = 0 then
+  begin
     Result := false;
     Exit;
   end;
 
-  if GetNextEmulatedEvent(Event) then Exit;
+  if GetNextEmulatedEvent(Event) then
+    Exit;
 
-  if fWaited then ptraceCont(fChild, fContSig);
+  if fWaited then
+    ptraceCont(fChild, fContSig);
 
-  if fTerminated then begin
+  if fTerminated then
+  begin
     Result := false;
     Exit;
   end;
 
   fCh := FpWaitPid(fChild, Status, 0);
-  if fCh < 0 then begin // failed to wait
+  if fCh < 0 then
+  begin // failed to wait
     Result := false;
     fChild := 0;
     fTerminated := true;
     Exit;
-  end else if Status = 0 then begin
+  end
+  else if Status = 0 then
+  begin
     //terminated?
   end;
 
-  if isStopped(Status, fContSig) then begin
+  if isStopped(Status, fContSig) then
+  begin
     case fContSig of
       SIGTRAP: fContSig := 0;
     end;
@@ -214,7 +222,8 @@ begin
 
   Result := WaitStatusToDbgEvent(fChild, fCh, Status, Event);
 
-  if event.Kind = dek_SingleStep then begin
+  if event.Kind = dek_SingleStep then
+  begin
     if Assigned(EnableSingleStep) then
       EnableSingleStep(fCh, False);
   end;

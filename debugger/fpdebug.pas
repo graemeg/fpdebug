@@ -86,18 +86,16 @@ begin
 
   dbg := DebugProcessStart(cmd);
   lDebugger := TDbgMain.Create(dbg, 0, True);
-  if not Assigned(dbg) then
-  begin
-    writeln('cannot start debug process');
-    Exit;
-  end;
-
   try
+    if not Assigned(dbg) then
+    begin
+      writeln('cannot start debug process');
+      Exit;
+    end;
     RunLoop(lDebugger);
-  except
-    writeln('main loop exception');
+  finally
+    lDebugger.Free;
   end;
-  lDebugger.Free;
 end;
 
 begin
@@ -106,8 +104,7 @@ begin
   except
     on E: Exception do
       begin
-        writeln('ERROR: exception while debugging');
-        writeln('Details:');
+        writeln('ERROR:');
         writeln(E.Message);
         writeln('');
       end;

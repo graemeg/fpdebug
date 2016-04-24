@@ -349,11 +349,8 @@ end;
 
 procedure RunLoop(ADebugger: TDbgMain);
 begin
-  try
-    uDebugger := ADebugger;
-    DoRunLoop(ADebugger);
-  except
-  end;
+  uDebugger := ADebugger;
+  DoRunLoop(ADebugger);
 end;
 
 function LastEvent:TDbgEvent;
@@ -388,9 +385,5 @@ end;
 initialization
   RegisterLoopCommands;
  
-finalization
-    
-  
-
 end.
 

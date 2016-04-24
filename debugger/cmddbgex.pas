@@ -7,31 +7,30 @@
     for details about redistributing fpDebug.
 
     Description:
-      .
+      This unit contains additional fpDebugger commands
+      to debug loaded debug-info
 }
 unit cmdDbgEx;
-// the unit contains additional duby-line commands
-// to debug loaded debug-info 
+
+{$mode objfpc}{$H+}
 
 interface
 
-{$ifdef fpc}{$mode delphi}{$H+}{$endif}
 uses
-  Classes, SysUtils,
-  commands, cmdDbg,
+  Classes,
+  SysUtils,
+  commands,
+  cmdDbg,
   dbgInfoTypes;
 
-implementation
-
 type
-  { TdbgInfoFilesCommand }
+
   TdbgInfoFilesCommand = class(TCommand)
   public
     procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
 
-  { TdbgSourceFilesCommand}
 
   TdbgSourceFilesCommand = class(TCommand)
   public
@@ -39,13 +38,16 @@ type
     function ShortHelp: String; override;
   end;
 
-  { TdbgEnumFileSymCommand }
 
   TdbgEnumFileSymCommand = class(TCommand)
   public
     procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
     function ShortHelp: String; override;
   end;
+
+
+implementation
+
 
 { TTdbgInfoFilesCommand }
 

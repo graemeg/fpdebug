@@ -130,22 +130,26 @@ begin
   //Result := ptraceSingleStep(ThreadID);
   //writeln('TLinuxProcess.SetSingleStep ', PtrUInt(threadID), ' ', Result);
   Result:=Assigned(EnableSingleStep);
-  if Result then Result:=EnableSingleStep(procID, True);
+  if Result then
+    Result:=EnableSingleStep(procID, True);
 end;
 
 function TLinuxProcess.GetNextEmulatedEvent(var Event: TDbgEvent): Boolean;
 begin
   //todo: some events must not be emulated but catched via ptracing syscall()
   Result:=False;
-  if not Started then begin
+  if not Started then
+  begin
     Event.Kind:=dek_ProcessStart;
     Event.Process:=fChild;
-    Event.Thread:=0;
+    Event.Thread:= TDbgThreadID(0);
     Event.Addr:=0;
     EmulateThread:=True;
     Started:=True;
     Result:=True;
-  end else if EmulateThread then begin
+  end
+  else if EmulateThread then
+  begin
     Event.Kind:=dek_ThreadStart;
     Event.Process:=fChild;
     Event.Thread:=fChild;

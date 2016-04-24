@@ -148,10 +148,12 @@ procedure TStepCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 var
   Success: Boolean;
 begin
-  if not uRunning then WriteLn('not running');
+  if not uRunning then
+    WriteLn('not running');
     
-  Success:=Assigned(Env.Thread) and Env.Thread.NextSingleStep;
-  if not Success then writeln('unable to make a step');
+  Success := Assigned(Env.Thread) and Env.Thread.NextSingleStep;
+  if not Success then
+    writeln('unable to make a step');
   
   uWaitForNext := true;
 end;

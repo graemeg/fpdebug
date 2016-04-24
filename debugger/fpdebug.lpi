@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
     <Version Value="9"/>
@@ -34,20 +34,17 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="test${ExeExt}"/>
-        <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
+        <CommandLineParams Value="..\tests\hello2-64"/>
       </local>
     </RunParams>
-    <Units Count="10">
+    <Units Count="12">
       <Unit0>
         <Filename Value="fpdebug.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="fpdebug"/>
       </Unit0>
       <Unit1>
         <Filename Value="cmdlineutils.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="cmdlineutils"/>
       </Unit1>
       <Unit2>
         <Filename Value="cmddbg.pas"/>
@@ -72,7 +69,6 @@
       <Unit6>
         <Filename Value="..\debuglib\dbgi386.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="dbgi386"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\debuglib\dbgmain.pas"/>
@@ -82,25 +78,32 @@
       <Unit8>
         <Filename Value="cmdloop.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="cmdloop"/>
       </Unit8>
       <Unit9>
         <Filename Value="commands.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="commands"/>
       </Unit9>
+      <Unit10>
+        <Filename Value="cmddbgex.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="cmdDbgEx"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="cmdmemview.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit11>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value=".\fpdebug"/>
+      <Filename Value=".\fpdebug.exe" ApplyConventions="False"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
       <OtherUnitFiles Value="..\debuglib"/>
-      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+      <UnitOutputDirectory Value="units"/>
     </SearchPaths>
     <Parsing>
       <Style Value="1"/>
@@ -110,10 +113,8 @@
     </Parsing>
     <Other>
       <CompilerMessages>
-        <IgnoredMessages idx3189="True" idx4055="True" idx4079="True" idx4080="True" idx4081="True" idx5024="True" idx5028="True" idx5029="True" idx5030="True" idx5031="True" idx5057="True" idx5058="True" idx5060="True"/>
-        <MsgFileName Value="E:\FPC_Laz\fpc\compiler\msg\errorheu.msg"/>
+        <IgnoredMessages idx5060="True" idx5058="True" idx5057="True" idx5031="True" idx5030="True" idx5029="True" idx5028="True" idx5024="True" idx4081="True" idx4080="True" idx4079="True" idx4055="True" idx3189="True"/>
       </CompilerMessages>
-      <CompilerPath Value="$(CompPath)"/>
     </Other>
   </CompilerOptions>
 </CONFIG>

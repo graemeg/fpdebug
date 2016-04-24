@@ -32,7 +32,6 @@ type
 
   TExcAddrProc = function (pid: TPid; var addr: TDbgPtr): Boolean;
 
-  { TLinuxProcess }
 
   TLinuxProcess = class(TDbgTarget)
   private
@@ -41,32 +40,22 @@ type
     fTerminated : Boolean;
     fWaited     : Boolean;
     fcputype    : TCpuType;
-
     EmulateThread : Boolean; // the next WaitEvent is CreateThread!
     Started       : Boolean; // has start thread been reported?
-
+    function    StartProcess(const ACmdLine: String): Boolean;
   protected
-    function GetNextEmulatedEvent(var Event: TDbgEvent): Boolean;
-
+    function    GetNextEmulatedEvent(var Event: TDbgEvent): Boolean;
   public
     constructor Create;
-    function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
-    procedure Terminate; override;
-
-    function GetThreadsCount(procID: TDbgProcessID): Integer; override;
-    function GetThreadID(procID: TDbgProcessID; AIndex: Integer): TDbgThreadID; override;
-    function GetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; override;
-    function SetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; override;
-
-    function SetSingleStep(procID: TDbgProcessID; ThreadID: TDbgThreadID): Boolean; override;
-
-    function MainThreadID(procID: TDbgProcessID): TDbgThreadID; override;
-
-    function ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
-    function WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
-
-    // Linux specific methods
-    function StartProcess(const ACmdLine: String): Boolean;
+    function    WaitNextEvent(var Event: TDbgEvent): Boolean; override;
+    procedure   Terminate; override;
+    function    GetThreadsCount(procID: TDbgProcessID): Integer; override;
+    function    GetThreadID(procID: TDbgProcessID; AIndex: Integer): TDbgThreadID; override;
+    function    GetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; override;
+    function    SetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Registers: TDbgDataList): Boolean; override;
+    function    SetSingleStep(procID: TDbgProcessID; ThreadID: TDbgThreadID): Boolean; override;
+    function    ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
+    function    WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
   end;
 
 function DebugLinuxProcessStart(const ACmdLine: String): TDbgTarget;
@@ -141,12 +130,7 @@ begin
   //Result := ptraceSingleStep(ThreadID);
   //writeln('TLinuxProcess.SetSingleStep ', PtrUInt(threadID), ' ', Result);
   Result:=Assigned(EnableSingleStep);
-  if Result then Result:=EnableSingleStep(ThreadID, True);
-end;
-
-function TLinuxProcess.MainThreadID(procID: TDbgProcessID): TDbgThreadID;
-begin
-  Result := fChild;
+  if Result then Result:=EnableSingleStep(procID, True);
 end;
 
 function TLinuxProcess.GetNextEmulatedEvent(var Event: TDbgEvent): Boolean;

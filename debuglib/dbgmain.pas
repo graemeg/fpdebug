@@ -98,7 +98,6 @@ type
     property isEnabled: Boolean read fEnabled;
   end;
 
-  { TDbgProcess }
 
   TDbgProcess  = class(TObject)
   private
@@ -108,44 +107,35 @@ type
     fState    : TDbgProcessState;
     fBreaks   : TList;
   protected
-    function DbgTarget: TDbgTarget;
-
-    procedure AddThread(threadid: TDbgThreadID);
-    procedure RemoveThread(threadid: TDbgThreadID);
-    function GetThread(i: Integer): TDbgThread;
-    function GetThreadsCount: Integer;
-
-    function FindBreakpoint(Addr: TDbgPtr; Forced: Boolean): TDbgBreakpoint;
-
-    procedure UninstallBreaks(Addr, Count: TDbgPtr; BPList: TFPList);
-    procedure ReinstallBreaks(Addr, Count: TDbgPtr; BPList: TFPList);
-
-    procedure HandleBreakpointEvent(const Event: TDbgEvent; var StartedSingleStep: Boolean);
-    procedure HandleManualStep(const Event: TDbgEvent; var ReportToUser: Boolean);
+    function    DbgTarget: TDbgTarget;
+    procedure   AddThread(threadid: TDbgThreadID);
+    procedure   RemoveThread(threadid: TDbgThreadID);
+    function    GetThread(i: Integer): TDbgThread;
+    function    GetThreadsCount: Integer;
+    function    FindBreakpoint(Addr: TDbgPtr; Forced: Boolean): TDbgBreakpoint;
+    procedure   UninstallBreaks(Addr, Count: TDbgPtr; BPList: TFPList);
+    procedure   ReinstallBreaks(Addr, Count: TDbgPtr; BPList: TFPList);
+    procedure   HandleBreakpointEvent(const Event: TDbgEvent; var StartedSingleStep: Boolean);
+    procedure   HandleManualStep(const Event: TDbgEvent; var ReportToUser: Boolean);
   public
     constructor Create(AOwner: TDbgMain; AProcessID: TDbgProcessID);
-    destructor Destroy; override;
-
-    function FindThread(AThreadid: TDbgThreadID): TDbgThread;
-    function ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; 
-    function WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
-
-    function EnableBreakpoint(const Addr: TDbgPtr): Boolean;
-    procedure DisableBreakpoint(const Addr: TDbgPtr);
-    function isBreakpointEnabled(const Addr: TDbgPtr): Boolean;
-    function AddBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent): Boolean;
-    procedure RemoveBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent);
-
-    procedure Suspend;
-    procedure Resume;
-
-    property ID: TDbgProcessID read fID;
-    property State: TDbgProcessState read fState;
-    property ThreadsCount: Integer read GetThreadsCount;
-    property Thread[i: Integer]: TDbgThread read GetThread;
+    destructor  Destroy; override;
+    function    FindThread(AThreadid: TDbgThreadID): TDbgThread;
+    function    ReadMem(Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer;
+    function    WriteMem(Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer;
+    function    EnableBreakpoint(const Addr: TDbgPtr): Boolean;
+    procedure   DisableBreakpoint(const Addr: TDbgPtr);
+    function    isBreakpointEnabled(const Addr: TDbgPtr): Boolean;
+    function    AddBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent): Boolean;
+    procedure   RemoveBreakHandler(const Addr: TDbgPtr; Handler: TDbgHandlerEvent);
+    procedure   Suspend;
+    procedure   Resume;
+    property    ID: TDbgProcessID read fID;
+    property    State: TDbgProcessState read fState;
+    property    ThreadsCount: Integer read GetThreadsCount;
+    property    Thread[i: Integer]: TDbgThread read GetThread;
   end;
 
-  { TMemAccessHandler }
 
   TMemAccessEvent = procedure (Proc: TDbgProcessID; var Data: array of byte; Offset: TDbgPtr; Count: Integer) of object;
   
@@ -153,40 +143,34 @@ type
   
   TDbgHandleEvent = procedure (const Event: TDbgEvent; var EventHandled: THandleState) of object;
 
-  { TDbgMain }
 
+  { Main debugging class than manages multiple processes. }
   TDbgMain = class(TObject)
   private
     fTarget     : TDbgTarget;
     fProcList   : TFPList;
     fOwnTarget  : Boolean;
-
     //the list of the stepper processes, for multi-process debugging
     fSteppers   : TFPList;
     fStepper    : TDbgProcess; // the process that must make a SINGLE step in SINGLE thread
     fStepThread : TDbgThreadID;
   protected
-    function DoAddProcess(AProcessID: TDbgProcessID): TDbgProcess;
-    procedure DoRemoveProcess(AProcessID: TDbgProcessID);
-
-    function GetProcessCount: Integer;
-    function GetProcess(i: Integer): TDbgProcess;
-
-    procedure UpdateProcThreadState;
-    procedure DoHandleEvent(Event: TDbgEvent; var ReportToUser: Boolean);
+    function    DoAddProcess(AProcessID: TDbgProcessID): TDbgProcess;
+    procedure   DoRemoveProcess(AProcessID: TDbgProcessID);
+    function    GetProcessCount: Integer;
+    function    GetProcess(i: Integer): TDbgProcess;
+    procedure   UpdateProcThreadState;
+    procedure   DoHandleEvent(Event: TDbgEvent; var ReportToUser: Boolean);
   public
-    constructor Create(ATarget: TDbgTarget; AProcessID: TDbgProcessID;
-      OwnTarget: Boolean = False);
-    destructor Destroy; override;
-    function WaitNextEvent(var Event: TDbgEvent): Boolean;  
-    function FindProcess(processID: TDbgProcessID): TDbgProcess;
-    function FindThread(processID: TDbgProcessID; ThreadID: TDbgThreadID): TDbgThread;
-
-    function CPU: TCPUCode;
-
-    procedure Terminate; //terminates all processes
-    property ProcessCount: Integer read GetProcessCount;
-    property Process[i: Integer]: TDbgProcess read GetProcess;
+    constructor Create(ATarget: TDbgTarget; AProcessID: TDbgProcessID; OwnTarget: Boolean = False);
+    destructor  Destroy; override;
+    function    WaitNextEvent(var Event: TDbgEvent): Boolean;
+    function    FindProcess(processID: TDbgProcessID): TDbgProcess;
+    function    FindThread(processID: TDbgProcessID; ThreadID: TDbgThreadID): TDbgThread;
+    function    CPU: TCPUCode;
+    procedure   Terminate; //terminates all processes
+    property    ProcessCount: Integer read GetProcessCount;
+    property    Process[i: Integer]: TDbgProcess read GetProcess;
   end;
   
 // utility function
@@ -286,8 +270,9 @@ end;
 
 function TDbgMain.DoAddProcess(AProcessID: TDbgProcessID): TDbgProcess;
 begin
-  Result:=FindProcess(AProcessID);
-  if not Assigned(Result) then begin
+  Result := FindProcess(AProcessID);
+  if not Assigned(Result) then
+  begin
     Result := TDbgProcess.Create(Self, AProcessID);
     fProcList.Add(Result);
   end;
@@ -454,14 +439,17 @@ end;
 
 function TDbgMain.FindProcess(processID: TDbgProcessID): TDbgProcess; 
 var
-  i : integer;
+  i: integer;
 begin
-  for i:=0 to ProcessCount-1 do 
-    if Process[i].ID=processID then begin
-      Result:=Process[i];
+  for i := 0 to ProcessCount-1 do
+  begin
+    if Process[i].ID = processID then
+    begin
+      Result := Process[i];
       Exit;
     end;
-  Result:=nil;
+  end;
+  Result := nil;
 end;
 
 function TDbgMain.FindThread(processID: TDbgProcessID; ThreadID: TDbgThreadID): TDbgThread; 
@@ -489,19 +477,18 @@ end;
 
 constructor TDbgProcess.Create(AOwner: TDbgMain; AProcessID: TDbgProcessID); 
 var
-  i     : Integer;
-  thrid : TDbgThreadID;
+  i: Integer;
+  thrid: TDbgThreadID;
 begin
   inherited Create;
-  
-  fOwner:=AOwner;
+  fOwner := AOwner;
   fID := AProcessID;
-  fThreads:=TList.Create;
-  fBreaks:=TList.Create;
-
+  fThreads := TList.Create;
+  fBreaks := TList.Create;
   {filling existing threads}
-  for i:=0 to DbgTarget.GetThreadsCount(fID) - 1 do begin
-    thrid:=DbgTarget.GetThreadID(fID, i);
+  for i := 0 to DbgTarget.GetThreadsCount(fID) - 1 do
+  begin
+    thrid := DbgTarget.GetThreadID(fID, i);
     AddThread(thrid);
   end;
 end;

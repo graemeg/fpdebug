@@ -306,7 +306,8 @@ begin
       begin
         uWaitForNext := false;
         ExecuteNextCommand(Env);
-      end else
+      end
+      else
         uWaitForNext := true;
       StopForUser  := true;
 
@@ -319,19 +320,28 @@ begin
         else
         begin
           //HandleEvent( Process, DbgEvent);
-
           case DbgEvent.Kind of
-            dek_SysExc:;
-            dek_SingleStep:;
-              //writeln('single step');
-            dek_BreakPoint:;
-              //writeln('breakpoint');
+            dek_SysExc:
+              begin
+                // do nothing
+              end;
+
+            dek_SingleStep:
+              begin
+                //writeln('single step');
+              end;
+
+            dek_BreakPoint:
+              begin
+                //writeln('breakpoint');
+              end;
+
             dek_SysCall:
-            begin
-              //writeln('system call: ', DbgEvent.Debug);
-              StopForUser := uStopOnSysCall;
-            end;
-          end;
+              begin
+                //writeln('system call: ', DbgEvent.Debug);
+                StopForUser := uStopOnSysCall;
+              end;
+          end;  { case }
           writeln('event:   ',  dekStr[DbgEvent.Kind]);
           writeln('process: ',  DbgEvent.Process);
           writeln('thread:  ',  PtrUInt(DbgEvent.Thread));

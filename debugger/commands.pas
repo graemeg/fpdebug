@@ -7,11 +7,12 @@
     for details about redistributing fpDebug.
 
     Description:
-      .
+      This unit defines the base command class and two default
+      commands to exit and ask for help.
 }
 unit commands;
 
-{$ifdef fpc}{$mode delphi}{$H+}{$endif}
+{$mode objfpc}{$H+}
 
 interface
 
@@ -26,7 +27,6 @@ type
     function Thread: TDbgThread; virtual; abstract; // thread there stopped
   end;
   
-  { TCommand }
 
   TCommand = class(TObject)
   public
@@ -38,6 +38,21 @@ type
     function ResetParamsCache: Boolean; virtual;
   end;
   
+
+  THelpCommand = class(TCommand)
+  public
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
+
+  TExitCommand = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    procedure PrintHelp; override;
+    function ShortHelp: String; override;
+  end;
+
+
 function RegisterCommand(const Keys: array of String; ACommand: TCommand): Boolean;
 function FindCommand(const Key: String): TCommand;
 function ExecuteCommand(Params: TStrings; var Env: TCommandEnvironment; var ExecutedCommand: TCommand): Boolean;
@@ -51,22 +66,6 @@ var
   keyslist : TStringList;
   cmdlist  : TList;
   
-type 
-  { THelpCommand }
-  THelpCommand = class(TCommand)
-  public
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    function ShortHelp: String; override;
-  end;
-  
-  { TExitCommand }
-
-  TExitCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    procedure PrintHelp; override;
-    function ShortHelp: String; override;
-  end;
-
 { TExitCommand }
 
 procedure TExitCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);

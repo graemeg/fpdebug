@@ -63,17 +63,14 @@ type
   end;
   
 
-  { TWinDbgTarget }
 
   TWinDbgTarget = class(TDbgTarget)
   private
     fCmdLine  : String;
     fOnlyProcess  : Boolean;
     fis32proc     : Boolean; //todo:
-  
     {the root process. If it's terminated the Target is terminated too}
     fMainProc   : TProcessInformation; 
-    
     fProcesses    : THandleList;
     fThreads      : THandleList;
     fLastEvent    : TDebugEvent;
@@ -81,31 +78,25 @@ type
     fWaited       : Boolean;
     fTerminated   : Boolean;
     fEHandled     : Boolean;
-    
+    function StartProcess(const ACommandLine: String; OnlyProcess: Boolean): Boolean;
   protected
     procedure AddProcess(ProcessID: DWORD; ProcessHandle: THandle);
     procedure AddThread(ProcessID, ThreadID: DWORD; ThreadHandle: THandle);
     procedure RemoveThread(ThreadID: TThreadID);
-
   public
     constructor Create;
     destructor Destroy; override;
-
     procedure Terminate; override;
     function SuspendProcess(procID: TDbgProcessID): Boolean; override;
     function ResumeProcess(procID: TDbgProcessID): Boolean; override;
     function WaitNextEvent(var Event: TDbgEvent): Boolean; override;
-    
     function GetThreadsCount(procID: TDbgProcessID): Integer; override;
     function GetThreadID(procID: TDbgProcessID; AIndex: Integer): TDbgThreadID; override;
     function GetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
     function SetThreadRegs(procID: TDbgProcessID; ThreadID: TDbgThreadID; Regs: TDbgDataList): Boolean; override;
     function SetSingleStep(procID: TDbgProcessID; ThreadID: TDbgThreadID): Boolean; override;
-
     function ReadMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; var Data: array of byte): Integer; override;
     function WriteMem(procID: TDbgProcessID; Offset: TDbgPtr; Count: Integer; const Data: array of byte): Integer; override;
-    
-    function StartDebugProcess(const ACommandLine: String; OnlyProcess: Boolean): Boolean; 
   end;
 
 implementation
@@ -115,7 +106,7 @@ var
   win : TWinDbgTarget;
 begin
   win := TWinDbgTarget.Create;
-  if not win.StartDebugProcess(ACommandLine, True) then begin
+  if not win.StartProcess(ACommandLine, True) then begin
     win.Free;
     Result := nil
   end else
@@ -185,7 +176,7 @@ begin
   fThreads.DeleteByID(ThreadID);
 end;
 
-function TWinDbgTarget.StartDebugProcess(const ACommandLine: String; OnlyProcess: Boolean): Boolean;
+function TWinDbgTarget.StartProcess(const ACommandLine: String; OnlyProcess: Boolean): Boolean;
 begin
   fCmdLine:=ACommandLine;
   fOnlyProcess:=OnlyProcess;

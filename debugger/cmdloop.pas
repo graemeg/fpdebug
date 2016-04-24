@@ -7,11 +7,13 @@
     for details about redistributing fpDebug.
 
     Description:
-      .
+      Defines the fpDebugger command looping code, and a few
+      commands related to the command loop (for example Run and
+      Step).
 }
 unit cmdloop;
 
-{$ifdef fpc}{$mode delphi}{$H+}{$endif}
+{$mode objfpc}{$H+}
 
 interface
 
@@ -19,6 +21,40 @@ uses
   Classes, SysUtils, 
   dbgTypes, dbgUtils, dbgConsts, dbgMain,
   commands; 
+
+type
+
+  TDebugEnvironment = class(TCommandEnvironment)
+  public
+    function Debugger: TDbgMain; override;
+    function Process: TDbgProcess; override;
+    function Thread: TDbgThread; override;
+  end;
+
+
+  TRunCommand = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
+
+  TRunToCommand = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
+
+  TStepCommand = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
+
+  TContinueCommand = class(TCommand)
+    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
+    function ShortHelp: String; override;
+  end;
+
 
 procedure RunLoop(ATarget: TDbgMain);
 
@@ -36,70 +72,35 @@ implementation
 var
   LastCommand   : String;
   DbgEvent      : TDbgEvent;
-  Target        : TDbgMain;
+  uDebugger     : TDbgMain;
 
   Running       : Boolean = False;
   WaitForNext   : Boolean = False;
   StopOnSysCall : Boolean = False;
-  
- // EventHandlers : TFPList;
-  
-type
-  TDebugEnvironment=class(TCommandEnvironment)
-  public
-    function Main: TDbgMain; override;
-    function Process: TDbgProcess; override;
-    function Thread: TDbgThread; override;
-  end;
 
-function TDebugEnvironment.Main: TDbgMain; 
-begin
-  Result:=Target;
-end;
-
-function TDebugEnvironment.Process: TDbgProcess; 
-begin
-  Result:=Main.FindProcess( DbgEvent.Process );
-end;
-
-function TDebugEnvironment.Thread: TDbgThread; 
-begin
-  Result:=Main.FindThread( DbgEvent.Process, DbgEvent.Thread );
-end;
-  
 const
   CmdPrefix = 'fpd> ';
   HexSize   = sizeof(TDbgPtr) * 2;
 
-type
-  { TRunCommand }
-
-  TRunCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    function ShortHelp: String; override;
-  end;
+ // EventHandlers : TFPList;
   
-  { TRunToCommand }
+{ TDebugEnvironment }
 
-  TRunToCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    function ShortHelp: String; override;
-  end;
+function TDebugEnvironment.Debugger: TDbgMain;
+begin
+  Result := uDebugger;
+end;
+
+function TDebugEnvironment.Process: TDbgProcess; 
+begin
+  Result := Debugger.FindProcess(DbgEvent.Process);
+end;
+
+function TDebugEnvironment.Thread: TDbgThread; 
+begin
+  Result := Debugger.FindThread(DbgEvent.Process, DbgEvent.Thread);
+end;
   
-  { TStepCommand }
-
-  TStepCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    function ShortHelp: String; override;
-  end;
-
-  { TContinueCommand }
-
-  TContinueCommand = class(TCommand)
-    procedure Execute(CmdParams: TStrings; Env: TCommandEnvironment); override;
-    function ShortHelp: String; override;
-  end;
-
 { TRunToCommand }
 
 procedure TRunToCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
@@ -179,11 +180,13 @@ end;
 
 procedure TRunCommand.Execute(CmdParams: TStrings; Env: TCommandEnvironment);
 begin
-  if not Running then begin
+  if not Running then
+  begin
     running := true;
     writeln('starting process');
     WaitForNext := true;
-  end else
+  end
+  else
     writelN('process already started');
 end;
 
@@ -287,7 +290,8 @@ const
     'Other', 'SysExc', 'Single step', 'Breakpoint', 
     'Process Start', 'Process Terminated', 'Thread Start', 'Thread Terminate', 'SysCall');
 begin
-  if not Assigned(Target) then begin
+  if not Assigned(Target) then
+  begin
     writeln('no process to debug (internal error?)');
     Exit;
   end;
@@ -296,18 +300,24 @@ begin
     ProcTerm := false;
     StopForUser := true;
 
-    while not QuitCommand do begin
-      if StopForUser then begin
+    while not QuitCommand do
+    begin
+      if StopForUser then
+      begin
         WaitForNext := false;
         ExecuteNextCommand(Env);
       end else
         WaitForNext := true;
       StopForUser  := true;
 
-      if WaitForNext and not ProcTerm then begin
-        if not Target.WaitNextEvent(DbgEvent) then begin
+      if WaitForNext and not ProcTerm then
+      begin
+        if not Target.WaitNextEvent(DbgEvent) then
+        begin
           writeln('the process terminated? (type "quit" to quit)');
-        end else begin
+        end
+        else
+        begin
           //HandleEvent( Process, DbgEvent);
 
           case DbgEvent.Kind of
@@ -322,7 +332,7 @@ begin
               StopForUser := StopOnSysCall;
             end;
           end;
-          writeln('even:    ',  dekStr[DbgEvent.Kind]);
+          writeln('event:   ',  dekStr[DbgEvent.Kind]);
           writeln('process: ',  DbgEvent.Process);
           writeln('thread:  ',  PtrUInt(DbgEvent.Thread));
           writeln('addr:    $', HexAddr(DbgEvent.Addr), ' / ', DbgEvent.Addr);
@@ -340,7 +350,7 @@ end;
 procedure RunLoop(ATarget: TDbgMain);
 begin
   try
-    Target:=ATarget;
+    uDebugger:=ATarget;
     DoRunLoop(ATarget);
   except
   end;
@@ -353,17 +363,17 @@ end;
 
 function DebugTarget: TDbgMain;
 begin
-  Result:=Target;
+  Result:=uDebugger;
 end;
 
 function EventProc: TDbgProcess;
 begin
-  Result:=Target.FindProcess(DbgEvent.Process);
+  Result:=uDebugger.FindProcess(DbgEvent.Process);
 end;
 
 function EventThread: TDbgThread;
 begin
-  Result:=Target.FindThread(DbgEvent.Process, DbgEvent.Thread);
+  Result:=uDebugger.FindThread(DbgEvent.Process, DbgEvent.Thread);
 end;
 
 // Registering commands

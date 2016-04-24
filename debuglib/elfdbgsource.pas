@@ -185,6 +185,7 @@ begin
 
   except
     Result := false;
+    raise;
   end;
 end;
 

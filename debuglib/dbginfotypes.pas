@@ -281,11 +281,14 @@ function GetDataSource(const FileName: string): TDbgDataSource;
 var
   fs  : TFileStream;
 begin
+  writeln('Filename = ', Filename);
   try
     fs := TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
+    writeln('file size = ', fs.Size);
     Result := GetDataSource(fs, true);
   except
     Result := nil;
+    raise;
   end;
 end;  
 
@@ -296,24 +299,24 @@ var
   p : Int64;
 begin
   Result := nil;
-  if not Assigned(ASource) then Exit;
+  if not Assigned(ASource) then
+    Exit;
   
   p := ASource.Position;
-  for i := 0 to srcclasses.Count - 1 do begin
+  writeln ('srcclasses.Count = ', srcclasses.Count);
+  for i := 0 to srcclasses.Count - 1 do
+  begin
     cls :=  TDbgDataSourceClass(srcclasses[i]);
-    try
-      ASource.Position := P;
-      if cls.isValid(ASource) then begin 
-        ASource.Position := p;
-        Result := cls.Create(ASource, OwnSource);
-        Exit;
-      end else
-        ;
-        
-    except
-      on e: exception do begin
-        //writeln('exception! WHY? ', e.Message);
-      end;
+    ASource.Position := P;
+    if cls.isValid(ASource) then
+    begin
+      ASource.Position := p;
+      Result := cls.Create(ASource, OwnSource);
+      Exit;
+    end
+    else
+    begin
+      writeln('DataSourceClass is not valid. Is this important info?');
     end;
   end;
   Result := nil;

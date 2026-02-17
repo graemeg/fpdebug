@@ -1,3 +1,7 @@
+NOTE: This project has been discontinued, and will be replaced by a brand
+      new one. Details to follow later.  -- Graeme
+
+
 Free Pascal Debugger
 ====================
 This project is trying to create a debugger written in Object Pascal, for the
